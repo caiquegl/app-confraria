@@ -1,0 +1,40 @@
+---
+description: Padrões para a camada de services do app-confraria
+globs: **/services/**/*.ts
+alwaysApply: false
+---
+
+# Services
+
+A camada `services` é a **única** que se comunica com a API externa.
+
+## Regras
+
+- Funções nomeadas, exportadas individualmente — sem classes
+- Sempre retornar um tipo explícito
+- Nunca importar hooks do React nem usar `useState`/`useEffect`
+- Erros de rede devem ser lançados — quem trata é o hook em `business/`
+
+```ts
+// ✅ CORRETO
+export async function fetchUserProfile(userId: string): Promise<UserProfile> {
+  const response = await api.get(`/users/${userId}`);
+  return response.data;
+}
+
+// ❌ ERRADO — lógica de estado dentro do service
+export async function fetchUserProfile() {
+  const [data, setData] = useState(null); // nunca aqui
+}
+```
+
+## Estrutura de chamada à API
+
+```ts
+import { api } from "@/lib/api"; // cliente axios/fetch centralizado
+
+export async function minhaFuncao(params: MeusParams): Promise<MeuRetorno> {
+  const response = await api.post("/endpoint", params);
+  return response.data;
+}
+```

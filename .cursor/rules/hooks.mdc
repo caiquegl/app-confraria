@@ -1,0 +1,45 @@
+---
+description: Padrões para hooks de regra de negócio do app-confraria
+globs: **/business/**/*.ts
+alwaysApply: false
+---
+
+# Hooks de Regra de Negócio
+
+Os hooks em `business/` contêm toda a lógica de estado e orquestração da página.
+
+## Regras
+
+- Nome sempre começa com `use` seguido do nome da página em PascalCase
+- Deve tipar explicitamente o retorno do hook
+- Chama funções do `services/` — nunca chama `fetch`/`api` diretamente
+- Não renderiza JSX — só retorna dados e funções
+
+```ts
+// ✅ CORRETO
+import type { UseLoadingParams } from "../types/loading.types";
+import { waitLoadingDuration } from "../services/loading.service";
+
+export function useLoading({ durationMs, onComplete }: UseLoadingParams): void {
+  useEffect(() => {
+    let alive = true;
+    waitLoadingDuration(durationMs).then(() => {
+      if (alive) onComplete?.();
+    });
+    return () => { alive = false; };
+  }, [durationMs, onComplete]);
+}
+```
+
+## O que pertence ao hook
+
+- `useState`, `useEffect`, `useCallback`, `useRef`
+- Validações de formulário
+- Lógica de navegação pós-ação
+- Formatação de dados antes de exibir na view
+
+## O que NÃO pertence ao hook
+
+- JSX ou StyleSheet
+- Chamadas diretas à API (vai no `service`)
+- Lógica que pode ser compartilhada entre páginas (vai em `src/hooks/`)

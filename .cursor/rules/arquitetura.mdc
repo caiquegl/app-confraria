@@ -1,0 +1,47 @@
+---
+description: Arquitetura de páginas do app-confraria — estrutura obrigatória por página
+alwaysApply: true
+---
+
+# Arquitetura por Página
+
+Cada página vive em `src/pages/<nome-da-pagina>/` e **deve** ter exatamente esta estrutura:
+
+```
+src/pages/<pagina>/
+  index.ts                   ← barrel de exportações públicas
+  types/<pagina>.types.ts    ← só tipagens, sem lógica
+  services/<pagina>.service.ts ← chamadas de API / side effects externos
+  business/use<Pagina>.ts    ← hook com regras de negócio e manipulação de estado
+  view/<PaginaView>.tsx       ← layout/JSX puro, sem lógica de negócio
+  components/                ← componentes exclusivos da página
+    <Componente>.tsx
+```
+
+## Responsabilidades
+
+| Camada | O que faz | O que NÃO faz |
+|--------|-----------|---------------|
+| `types` | Define interfaces e types da página | Nenhuma lógica |
+| `services` | Chama API, async, fetch, axios | Não manipula estado |
+| `business` | Hook com lógica, estado, validações | Não renderiza JSX |
+| `view` | Layout e JSX | Não chama API diretamente |
+| `components` | Pedaços visuais reutilizáveis da página | Não conhece a API |
+
+## Regras obrigatórias
+
+- `view` **nunca** importa diretamente de `services` — passa pelo hook em `business`
+- Cada componente na pasta `components/` deve ter no máximo ~80 linhas
+- O arquivo `index.ts` da página exporta tudo que for público
+- Componentes compartilhados entre páginas vão em `src/components/` (não dentro de uma página)
+- Rotas ficam em `src/app/` e **só importam** da pasta da respectiva página via `@/pages/<pagina>`
+
+## Exemplo de import correto
+
+```ts
+// ✅ CORRETO — rota importa da página
+import { LoadingView } from "@/pages/loading";
+
+// ❌ ERRADO — rota importa direto de subcamada
+import { LoadingView } from "@/pages/loading/view/LoadingView";
+```

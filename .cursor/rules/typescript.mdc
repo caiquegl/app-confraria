@@ -1,0 +1,49 @@
+---
+description: Padrões de TypeScript para o app-confraria
+globs: **/*.ts,**/*.tsx
+alwaysApply: false
+---
+
+# TypeScript
+
+## Tipagem
+
+- Sempre tipar props de componentes e retornos de hooks
+- Usar `type` para shapes de dados; `interface` apenas para contratos extensíveis
+- Nunca usar `any` — use `unknown` quando o tipo for realmente desconhecido
+- Props de componentes devem viver no arquivo `types/<pagina>.types.ts` da sua página
+
+```ts
+// ✅ CORRETO
+type LoadingViewProps = {
+  durationMs?: number;
+  onComplete?: () => void;
+};
+
+// ❌ ERRADO
+const LoadingView = ({ durationMs, onComplete }: any) => { ... }
+```
+
+## Imports
+
+- Usar alias `@/` para imports internos (configurado no tsconfig)
+- Imports de tipos devem usar `import type`
+
+```ts
+// ✅
+import type { LoadingViewProps } from "../types/loading.types";
+
+// ❌
+import { LoadingViewProps } from "../types/loading.types";
+```
+
+## Funções assíncronas
+
+```ts
+// ✅ — sempre tratar o retorno de Promises
+void fetchData();
+await fetchData();
+
+// ❌ — Promise solta sem tratamento
+fetchData();
+```

@@ -1,0 +1,62 @@
+---
+description: Padrões de componentes React Native para o app-confraria
+globs: **/*.tsx
+alwaysApply: false
+---
+
+# Componentes React Native
+
+## Regras gerais
+
+- Sempre componentes funcionais — nunca class components
+- Styles sempre com `StyleSheet.create()` no mesmo arquivo, no final
+- Nomes de componentes em PascalCase; arquivos com o mesmo nome do componente
+- Máximo ~80 linhas por arquivo de componente — quebre em sub-componentes se passar disso
+
+## Estrutura de um componente
+
+```tsx
+// 1. imports externos
+import { StyleSheet, View } from "react-native";
+
+// 2. imports internos
+import type { MeuComponenteProps } from "../types/pagina.types";
+
+// 3. componente
+export function MeuComponente({ prop }: MeuComponenteProps) {
+  return <View style={styles.container} />;
+}
+
+// 4. styles no final
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+});
+```
+
+## Evitar
+
+```tsx
+// ❌ styles inline
+<View style={{ flex: 1, backgroundColor: "#fff" }} />
+
+// ❌ lógica de negócio dentro da view
+export function MinhaTela() {
+  const [data, setData] = useState(null);
+  useEffect(() => { fetch("/api/data").then(...) }, []); // isso vai no hook
+}
+
+// ❌ componente gigante — quebre em partes menores
+```
+
+## Cores e tokens de design
+
+Usar as constantes centralizadas em `src/theme/colors.ts` — nunca hardcodar hex inline.
+
+```tsx
+// ✅
+import { colors } from "@/theme/colors";
+backgroundColor: colors.brandGreen
+
+// ❌
+backgroundColor: "#C8F763"
+```
