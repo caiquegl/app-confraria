@@ -7,9 +7,9 @@ export function waitDuration(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function resolveInitialRoute(): Promise<"home" | "landing"> {
+export async function resolveInitialRoute(): Promise<"feed" | "landing"> {
   const authenticated = await isAuthenticated();
-  return authenticated ? "home" : "landing";
+  return authenticated ? "feed" : "landing";
 }
 
 /**
@@ -18,7 +18,7 @@ export async function resolveInitialRoute(): Promise<"home" | "landing"> {
  * - Verificação OTA com timeout (sem reload na splash)
  * - Rota inicial (auth)
  */
-export async function prepareApp(): Promise<"home" | "landing"> {
+export async function prepareApp(): Promise<"feed" | "landing"> {
   const [route] = await Promise.all([
     resolveInitialRoute(),
     waitDuration(LOADING_DURATION_MS),

@@ -65,7 +65,7 @@ export function useWizard(): UseWizardResult {
         text2: "Bem-vindo à Confraria 🏍️",
         visibilityTime: 3000,
       });
-      router.replace("/home");
+      router.replace("/feed");
     } catch {
       // erro já tratado no catch do registerUser
     }

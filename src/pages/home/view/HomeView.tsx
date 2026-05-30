@@ -1,8 +1,5 @@
-import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
-import { Button } from "@/components/Button";
-import { removeToken } from "@/lib/auth";
 import { colors } from "@/theme/colors";
 
 import { useHomeVersion } from "../business/useHomeVersion";
@@ -10,14 +7,9 @@ import { useHomeVersion } from "../business/useHomeVersion";
 export function HomeView() {
   const updateInfo = useHomeVersion();
 
-  const handleLogout = async () => {
-    await removeToken();
-    router.replace("/landing");
-  };
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>home</Text>
+      <Text style={styles.title}>Feed</Text>
 
       <View style={styles.versionCard}>
         <Text style={styles.versionTitle}>Versões</Text>
@@ -37,10 +29,6 @@ export function HomeView() {
           <Text style={styles.versionMeta}>Atualizado em {updateInfo.updatedAt}</Text>
         )}
       </View>
-
-      <Button variant="secondary" size="lg" style={styles.logoutButton} onPress={handleLogout}>
-        Sair
-      </Button>
     </View>
   );
 }
@@ -51,10 +39,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
-  },
-  logoutButton: {
-    marginTop: 24,
-    width: "100%",
   },
   title: {
     color: colors.brandDark,

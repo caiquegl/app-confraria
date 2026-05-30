@@ -6,7 +6,7 @@ export default function Index() {
   return (
     <LoadingView
       onComplete={(route) => {
-        router.replace(`/${route}`);
+        router.replace(route === "feed" ? "/feed" : "/landing");
       }}
     />
   );

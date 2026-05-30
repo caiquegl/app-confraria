@@ -7,7 +7,10 @@ import { colors } from "@/theme/colors";
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.brandGray }}>
+      <SafeAreaView
+        edges={["top", "left", "right"]}
+        style={{ flex: 1, backgroundColor: colors.brandGray }}
+      >
         <Stack
           screenOptions={{
             contentStyle: { backgroundColor: colors.brandGray },

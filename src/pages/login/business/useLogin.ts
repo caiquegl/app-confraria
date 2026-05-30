@@ -39,7 +39,7 @@ export function useLogin() {
         text2: "Bem-vindo de volta 🏍️",
         visibilityTime: 3000,
       });
-      router.replace("/home");
+      router.replace("/feed");
     } catch (err) {
       Toast.show({
         type: "error",

@@ -1,4 +1,4 @@
-export type AppRoute = "home" | "landing";
+export type AppRoute = "feed" | "landing";
 
 export type LoadingViewProps = {
   onComplete?: (route: AppRoute) => void | Promise<void>;
