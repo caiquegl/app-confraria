@@ -18,8 +18,8 @@ export const step2Schema = step2BaseSchema.refine(
 );
 
 export const step3Schema = z.object({
-  hasLicense: z.boolean({ required_error: "Selecione uma opção" }),
-  isAdult: z.boolean({ required_error: "Selecione uma opção" }),
+  hasLicense: z.boolean({ message: "Selecione uma opção" }),
+  isAdult: z.boolean({ message: "Selecione uma opção" }),
 });
 
 export const step4Schema = z.object({

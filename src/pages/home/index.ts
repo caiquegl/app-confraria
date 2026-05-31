@@ -1,2 +1,12 @@
+export { useFeed } from "./business/useFeed";
 export { useHomeVersion } from "./business/useHomeVersion";
+export { FeedActions } from "./components/FeedActions";
+export { FeedCard } from "./components/FeedCard";
+export { FeedCardHeader } from "./components/FeedCardHeader";
+export { FeedComments } from "./components/FeedComments";
+export { FeedList } from "./components/FeedList";
+export { FeedMediaCarousel } from "./components/FeedMediaCarousel";
+export { ShareFriendItem } from "./components/ShareFriendItem";
+export { SharePostSheet } from "./components/SharePostSheet";
+export type { FeedComment, FeedPost, FeedPostType, FeedShareFriend } from "./types/feed.types";
 export { HomeView } from "./view/HomeView";

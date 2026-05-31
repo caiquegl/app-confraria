@@ -9,8 +9,10 @@ import { colors } from "@/theme/colors";
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop";
 
+type AuthRoute = "/feed" | "/events" | "/routes" | "/services" | "/profile";
+
 type NavItem = {
-  href: string;
+  href: AuthRoute;
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   matchPaths: string[];

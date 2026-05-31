@@ -1,6 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
+import { useApiEnvironment } from "@/hooks/useApiEnvironment";
 import { ConfraLogo } from "@/pages/loading";
 import { colors } from "@/theme/colors";
 
@@ -11,6 +13,18 @@ import type { LandingViewProps } from "../types/landing.types";
 
 export function LandingView({ onLogin, onRegister }: LandingViewProps) {
   const { handleModalContinue, isReady, modalVisible } = useLanding();
+  const { toggleEnvironment } = useApiEnvironment();
+
+  const handleLogoLongPress = async () => {
+    const next = await toggleEnvironment();
+
+    Toast.show({
+      type: next === "homolog" ? "error" : "success",
+      text1: `Ambiente alterado para ${next === "homolog" ? "Homolog" : "Produção"}`,
+      text2: next === "homolog" ? "Usando API local de homologação." : "Usando API de produção.",
+      visibilityTime: 3000,
+    });
+  };
 
   if (!isReady) return null;
 
@@ -18,9 +32,13 @@ export function LandingView({ onLogin, onRegister }: LandingViewProps) {
     <View style={styles.screen}>
       <WelcomeModal visible={modalVisible} onContinue={handleModalContinue} />
 
-      <View style={styles.logoRow}>
-        <ConfraLogo  />
-      </View>
+      <Pressable
+        style={styles.logoRow}
+        delayLongPress={900}
+        onLongPress={handleLogoLongPress}
+      >
+        <ConfraLogo />
+      </Pressable>
 
       <View style={styles.body}>
         <View style={styles.hero}>

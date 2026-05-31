@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+import { EnvironmentBanner } from "@/components/EnvironmentBanner";
 import { colors } from "@/theme/colors";
 
 export default function RootLayout() {
@@ -11,6 +12,7 @@ export default function RootLayout() {
         edges={["top", "left", "right"]}
         style={{ flex: 1, backgroundColor: colors.brandGray }}
       >
+        <EnvironmentBanner />
         <Stack
           screenOptions={{
             contentStyle: { backgroundColor: colors.brandGray },

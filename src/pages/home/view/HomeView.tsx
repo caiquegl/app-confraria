@@ -1,49 +1,64 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
-import { useHomeVersion } from "../business/useHomeVersion";
+import { useFeed } from "../business/useFeed";
+import { FeedList } from "../components/FeedList";
+import { SharePostSheet } from "../components/SharePostSheet";
 
 export function HomeView() {
-  const updateInfo = useHomeVersion();
+  const {
+    addComment,
+    closeShare,
+    friends,
+    isPostLiked,
+    openShare,
+    posts,
+    sentFriendId,
+    sharePost,
+    shareToFriend,
+    toggleLike,
+  } = useFeed();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Feed</Text>
+      <FeedList
+        posts={posts}
+        isPostLiked={isPostLiked}
+        onAddComment={addComment}
+        onOpenShare={openShare}
+        onToggleLike={toggleLike}
+      />
 
-      <View style={styles.versionCard}>
-        <Text style={styles.versionTitle}>Versões</Text>
-        <Text style={styles.versionRow}>
-          App: <Text style={styles.versionValue}>{updateInfo.appVersion}</Text>
-        </Text>
-        <Text style={styles.versionRow}>
-          OTA: <Text style={styles.versionValue}>{updateInfo.label}</Text>
-        </Text>
-        <Text style={styles.versionRow}>
-          Canal: <Text style={styles.versionValue}>{updateInfo.channel}</Text>
-        </Text>
-        <Text style={styles.versionRow}>
-          Runtime: <Text style={styles.versionValue}>{updateInfo.runtimeVersion}</Text>
-        </Text>
-        {updateInfo.updatedAt && (
-          <Text style={styles.versionMeta}>Atualizado em {updateInfo.updatedAt}</Text>
-        )}
-      </View>
+      <SharePostSheet
+        post={sharePost}
+        friends={friends}
+        sentFriendId={sentFriendId}
+        onClose={closeShare}
+        onSendToFriend={shareToFriend}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    backgroundColor: colors.brandGray,
     flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   title: {
     color: colors.brandDark,
-    fontSize: 24,
-    fontWeight: "600",
+    fontSize: 28,
+    fontWeight: "800",
+  },
+  subtitle: {
+    color: "#6B7280",
+    fontSize: 13,
+    marginTop: 2,
   },
   versionCard: {
     backgroundColor: "#FFFFFF",
@@ -51,10 +66,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     gap: 6,
-    marginTop: 24,
+    marginHorizontal: 16,
+    marginTop: 14,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    width: "100%",
   },
   versionMeta: {
     color: "#9CA3AF",

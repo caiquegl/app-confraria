@@ -161,9 +161,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   iconCenter: {
-    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
+    bottom: 0,
     justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
   iconWrapper: {
     height: 96,

@@ -19,7 +19,7 @@ export function useWizard(): UseWizardResult {
   const [formData, setFormData] = useState<WizardFormData>({});
   const [isPreparingProfile, setIsPreparingProfile] = useState(false);
 
-  const registerPromiseRef = useRef<Promise<void> | null>(null);
+  const registerPromiseRef = useRef<Promise<unknown> | null>(null);
   const dismissedRef = useRef(false);
 
   const isLastStep = currentStep === TOTAL_STEPS;
