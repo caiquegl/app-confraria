@@ -14,6 +14,24 @@ export async function removeToken(): Promise<void> {
   await AsyncStorage.removeItem(TOKEN_KEY);
 }
 
+export async function getCurrentUserId(): Promise<string | null> {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+
+    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as {
+      sub?: string;
+    };
+
+    return decoded.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function isAuthenticated(): Promise<boolean> {
   const token = await getToken();
   return !!token;

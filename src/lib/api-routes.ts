@@ -10,6 +10,10 @@ export const apiRoutes = {
     likedPosts: "/feed/posts/liked",
     post: (postId: string) => `/feed/posts/${postId}`,
     postComments: (postId: string) => `/feed/posts/${postId}/comments`,
+    postComment: (postId: string, commentId: string) =>
+      `/feed/posts/${postId}/comments/${commentId}`,
+    postCommentLike: (postId: string, commentId: string) =>
+      `/feed/posts/${postId}/comments/${commentId}/like`,
     postLike: (postId: string) => `/feed/posts/${postId}/like`,
   },
   notifications: {

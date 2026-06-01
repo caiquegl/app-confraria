@@ -12,8 +12,11 @@ import { SharePostSheet } from "../components/SharePostSheet";
 export function LikedFeedView() {
   const {
     addComment,
+    addReply,
     closeShare,
     commentsLoadingByPost,
+    deleteComment,
+    editComment,
     friends,
     handlePrefetch,
     isLoadingInitial,
@@ -27,6 +30,7 @@ export function LikedFeedView() {
     sharePost,
     shareToFriend,
     toggleLike,
+    toggleCommentLike,
   } = useLikedFeed();
   const { hasUnread } = useNotificationBadge();
 
@@ -41,10 +45,14 @@ export function LikedFeedView() {
         isLoadingInitial={isLoadingInitial}
         isLoadingMore={isLoadingMore}
         onAddComment={addComment}
+        onAddReply={addReply}
+        onDeleteComment={deleteComment}
+        onEditComment={editComment}
         onLoadComments={loadComments}
         onLoadMore={loadMoreFeed}
         onOpenShare={openShare}
         onPrefetch={handlePrefetch}
+        onToggleCommentLike={toggleCommentLike}
         onToggleLike={toggleLike}
       />
 

@@ -15,6 +15,7 @@ import { SharePostSheet } from "../components/SharePostSheet";
 export function HomeView() {
   const {
     addComment,
+    addReply,
     addCameraPhoto,
     cameraPhotos,
     commentsLoadingByPost,
@@ -22,6 +23,8 @@ export function HomeView() {
     closeNewPostCamera,
     closePostSuccess,
     closeShare,
+    deleteComment,
+    editComment,
     composeActivePhotoIndex,
     composeAudience,
     composeCaption,
@@ -52,6 +55,7 @@ export function HomeView() {
     sharePost,
     shareToFriend,
     toggleLike,
+    toggleCommentLike,
   } = useFeed();
   const { hasUnread } = useNotificationBadge();
 
@@ -64,10 +68,14 @@ export function HomeView() {
         isLoadingInitial={isLoadingInitial}
         isLoadingMore={isLoadingMore}
         onAddComment={addComment}
+        onAddReply={addReply}
+        onDeleteComment={deleteComment}
+        onEditComment={editComment}
         onLoadComments={loadComments}
         onLoadMore={loadMoreFeed}
         onOpenShare={openShare}
         onPrefetch={handlePrefetch}
+        onToggleCommentLike={toggleCommentLike}
         onToggleLike={toggleLike}
       />
 

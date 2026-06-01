@@ -5,12 +5,20 @@ import type { FlatList } from "react-native";
 import { MOCK_FEED_FRIENDS } from "@/mock/mockFeedFriends";
 
 import {
+  countFeedComments,
+  removeCommentFromTree,
+  updateCommentInTree,
+} from "../business/feed-comments.utils";
+import {
   createFeedPostComment,
+  deleteFeedPostComment,
   FEED_PAGE_SIZE,
   FEED_PREFETCH_INDEX,
   fetchFeedPostComments,
   fetchLikedFeedPosts,
+  toggleFeedPostCommentLike,
   toggleFeedPostLike,
+  updateFeedPostComment,
 } from "../services/feed.service";
 import type { FeedPost } from "../types/feed.types";
 
@@ -189,18 +197,27 @@ export function useLikedFeed() {
     [posts],
   );
 
+  const syncPostComments = useCallback(
+    async (postId: string) => {
+      const comments = await fetchFeedPostComments(postId);
+      if (!mountedRef.current) return;
+
+      updatePost(postId, (post) => ({
+        ...post,
+        commentCount: countFeedComments(comments),
+        comments,
+      }));
+      loadedCommentsRef.current.add(postId);
+    },
+    [updatePost],
+  );
+
   const addComment = useCallback(
     async (postId: string, text: string) => {
       try {
-        const comment = await createFeedPostComment(postId, text);
+        await createFeedPostComment(postId, text);
         if (!mountedRef.current) return;
-
-        updatePost(postId, (post) => ({
-          ...post,
-          commentCount: post.commentCount + 1,
-          comments: [...post.comments, comment],
-        }));
-        loadedCommentsRef.current.add(postId);
+        await syncPostComments(postId);
       } catch (err) {
         const message =
           (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -213,7 +230,123 @@ export function useLikedFeed() {
         });
       }
     },
+    [syncPostComments],
+  );
+
+  const addReply = useCallback(
+    async (
+      postId: string,
+      parentCommentId: string,
+      text: string,
+      replyToCommentId?: string,
+    ) => {
+      try {
+        await createFeedPostComment(postId, text, parentCommentId, replyToCommentId);
+        if (!mountedRef.current) return;
+        await syncPostComments(postId);
+      } catch (err) {
+        const message =
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Não foi possível enviar a resposta.";
+
+        Toast.show({
+          type: "error",
+          text1: "Erro ao responder",
+          text2: message,
+        });
+      }
+    },
+    [syncPostComments],
+  );
+
+  const editComment = useCallback(
+    async (postId: string, commentId: string, text: string) => {
+      try {
+        const updated = await updateFeedPostComment(postId, commentId, text);
+        if (!mountedRef.current) return;
+
+        updatePost(postId, (post) => ({
+          ...post,
+          comments: updateCommentInTree(post.comments, commentId, () => updated),
+        }));
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Erro ao editar",
+          text2: "Não foi possível editar o comentário.",
+        });
+      }
+    },
     [updatePost],
+  );
+
+  const deleteComment = useCallback(
+    async (postId: string, commentId: string) => {
+      try {
+        await deleteFeedPostComment(postId, commentId);
+        if (!mountedRef.current) return;
+
+        updatePost(postId, (post) => {
+          const comments = removeCommentFromTree(post.comments, commentId);
+          return {
+            ...post,
+            commentCount: countFeedComments(comments),
+            comments,
+          };
+        });
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Erro ao excluir",
+          text2: "Não foi possível excluir o comentário.",
+        });
+      }
+    },
+    [updatePost],
+  );
+
+  const toggleCommentLike = useCallback(
+    async (postId: string, commentId: string) => {
+      const currentPost = posts.find((post) => post.id === postId);
+      if (!currentPost) return;
+
+      updatePost(postId, (post) => ({
+        ...post,
+        comments: updateCommentInTree(post.comments, commentId, (comment) => {
+          const liked = !(comment.isLiked ?? false);
+          const likeCount = Math.max(0, (comment.likeCount ?? 0) + (liked ? 1 : -1));
+          return { ...comment, isLiked: liked, likeCount };
+        }),
+      }));
+
+      try {
+        const result = await toggleFeedPostCommentLike(postId, commentId);
+        if (!mountedRef.current) return;
+
+        updatePost(postId, (post) => ({
+          ...post,
+          comments: updateCommentInTree(post.comments, commentId, (comment) => ({
+            ...comment,
+            isLiked: result.liked,
+            likeCount: result.likeCount,
+          })),
+        }));
+      } catch {
+        if (!mountedRef.current) return;
+
+        updatePost(postId, (post) => ({
+          ...post,
+          comments: currentPost.comments,
+        }));
+
+        Toast.show({
+          type: "error",
+          text1: "Erro ao curtir",
+          text2: "Não foi possível curtir o comentário.",
+        });
+      }
+    },
+    [posts, updatePost],
   );
 
   const openShare = (post: FeedPost) => {
@@ -232,8 +365,11 @@ export function useLikedFeed() {
 
   return {
     addComment,
+    addReply,
     closeShare,
     commentsLoadingByPost,
+    deleteComment,
+    editComment,
     friends: MOCK_FEED_FRIENDS,
     handlePrefetch,
     isLoadingInitial,
@@ -247,5 +383,6 @@ export function useLikedFeed() {
     sharePost,
     shareToFriend,
     toggleLike,
+    toggleCommentLike,
   };
 }

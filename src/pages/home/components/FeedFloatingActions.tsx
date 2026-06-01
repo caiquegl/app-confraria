@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
@@ -23,14 +23,17 @@ export function FeedFloatingActions({
       <View style={styles.tabsPillContainer}>
         <View style={styles.tabsPill}>
           <Pressable
+            accessibilityLabel="Abrir curtidos"
             accessibilityRole="button"
             accessibilityState={{ selected: isLikedTabActive }}
             style={[styles.tab, isLikedTabActive && styles.tabActive]}
             onPress={onOpenLiked}
           >
-            <Text style={[styles.tabLabel, isLikedTabActive && styles.tabLabelActive]}>
-              Curtidos
-            </Text>
+            <Ionicons
+              color={isLikedTabActive ? colors.brandDark : "#6B7280"}
+              name="chatbubble-outline"
+              size={18}
+            />
           </Pressable>
         </View>
       </View>
@@ -112,15 +115,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 18,
   },
-  tabLabel: {
-    color: "#6B7280",
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  tabLabelActive: {
-    color: colors.brandDark,
-    fontWeight: "700",
-  },
   tabsPill: {
     backgroundColor: "#FFFFFF",
     borderColor: "#DADFD5",
@@ -133,7 +127,7 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 10, width: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 30,
-    maxWidth: "40%",
+    maxWidth: "25%",
   },
   unreadDot: {
     backgroundColor: colors.brandGreen,

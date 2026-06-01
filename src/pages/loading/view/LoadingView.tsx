@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Animated, Easing, StyleSheet } from "react-native";
 
 import { colors } from "@/theme/colors";
@@ -9,8 +9,8 @@ import { LoadingBar } from "../components/LoadingBar";
 import type { LoadingViewProps } from "../types/loading.types";
 
 export function LoadingView({ onComplete }: LoadingViewProps) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.92)).current;
+  const opacity = useMemo(() => new Animated.Value(0), []);
+  const scale = useMemo(() => new Animated.Value(0.92), []);
 
   useLoading({ onComplete });
 

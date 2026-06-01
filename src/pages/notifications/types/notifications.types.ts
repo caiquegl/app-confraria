@@ -1,4 +1,8 @@
-export type NotificationType = "post_like" | "post_comment";
+export type NotificationType =
+  | "post_like"
+  | "post_comment"
+  | "comment_reply"
+  | "comment_like";
 
 export type AppNotification = {
   id: string;

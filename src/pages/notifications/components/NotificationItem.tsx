@@ -11,8 +11,10 @@ type NotificationItemProps = {
 };
 
 export function NotificationItem({ notification, onPress }: NotificationItemProps) {
-  const iconName = notification.type === "post_like" ? "heart" : "chatbubble";
-  const iconBg = notification.type === "post_like" ? "#EF4444" : colors.brandPrimary;
+  const isLike =
+    notification.type === "post_like" || notification.type === "comment_like";
+  const iconName = isLike ? "heart" : "chatbubble";
+  const iconBg = isLike ? "#EF4444" : colors.brandPrimary;
 
   return (
     <Pressable

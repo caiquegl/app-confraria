@@ -11,6 +11,15 @@ export type FeedComment = {
   userAvatar?: string | null;
   text: string;
   createdAt: string;
+  editedAt?: string;
+  isLiked?: boolean;
+  likeCount?: number;
+  replies?: FeedComment[];
+};
+
+export type FeedCommentLikeResponse = {
+  liked: boolean;
+  likeCount: number;
 };
 
 export type FeedPost = {

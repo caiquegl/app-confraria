@@ -6,6 +6,7 @@ import { getToken } from "@/lib/auth";
 import type {
   ComposeAudience,
   FeedComment,
+  FeedCommentLikeResponse,
   FeedLikeResponse,
   FeedPost,
   FeedPostsPage,
@@ -60,8 +61,43 @@ export async function fetchFeedPostComments(postId: string): Promise<FeedComment
 export async function createFeedPostComment(
   postId: string,
   text: string,
+  parentId?: string,
+  replyToCommentId?: string,
 ): Promise<FeedComment> {
-  const { data } = await api.post<FeedComment>(apiRoutes.feed.postComments(postId), { text });
+  const { data } = await api.post<FeedComment>(apiRoutes.feed.postComments(postId), {
+    parentId,
+    replyToCommentId,
+    text,
+  });
+  return data;
+}
+
+export async function updateFeedPostComment(
+  postId: string,
+  commentId: string,
+  text: string,
+): Promise<FeedComment> {
+  const { data } = await api.patch<FeedComment>(
+    apiRoutes.feed.postComment(postId, commentId),
+    { text },
+  );
+  return data;
+}
+
+export async function deleteFeedPostComment(
+  postId: string,
+  commentId: string,
+): Promise<void> {
+  await api.delete(apiRoutes.feed.postComment(postId, commentId));
+}
+
+export async function toggleFeedPostCommentLike(
+  postId: string,
+  commentId: string,
+): Promise<FeedCommentLikeResponse> {
+  const { data } = await api.post<FeedCommentLikeResponse>(
+    apiRoutes.feed.postCommentLike(postId, commentId),
+  );
   return data;
 }
 

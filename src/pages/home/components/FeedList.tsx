@@ -22,10 +22,19 @@ type FeedListProps = {
   isLoadingMore: boolean;
   listRef?: React.RefObject<FlatList<FeedPost> | null>;
   onAddComment: (postId: string, text: string) => void;
+  onAddReply: (
+    postId: string,
+    parentCommentId: string,
+    text: string,
+    replyToCommentId?: string,
+  ) => void;
+  onDeleteComment: (postId: string, commentId: string) => void;
+  onEditComment: (postId: string, commentId: string, text: string) => void;
   onLoadComments: (postId: string) => void;
   onLoadMore: () => void;
   onOpenShare: (post: FeedPost) => void;
   onPrefetch: (visibleIndex: number) => void;
+  onToggleCommentLike: (postId: string, commentId: string) => void;
   onToggleLike: (postId: string) => void;
   posts: FeedPost[];
 };
@@ -42,10 +51,14 @@ export function FeedList({
   isLoadingMore,
   listRef,
   onAddComment,
+  onAddReply,
+  onDeleteComment,
+  onEditComment,
   onLoadComments,
   onLoadMore,
   onOpenShare,
   onPrefetch,
+  onToggleCommentLike,
   onToggleLike,
   posts,
 }: FeedListProps) {
@@ -76,12 +89,26 @@ export function FeedList({
         post={item}
         isLoadingComments={commentsLoadingByPost[item.id] ?? false}
         onAddComment={onAddComment}
+        onAddReply={onAddReply}
+        onDeleteComment={onDeleteComment}
+        onEditComment={onEditComment}
         onLoadComments={onLoadComments}
         onOpenShare={onOpenShare}
+        onToggleCommentLike={onToggleCommentLike}
         onToggleLike={onToggleLike}
       />
     ),
-    [commentsLoadingByPost, onAddComment, onLoadComments, onOpenShare, onToggleLike],
+    [
+      commentsLoadingByPost,
+      onAddComment,
+      onAddReply,
+      onDeleteComment,
+      onEditComment,
+      onLoadComments,
+      onOpenShare,
+      onToggleCommentLike,
+      onToggleLike,
+    ],
   );
 
   if (isLoadingInitial) {

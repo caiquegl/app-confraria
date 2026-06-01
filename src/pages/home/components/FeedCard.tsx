@@ -13,8 +13,17 @@ import { FeedMediaCarousel } from "./FeedMediaCarousel";
 type FeedCardProps = {
   isLoadingComments: boolean;
   onAddComment: (postId: string, text: string) => void;
+  onAddReply: (
+    postId: string,
+    parentCommentId: string,
+    text: string,
+    replyToCommentId?: string,
+  ) => void;
+  onDeleteComment: (postId: string, commentId: string) => void;
+  onEditComment: (postId: string, commentId: string, text: string) => void;
   onLoadComments: (postId: string) => void;
   onOpenShare: (post: FeedPost) => void;
+  onToggleCommentLike: (postId: string, commentId: string) => void;
   onToggleLike: (postId: string) => void;
   post: FeedPost;
 };
@@ -22,8 +31,12 @@ type FeedCardProps = {
 function FeedCardInner({
   isLoadingComments,
   onAddComment,
+  onAddReply,
+  onDeleteComment,
+  onEditComment,
   onLoadComments,
   onOpenShare,
+  onToggleCommentLike,
   onToggleLike,
   post,
 }: FeedCardProps) {
@@ -73,7 +86,16 @@ function FeedCardInner({
               <ActivityIndicator color={colors.brandPrimary} size="small" />
             </View>
           )}
-          <FeedComments comments={post.comments} onAddComment={(text) => onAddComment(post.id, text)} />
+          <FeedComments
+            comments={post.comments}
+            onAddComment={(text) => onAddComment(post.id, text)}
+            onAddReply={(parentCommentId, text, replyToCommentId) =>
+              onAddReply(post.id, parentCommentId, text, replyToCommentId)
+            }
+            onDeleteComment={(commentId) => onDeleteComment(post.id, commentId)}
+            onEditComment={(commentId, text) => onEditComment(post.id, commentId, text)}
+            onToggleCommentLike={(commentId) => onToggleCommentLike(post.id, commentId)}
+          />
         </View>
       )}
     </View>
