@@ -1,65 +1,326 @@
-import { useMemo, useState } from "react";
+import Toast from "react-native-toast-message";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { FlatList } from "react-native";
 
+import { consumeHighlightPostId } from "@/lib/feed-highlight-store";
 import { MOCK_FEED_FRIENDS } from "@/mock/mockFeedFriends";
 
-import { fetchMockFeed } from "../services/feed.service";
-import type { FeedComment, FeedInteraction, FeedPost } from "../types/feed.types";
-
-const CURRENT_USER = {
-  avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop",
-  id: "current-user",
-  name: "Você",
-};
+import {
+  createFeedPost,
+  createFeedPostComment,
+  FEED_PAGE_SIZE,
+  FEED_PREFETCH_INDEX,
+  fetchFeedPost,
+  fetchFeedPostComments,
+  fetchFeedPosts,
+  toggleFeedPostLike,
+} from "../services/feed.service";
+import type { ComposeAudience, FeedPost } from "../types/feed.types";
 
 export function useFeed() {
-  const [interactions, setInteractions] = useState<Record<string, FeedInteraction>>({});
+  const listRef = useRef<FlatList<FeedPost>>(null);
+  const loadingMoreRef = useRef(false);
+  const nextCursorRef = useRef<string | null>(null);
+  const hasMoreRef = useRef(true);
+  const mountedRef = useRef(true);
+  const loadedCommentsRef = useRef<Set<string>>(new Set());
+  const postsRef = useRef<FeedPost[]>([]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+  const isLoadingInitialRef = useRef(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [commentsLoadingByPost, setCommentsLoadingByPost] = useState<Record<string, boolean>>({});
   const [sharePost, setSharePost] = useState<FeedPost | null>(null);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
+  const [composerPhotos, setComposerPhotos] = useState<string[]>([]);
+  const [composeCaption, setComposeCaption] = useState("");
+  const [composeAudience, setComposeAudience] = useState<ComposeAudience>("all");
+  const [composeActivePhotoIndex, setComposeActivePhotoIndex] = useState(0);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraPhotos, setCameraPhotos] = useState<string[]>([]);
+  const [isPublishingPost, setIsPublishingPost] = useState(false);
+  const [isPostSuccessVisible, setIsPostSuccessVisible] = useState(false);
 
-  const posts = useMemo(() => {
-    return fetchMockFeed().map((post): FeedPost => {
-      const interaction = interactions[post.id];
-      if (!interaction) return post;
+  useEffect(() => {
+    nextCursorRef.current = nextCursor;
+  }, [nextCursor]);
 
-      return {
-        ...post,
-        commentCount: post.commentCount + interaction.extraComments.length,
-        comments: [...post.comments, ...interaction.extraComments],
-        likeCount: post.likeCount + (interaction.liked ? 1 : 0),
-      };
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+
+  useEffect(() => {
+    isLoadingInitialRef.current = isLoadingInitial;
+  }, [isLoadingInitial]);
+
+  const scrollFeedToTop = useCallback(() => {
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({ animated: true, offset: 0 });
     });
-  }, [interactions]);
+  }, []);
 
-  const isPostLiked = (postId: string) => interactions[postId]?.liked ?? false;
+  const prioritizePostInFeed = useCallback(
+    (currentPosts: FeedPost[], postId: string): FeedPost[] | null => {
+      const existingPost = currentPosts.find((post) => post.id === postId);
+      if (!existingPost) return null;
 
-  const toggleLike = (postId: string) => {
-    setInteractions((prev) => ({
-      ...prev,
-      [postId]: {
-        extraComments: prev[postId]?.extraComments ?? [],
-        liked: !(prev[postId]?.liked ?? false),
-      },
-    }));
-  };
+      return [existingPost, ...currentPosts.filter((post) => post.id !== postId)];
+    },
+    [],
+  );
 
-  const addComment = (postId: string, text: string) => {
-    const newComment: FeedComment = {
-      createdAt: new Date().toISOString(),
-      id: `local-${postId}-${Date.now()}`,
-      text,
-      userAvatar: CURRENT_USER.avatar,
-      userId: CURRENT_USER.id,
-      userName: CURRENT_USER.name,
+  const applyFeedHighlight = useCallback(
+    async (postId: string) => {
+      const reordered = prioritizePostInFeed(postsRef.current, postId);
+
+      if (reordered) {
+        setPosts(reordered);
+        scrollFeedToTop();
+        return;
+      }
+
+      try {
+        const post = await fetchFeedPost(postId);
+        if (!mountedRef.current) return;
+
+        setPosts((current) => [
+          post,
+          ...current.filter((currentPost) => currentPost.id !== postId),
+        ]);
+        scrollFeedToTop();
+      } catch {
+        if (!mountedRef.current) return;
+
+        Toast.show({
+          type: "error",
+          text1: "Post não encontrado",
+          text2: "Não foi possível localizar a publicação no feed.",
+        });
+      }
+    },
+    [prioritizePostInFeed, scrollFeedToTop],
+  );
+
+  const updatePost = useCallback((postId: string, updater: (post: FeedPost) => FeedPost) => {
+    setPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
+  }, []);
+
+  const loadMoreFeed = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMoreRef.current || !nextCursorRef.current) {
+      return;
+    }
+
+    loadingMoreRef.current = true;
+    setIsLoadingMore(true);
+
+    try {
+      const page = await fetchFeedPosts({
+        cursor: nextCursorRef.current,
+        limit: FEED_PAGE_SIZE,
+      });
+
+      if (!mountedRef.current) return;
+
+      setPosts((current) => {
+        const existingIds = new Set(current.map((post) => post.id));
+        const newPosts = page.data.filter((post) => !existingIds.has(post.id));
+        return [...current, ...newPosts];
+      });
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+    } catch {
+      if (!mountedRef.current) return;
+
+      Toast.show({
+        type: "error",
+        text1: "Erro ao carregar mais posts",
+        text2: "Verifique sua conexão e tente novamente.",
+      });
+    } finally {
+      loadingMoreRef.current = false;
+      if (mountedRef.current) {
+        setIsLoadingMore(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const page = await fetchFeedPosts({ limit: FEED_PAGE_SIZE });
+        if (cancelled || !mountedRef.current) return;
+
+        setPosts(page.data);
+        setNextCursor(page.nextCursor);
+        setHasMore(page.hasMore);
+        loadedCommentsRef.current = new Set();
+      } catch {
+        if (cancelled || !mountedRef.current) return;
+
+        Toast.show({
+          type: "error",
+          text1: "Erro ao carregar feed",
+          text2: "Não foi possível buscar os posts.",
+        });
+      } finally {
+        if (!cancelled && mountedRef.current) {
+          setIsLoadingInitial(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    setInteractions((prev) => ({
-      ...prev,
-      [postId]: {
-        extraComments: [...(prev[postId]?.extraComments ?? []), newComment],
-        liked: prev[postId]?.liked ?? false,
-      },
-    }));
-  };
+  useFocusEffect(
+    useCallback(() => {
+      const highlightPostId = consumeHighlightPostId();
+      if (!highlightPostId) return;
+
+      let cancelled = false;
+
+      void (async () => {
+        while (isLoadingInitialRef.current && !cancelled) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        if (cancelled || !mountedRef.current) return;
+
+        await applyFeedHighlight(highlightPostId);
+      })();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [applyFeedHighlight]),
+  );
+
+  const handlePrefetch = useCallback(
+    (visibleIndex: number) => {
+      if (visibleIndex >= FEED_PREFETCH_INDEX) {
+        void loadMoreFeed();
+      }
+    },
+    [loadMoreFeed],
+  );
+
+  const loadComments = useCallback(async (postId: string) => {
+    if (loadedCommentsRef.current.has(postId)) return;
+
+    setCommentsLoadingByPost((current) => ({ ...current, [postId]: true }));
+
+    try {
+      const comments = await fetchFeedPostComments(postId);
+      if (!mountedRef.current) return;
+
+      updatePost(postId, (post) => ({ ...post, comments }));
+      loadedCommentsRef.current.add(postId);
+    } catch {
+      if (!mountedRef.current) return;
+
+      Toast.show({
+        type: "error",
+        text1: "Erro ao carregar comentários",
+        text2: "Tente novamente em instantes.",
+      });
+    } finally {
+      if (mountedRef.current) {
+        setCommentsLoadingByPost((current) => ({ ...current, [postId]: false }));
+      }
+    }
+  }, [updatePost]);
+
+  const toggleLike = useCallback(
+    async (postId: string) => {
+      const currentPost = posts.find((post) => post.id === postId);
+      if (!currentPost) return;
+
+      const previousLiked = currentPost.isLiked ?? false;
+      const previousCount = currentPost.likeCount;
+      const optimisticLiked = !previousLiked;
+      const optimisticCount = previousCount + (optimisticLiked ? 1 : -1);
+
+      updatePost(postId, (post) => ({
+        ...post,
+        isLiked: optimisticLiked,
+        likeCount: Math.max(0, optimisticCount),
+      }));
+
+      try {
+        const result = await toggleFeedPostLike(postId);
+        if (!mountedRef.current) return;
+
+        updatePost(postId, (post) => ({
+          ...post,
+          isLiked: result.liked,
+          likeCount: result.likeCount,
+        }));
+      } catch {
+        if (!mountedRef.current) return;
+
+        updatePost(postId, (post) => ({
+          ...post,
+          isLiked: previousLiked,
+          likeCount: previousCount,
+        }));
+
+        Toast.show({
+          type: "error",
+          text1: "Erro ao curtir",
+          text2: "Não foi possível atualizar a curtida.",
+        });
+      }
+    },
+    [posts, updatePost],
+  );
+
+  const addComment = useCallback(
+    async (postId: string, text: string) => {
+      try {
+        const comment = await createFeedPostComment(postId, text);
+        if (!mountedRef.current) return;
+
+        updatePost(postId, (post) => ({
+          ...post,
+          commentCount: post.commentCount + 1,
+          comments: [...post.comments, comment],
+        }));
+        loadedCommentsRef.current.add(postId);
+      } catch (err) {
+        const message =
+          (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Não foi possível enviar o comentário.";
+
+        Toast.show({
+          type: "error",
+          text1: "Erro ao comentar",
+          text2: message,
+        });
+      }
+    },
+    [updatePost],
+  );
 
   const openShare = (post: FeedPost) => {
     setSharePost(post);
@@ -75,14 +336,192 @@ export function useFeed() {
     setSentFriendId(friendId);
   };
 
+  const openComposerWithPhotos = (uris: string[]) => {
+    if (uris.length === 0) return;
+
+    setComposerPhotos(uris);
+    setComposeActivePhotoIndex(0);
+    setComposeCaption("");
+    setComposeAudience("all");
+    setIsComposerOpen(true);
+  };
+
+  const openNewPostCamera = () => {
+    setCameraPhotos([]);
+    setIsCameraOpen(true);
+  };
+
+  const closeNewPostCamera = () => {
+    setCameraPhotos([]);
+    setIsCameraOpen(false);
+  };
+
+  const addCameraPhoto = (uri: string) => {
+    setCameraPhotos((prev) => [...prev, uri]);
+  };
+
+  const openComposerFromCamera = () => {
+    if (cameraPhotos.length === 0) {
+      Toast.show({
+        type: "error",
+        text1: "Nenhuma foto",
+        text2: "Tire ao menos uma foto para avançar.",
+      });
+      return;
+    }
+
+    openComposerWithPhotos(cameraPhotos);
+    setCameraPhotos([]);
+    setIsCameraOpen(false);
+  };
+
+  const openComposerFromGallery = (uris: string[]) => {
+    openComposerWithPhotos(uris);
+    setCameraPhotos([]);
+    setIsCameraOpen(false);
+  };
+
+  const closeComposer = () => {
+    setIsComposerOpen(false);
+    setComposerPhotos([]);
+    setComposeCaption("");
+    setComposeAudience("all");
+    setComposeActivePhotoIndex(0);
+  };
+
+  const closePostSuccess = () => {
+    setIsPostSuccessVisible(false);
+    listRef.current?.scrollToOffset({ animated: true, offset: 0 });
+  };
+
+  const removeComposerPhoto = (index: number) => {
+    setComposerPhotos((prev) => {
+      const next = prev.filter((_, photoIndex) => photoIndex !== index);
+
+      if (next.length === 0) {
+        setIsComposerOpen(false);
+        setComposeCaption("");
+        setComposeAudience("all");
+        setComposeActivePhotoIndex(0);
+        return [];
+      }
+
+      setComposeActivePhotoIndex((current) => {
+        if (current > next.length - 1) return next.length - 1;
+        if (current > index) return current - 1;
+        return current;
+      });
+
+      return next;
+    });
+  };
+
+  const reorderComposerPhotos = (fromIndex: number, toIndex: number) => {
+    setComposerPhotos((prev) => {
+      if (
+        fromIndex === toIndex ||
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex >= prev.length
+      ) {
+        return prev;
+      }
+
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+
+      setComposeActivePhotoIndex((current) => {
+        if (current === fromIndex) return toIndex;
+        if (fromIndex < current && toIndex >= current) return current - 1;
+        if (fromIndex > current && toIndex <= current) return current + 1;
+        return current;
+      });
+
+      return next;
+    });
+  };
+
+  const publishPost = async () => {
+    if (composerPhotos.length === 0) return;
+
+    const caption = composeCaption.trim();
+    if (!caption) {
+      Toast.show({
+        type: "error",
+        text1: "Legenda obrigatória",
+        text2: "Adicione uma legenda antes de compartilhar.",
+      });
+      return;
+    }
+
+    setIsPublishingPost(true);
+    try {
+      const createdPost = await createFeedPost({
+        audience: composeAudience,
+        caption,
+        photos: composerPhotos,
+      });
+
+      setPosts((current) => {
+        const withoutDuplicate = current.filter((post) => post.id !== createdPost.id);
+        return [{ ...createdPost, isLiked: false }, ...withoutDuplicate];
+      });
+      closeComposer();
+      setIsPostSuccessVisible(true);
+    } catch (err) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        (err instanceof Error ? err.message : null) ??
+        "Não foi possível publicar o post.";
+
+      Toast.show({
+        type: "error",
+        text1: "Erro ao publicar",
+        text2: message,
+      });
+    } finally {
+      setIsPublishingPost(false);
+    }
+  };
+
   return {
     addComment,
+    addCameraPhoto,
+    cameraPhotos,
+    closeNewPostCamera,
+    closePostSuccess,
     closeShare,
+    closeComposer,
+    commentsLoadingByPost,
+    composeActivePhotoIndex,
+    composeAudience,
+    composeCaption,
+    composerPhotos,
     friends: MOCK_FEED_FRIENDS,
-    isPostLiked,
+    isCameraOpen,
+    isComposerOpen,
+    isLoadingInitial,
+    isLoadingMore,
+    isPostSuccessVisible,
+    isPublishingPost,
+    listRef,
+    loadComments,
+    loadMoreFeed,
+    openComposerFromCamera,
+    openComposerFromGallery,
+    openNewPostCamera,
     openShare,
+    handlePrefetch,
+    publishPost,
     posts,
+    removeComposerPhoto,
+    reorderComposerPhotos,
     sentFriendId,
+    setComposeActivePhotoIndex,
+    setComposeAudience,
+    setComposeCaption,
     sharePost,
     shareToFriend,
     toggleLike,

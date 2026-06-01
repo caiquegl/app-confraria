@@ -1,4 +1,4 @@
-import { Stack, router } from "expo-router";
+import { Redirect, Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -6,20 +6,29 @@ import { BottomNav } from "@/components/BottomNav";
 import { isAuthenticated } from "@/lib/auth";
 import { colors } from "@/theme/colors";
 
+type AuthState = "loading" | "authenticated" | "unauthenticated";
+
 export default function AppLayout() {
-  const [ready, setReady] = useState(false);
+  const [authState, setAuthState] = useState<AuthState>("loading");
 
   useEffect(() => {
+    let mounted = true;
+
     isAuthenticated().then((authenticated) => {
-      if (!authenticated) {
-        router.replace("/landing");
-        return;
-      }
-      setReady(true);
+      if (!mounted) return;
+      setAuthState(authenticated ? "authenticated" : "unauthenticated");
     });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  if (!ready) return null;
+  if (authState === "loading") return null;
+
+  if (authState === "unauthenticated") {
+    return <Redirect href="/landing" />;
+  }
 
   return (
     <View style={styles.container}>

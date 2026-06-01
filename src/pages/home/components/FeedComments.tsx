@@ -1,33 +1,39 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
 
 import type { FeedComment } from "../types/feed.types";
 
 type FeedCommentsProps = {
   comments: FeedComment[];
-  onAddComment: (text: string) => void;
+  onAddComment: (text: string) => void | Promise<void>;
 };
 
 export function FeedComments({ comments, onAddComment }: FeedCommentsProps) {
   const [text, setText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const value = text.trim();
-    if (!value) return;
+    if (!value || isSubmitting) return;
 
-    onAddComment(value);
-    setText("");
+    setIsSubmitting(true);
+    try {
+      await onAddComment(value);
+      setText("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       {comments.map((comment) => (
         <View key={comment.id} style={styles.commentRow}>
-          <Image source={{ uri: comment.userAvatar }} style={styles.avatar} contentFit="cover" />
+          <UserAvatar avatarUrl={comment.userAvatar} name={comment.userName} size={28} />
           <View style={styles.commentBubble}>
             <Text style={styles.commentName}>{comment.userName}</Text>
             <Text style={styles.commentText}>{comment.text}</Text>
@@ -46,12 +52,16 @@ export function FeedComments({ comments, onAddComment }: FeedCommentsProps) {
           onSubmitEditing={handleSubmit}
         />
         <Pressable
-          style={[styles.sendButton, !text.trim() && styles.sendButtonDisabled]}
-          disabled={!text.trim()}
+          style={[styles.sendButton, (!text.trim() || isSubmitting) && styles.sendButtonDisabled]}
+          disabled={!text.trim() || isSubmitting}
           hitSlop={8}
-          onPress={handleSubmit}
+          onPress={() => void handleSubmit()}
         >
-          <Ionicons name="checkmark-circle" size={22} color={text.trim() ? colors.brandGreen : "#D1D5DB"} />
+          <Ionicons
+            name="checkmark-circle"
+            size={22}
+            color={text.trim() && !isSubmitting ? colors.brandGreen : "#D1D5DB"}
+          />
         </Pressable>
       </View>
     </View>
@@ -59,12 +69,6 @@ export function FeedComments({ comments, onAddComment }: FeedCommentsProps) {
 }
 
 const styles = StyleSheet.create({
-  avatar: {
-    borderRadius: 14,
-    height: 28,
-    marginTop: 2,
-    width: 28,
-  },
   commentBubble: {
     backgroundColor: "#F9FAFB",
     borderRadius: 14,
@@ -78,6 +82,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   commentRow: {
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 8,
   },

@@ -1,23 +1,32 @@
 import { memo, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
 import type { FeedPost } from "../types/feed.types";
 import { FeedActions } from "./FeedActions";
+import { FeedCaption } from "./FeedCaption";
 import { FeedCardHeader } from "./FeedCardHeader";
 import { FeedComments } from "./FeedComments";
 import { FeedMediaCarousel } from "./FeedMediaCarousel";
 
 type FeedCardProps = {
-  isLiked: boolean;
+  isLoadingComments: boolean;
   onAddComment: (postId: string, text: string) => void;
+  onLoadComments: (postId: string) => void;
   onOpenShare: (post: FeedPost) => void;
   onToggleLike: (postId: string) => void;
   post: FeedPost;
 };
 
-function FeedCardInner({ isLiked, onAddComment, onOpenShare, onToggleLike, post }: FeedCardProps) {
+function FeedCardInner({
+  isLoadingComments,
+  onAddComment,
+  onLoadComments,
+  onOpenShare,
+  onToggleLike,
+  post,
+}: FeedCardProps) {
   const [commentsVisible, setCommentsVisible] = useState(false);
 
   const mediaPhotos = useMemo(() => {
@@ -30,26 +39,42 @@ function FeedCardInner({ isLiked, onAddComment, onOpenShare, onToggleLike, post 
 
   const mediaTitle = post.eventTitle || post.routeTitle || post.caption || "Post da Confraria";
 
+  const handleToggleComments = () => {
+    const nextVisible = !commentsVisible;
+    setCommentsVisible(nextVisible);
+
+    if (nextVisible) {
+      onLoadComments(post.id);
+    }
+  };
+
   return (
     <View style={styles.card}>
       <FeedCardHeader post={post} />
 
       {mediaPhotos.length > 0 && <FeedMediaCarousel photos={mediaPhotos} title={mediaTitle} />}
 
-      {post.caption && <Text style={styles.caption}>{post.caption}</Text>}
+      {post.caption && <FeedCaption text={post.caption} />}
 
       <FeedActions
         commentCount={post.commentCount}
         commentsVisible={commentsVisible}
-        isLiked={isLiked}
+        isLiked={post.isLiked ?? false}
         likeCount={post.likeCount}
         onOpenShare={() => onOpenShare(post)}
-        onToggleComments={() => setCommentsVisible((visible) => !visible)}
+        onToggleComments={handleToggleComments}
         onToggleLike={() => onToggleLike(post.id)}
       />
 
       {commentsVisible && (
-        <FeedComments comments={post.comments} onAddComment={(text) => onAddComment(post.id, text)} />
+        <View>
+          {isLoadingComments && post.comments.length === 0 && (
+            <View style={styles.commentsLoading}>
+              <ActivityIndicator color={colors.brandPrimary} size="small" />
+            </View>
+          )}
+          <FeedComments comments={post.comments} onAddComment={(text) => onAddComment(post.id, text)} />
+        </View>
       )}
     </View>
   );
@@ -58,13 +83,6 @@ function FeedCardInner({ isLiked, onAddComment, onOpenShare, onToggleLike, post 
 export const FeedCard = memo(FeedCardInner);
 
 const styles = StyleSheet.create({
-  caption: {
-    color: "#374151",
-    fontSize: 14,
-    lineHeight: 20,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-  },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -74,5 +92,9 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.06,
     shadowRadius: 10,
+  },
+  commentsLoading: {
+    alignItems: "center",
+    paddingVertical: 8,
   },
 });

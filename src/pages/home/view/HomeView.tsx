@@ -1,32 +1,73 @@
 import { StyleSheet, View } from "react-native";
+import { router } from "expo-router";
 
+import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
 
 import { useFeed } from "../business/useFeed";
+import { FeedFloatingActions } from "../components/FeedFloatingActions";
 import { FeedList } from "../components/FeedList";
+import { NewPostCamera } from "../components/NewPostCamera";
+import { NewPostComposer } from "../components/NewPostComposer";
+import { PostSuccessModal } from "../components/PostSuccessModal";
 import { SharePostSheet } from "../components/SharePostSheet";
 
 export function HomeView() {
   const {
     addComment,
+    addCameraPhoto,
+    cameraPhotos,
+    commentsLoadingByPost,
+    closeComposer,
+    closeNewPostCamera,
+    closePostSuccess,
     closeShare,
+    composeActivePhotoIndex,
+    composeAudience,
+    composeCaption,
+    composerPhotos,
     friends,
-    isPostLiked,
+    handlePrefetch,
+    isCameraOpen,
+    isComposerOpen,
+    isLoadingInitial,
+    isLoadingMore,
+    isPostSuccessVisible,
+    isPublishingPost,
+    listRef,
+    loadComments,
+    loadMoreFeed,
+    openComposerFromCamera,
+    openComposerFromGallery,
+    openNewPostCamera,
     openShare,
+    publishPost,
     posts,
+    removeComposerPhoto,
+    reorderComposerPhotos,
     sentFriendId,
+    setComposeActivePhotoIndex,
+    setComposeAudience,
+    setComposeCaption,
     sharePost,
     shareToFriend,
     toggleLike,
   } = useFeed();
+  const { hasUnread } = useNotificationBadge();
 
   return (
     <View style={styles.container}>
       <FeedList
         posts={posts}
-        isPostLiked={isPostLiked}
+        listRef={listRef}
+        commentsLoadingByPost={commentsLoadingByPost}
+        isLoadingInitial={isLoadingInitial}
+        isLoadingMore={isLoadingMore}
         onAddComment={addComment}
+        onLoadComments={loadComments}
+        onLoadMore={loadMoreFeed}
         onOpenShare={openShare}
+        onPrefetch={handlePrefetch}
         onToggleLike={toggleLike}
       />
 
@@ -37,6 +78,41 @@ export function HomeView() {
         onClose={closeShare}
         onSendToFriend={shareToFriend}
       />
+
+      <NewPostCamera
+        capturedPhotos={cameraPhotos}
+        visible={isCameraOpen}
+        onAddPhoto={addCameraPhoto}
+        onClose={closeNewPostCamera}
+        onDone={openComposerFromCamera}
+        onGallerySelected={openComposerFromGallery}
+      />
+
+      <NewPostComposer
+        activePhotoIndex={composeActivePhotoIndex}
+        audience={composeAudience}
+        caption={composeCaption}
+        photos={composerPhotos}
+        publishing={isPublishingPost}
+        visible={isComposerOpen}
+        onBack={closeComposer}
+        onChangeActivePhotoIndex={setComposeActivePhotoIndex}
+        onChangeAudience={setComposeAudience}
+        onChangeCaption={setComposeCaption}
+        onRemovePhoto={removeComposerPhoto}
+        onReorderPhotos={reorderComposerPhotos}
+        onPublish={publishPost}
+      />
+
+      <PostSuccessModal visible={isPostSuccessVisible} onContinue={closePostSuccess} />
+
+      {!isComposerOpen && !isCameraOpen && (
+        <FeedFloatingActions
+          hasUnreadNotifications={hasUnread}
+          onOpenNewPost={openNewPostCamera}
+          onOpenNotifications={() => router.push("/notifications")}
+        />
+      )}
     </View>
   );
 }
@@ -45,49 +121,5 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.brandGray,
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  title: {
-    color: colors.brandDark,
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  subtitle: {
-    color: "#6B7280",
-    fontSize: 13,
-    marginTop: 2,
-  },
-  versionCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 6,
-    marginHorizontal: 16,
-    marginTop: 14,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  versionMeta: {
-    color: "#9CA3AF",
-    fontSize: 12,
-    marginTop: 4,
-  },
-  versionRow: {
-    color: "#6B7280",
-    fontSize: 14,
-  },
-  versionTitle: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  versionValue: {
-    color: colors.brandDark,
-    fontWeight: "600",
   },
 });

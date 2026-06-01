@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
 
 import type { FeedPost, FeedShareFriend } from "../types/feed.types";
@@ -60,7 +60,7 @@ export function SharePostSheet({
         </View>
 
         <View style={styles.preview}>
-          <Image source={{ uri: post.userAvatar }} style={styles.previewAvatar} contentFit="cover" />
+          <UserAvatar avatarUrl={post.userAvatar} name={post.userName} size={40} />
           <View style={styles.previewText}>
             <Text style={styles.previewName} numberOfLines={1}>
               {post.userName}
@@ -152,11 +152,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
-  },
-  previewAvatar: {
-    borderRadius: 22,
-    height: 44,
-    width: 44,
   },
   previewContext: {
     color: "#6B7280",

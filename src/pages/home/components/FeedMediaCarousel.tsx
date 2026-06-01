@@ -14,18 +14,26 @@ import {
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = 32;
 const CARD_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING;
-const MEDIA_HEIGHT = Math.round(CARD_WIDTH * 0.56);
+const DEFAULT_MEDIA_HEIGHT = Math.round(CARD_WIDTH * 0.75);
 
 type FeedMediaCarouselProps = {
   photos: string[];
   title: string;
 };
 
+function resolveImageHeight(width: number, height: number): number {
+  if (!width || !height) return DEFAULT_MEDIA_HEIGHT;
+  return Math.round((CARD_WIDTH / width) * height);
+}
+
 export function FeedMediaCarousel({ photos, title }: FeedMediaCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [imageHeights, setImageHeights] = useState<Record<number, number>>({});
   const scrollRef = useRef<ScrollView>(null);
 
   if (photos.length === 0) return null;
+
+  const activeHeight = imageHeights[activeIndex] ?? DEFAULT_MEDIA_HEIGHT;
 
   const scrollToIndex = (index: number) => {
     const clamped = Math.max(0, Math.min(index, photos.length - 1));
@@ -38,8 +46,17 @@ export function FeedMediaCarousel({ photos, title }: FeedMediaCarouselProps) {
     setActiveIndex(nextIndex);
   };
 
+  const handleImageLoad = (index: number, width?: number | null, height?: number | null) => {
+    if (!width || !height) return;
+
+    setImageHeights((current) => ({
+      ...current,
+      [index]: resolveImageHeight(width, height),
+    }));
+  };
+
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { height: activeHeight }]}>
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -50,15 +67,20 @@ export function FeedMediaCarousel({ photos, title }: FeedMediaCarouselProps) {
         snapToInterval={CARD_WIDTH}
         onMomentumScrollEnd={handleScrollEnd}
       >
-        {photos.map((photo, index) => (
-          <Image
-            key={`${photo}-${index}`}
-            source={{ uri: photo }}
-            style={styles.image}
-            contentFit="cover"
-            accessibilityLabel={`${title} ${index + 1}`}
-          />
-        ))}
+        {photos.map((photo, index) => {
+          const slideHeight = imageHeights[index] ?? activeHeight;
+
+          return (
+            <Image
+              key={`${photo}-${index}`}
+              source={{ uri: photo }}
+              style={[styles.image, { height: slideHeight }]}
+              contentFit="contain"
+              accessibilityLabel={`${title} ${index + 1}`}
+              onLoad={({ source }) => handleImageLoad(index, source.width, source.height)}
+            />
+          );
+        })}
       </ScrollView>
 
       {photos.length > 1 && (
@@ -137,11 +159,12 @@ const styles = StyleSheet.create({
     right: 0,
   },
   image: {
-    height: MEDIA_HEIGHT,
+    backgroundColor: "#E5E7EB",
     width: CARD_WIDTH,
   },
   wrapper: {
     backgroundColor: "#E5E7EB",
+    overflow: "hidden",
     position: "relative",
   },
 });

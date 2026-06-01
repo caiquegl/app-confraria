@@ -8,7 +8,7 @@ export type FeedComment = {
   id: string;
   userId: string;
   userName: string;
-  userAvatar: string;
+  userAvatar?: string | null;
   text: string;
   createdAt: string;
 };
@@ -18,7 +18,7 @@ export type FeedPost = {
   type: FeedPostType;
   userId: string;
   userName: string;
-  userAvatar: string;
+  userAvatar?: string | null;
   createdAt: string;
   eventId?: string;
   eventTitle?: string;
@@ -33,6 +33,7 @@ export type FeedPost = {
   attachedRouteTitle?: string;
   likeCount: number;
   commentCount: number;
+  isLiked?: boolean;
   comments: FeedComment[];
 };
 
@@ -40,6 +41,13 @@ export type FeedInteraction = {
   liked: boolean;
   extraComments: FeedComment[];
 };
+
+export type FeedLikeResponse = {
+  liked: boolean;
+  likeCount: number;
+};
+
+export type ComposeAudience = "all" | "friends";
 
 export type FeedShareFriend = {
   id: string;
@@ -49,4 +57,10 @@ export type FeedShareFriend = {
   location?: string;
   isFriend: boolean;
   isPremium: boolean;
+};
+
+export type FeedPostsPage = {
+  data: FeedPost[];
+  nextCursor: string | null;
+  hasMore: boolean;
 };

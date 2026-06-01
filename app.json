@@ -38,6 +38,19 @@
       "expo-router",
       "expo-updates",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Permita que o Confraria acesse sua câmera para criar postagens."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Permita que o Confraria acesse sua câmera para criar postagens.",
+          "photosPermission": "Permita que o Confraria acesse suas fotos para criar postagens."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",

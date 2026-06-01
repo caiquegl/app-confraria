@@ -1,6 +1,6 @@
-import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
+import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
 
 import { formatRelativeTime } from "../services/feed.service";
@@ -14,7 +14,7 @@ type FeedCardHeaderProps = {
 export function FeedCardHeader({ post }: FeedCardHeaderProps) {
   return (
     <View style={styles.container}>
-      <Image source={{ uri: post.userAvatar }} style={styles.avatar} contentFit="cover" />
+      <UserAvatar avatarUrl={post.userAvatar} name={post.userName} size={40} />
 
       <View style={styles.body}>
         <Text style={styles.userName} numberOfLines={1}>
@@ -33,11 +33,6 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontSize: 12,
     lineHeight: 17,
-  },
-  avatar: {
-    borderRadius: 20,
-    height: 40,
-    width: 40,
   },
   body: {
     flex: 1,
