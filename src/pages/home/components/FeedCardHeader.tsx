@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
@@ -8,20 +8,28 @@ import type { FeedPost } from "../types/feed.types";
 import { FeedActionText } from "./FeedActionText";
 
 type FeedCardHeaderProps = {
+  onOpenUserProfile: (userId: string) => void;
   post: FeedPost;
 };
 
-export function FeedCardHeader({ post }: FeedCardHeaderProps) {
+export function FeedCardHeader({ onOpenUserProfile, post }: FeedCardHeaderProps) {
   return (
     <View style={styles.container}>
-      <UserAvatar avatarUrl={post.userAvatar} name={post.userName} size={40} />
+      <Pressable
+        accessibilityLabel={`Abrir perfil de ${post.userName}`}
+        accessibilityRole="button"
+        style={styles.authorButton}
+        onPress={() => onOpenUserProfile(post.userId)}
+      >
+        <UserAvatar avatarUrl={post.userAvatar} name={post.userName} size={40} />
 
-      <View style={styles.body}>
-        <Text style={styles.userName} numberOfLines={1}>
-          {post.userName}
-        </Text>
-        <FeedActionText post={post} style={styles.actionText} />
-      </View>
+        <View style={styles.body}>
+          <Text style={styles.userName} numberOfLines={1}>
+            {post.userName}
+          </Text>
+          <FeedActionText post={post} style={styles.actionText} />
+        </View>
+      </Pressable>
 
       <Text style={styles.time}>{formatRelativeTime(post.createdAt)}</Text>
     </View>
@@ -33,6 +41,13 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontSize: 12,
     lineHeight: 17,
+  },
+  authorButton: {
+    alignItems: "flex-start",
+    flex: 1,
+    flexDirection: "row",
+    gap: 12,
+    minWidth: 0,
   },
   body: {
     flex: 1,

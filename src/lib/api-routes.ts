@@ -23,8 +23,10 @@ export const apiRoutes = {
   },
   users: {
     checkEmail: (email: string) => `/users/check-email/${encodeURIComponent(email)}`,
+    follow: (userId: string) => `/users/${userId}/follow`,
     forgotPassword: "/users/forgot-password",
     login: "/users/login",
+    publicProfile: (userId: string) => `/users/${userId}/public-profile`,
     register: "/users/register",
     resetPassword: "/users/reset-password",
     verifyResetCode: "/users/verify-reset-code",

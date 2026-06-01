@@ -25,6 +25,7 @@ type FeedCommentsProps = {
   ) => void | Promise<void>;
   onDeleteComment: (commentId: string) => void | Promise<void>;
   onEditComment: (commentId: string, text: string) => void | Promise<void>;
+  onOpenUserProfile: (userId: string) => void;
   onToggleCommentLike: (commentId: string) => void | Promise<void>;
 };
 
@@ -42,6 +43,7 @@ type CommentItemProps = {
   onChangeEditText: (text: string) => void;
   onChangeReplyText: (text: string) => void;
   onOpenActions: (commentId: string) => void;
+  onOpenUserProfile: (userId: string) => void;
   onStartReply: (comment: FeedComment, depth: number, rootCommentId: string) => void;
   onSubmitEdit: () => void;
   onSubmitReply: () => void;
@@ -62,6 +64,7 @@ function CommentItem({
   onChangeEditText,
   onChangeReplyText,
   onOpenActions,
+  onOpenUserProfile,
   onStartReply,
   onSubmitEdit,
   onSubmitReply,
@@ -84,7 +87,13 @@ function CommentItem({
   return (
     <View style={[styles.commentBlock, depth > 0 && styles.nestedComment]}>
       <View style={styles.commentRow}>
-        <UserAvatar avatarUrl={comment.userAvatar} name={comment.userName} size={28} />
+        <Pressable
+          accessibilityLabel={`Abrir perfil de ${comment.userName}`}
+          accessibilityRole="button"
+          onPress={() => onOpenUserProfile(comment.userId)}
+        >
+          <UserAvatar avatarUrl={comment.userAvatar} name={comment.userName} size={28} />
+        </Pressable>
 
         <View style={styles.commentContent}>
           {isEditing ? (
@@ -106,7 +115,12 @@ function CommentItem({
           ) : (
             <>
               <View style={styles.commentBubble}>
-                <Text style={styles.commentName}>{comment.userName}</Text>
+                <Text
+                  style={styles.commentName}
+                  onPress={() => onOpenUserProfile(comment.userId)}
+                >
+                  {comment.userName}
+                </Text>
                 <Text style={styles.commentText}>{comment.text}</Text>
               </View>
 
@@ -204,6 +218,7 @@ function CommentItem({
                   onChangeEditText={onChangeEditText}
                   onChangeReplyText={onChangeReplyText}
                   onOpenActions={onOpenActions}
+                  onOpenUserProfile={onOpenUserProfile}
                   onStartReply={onStartReply}
                   onSubmitEdit={onSubmitEdit}
                   onSubmitReply={onSubmitReply}
@@ -224,6 +239,7 @@ export function FeedComments({
   onAddReply,
   onDeleteComment,
   onEditComment,
+  onOpenUserProfile,
   onToggleCommentLike,
 }: FeedCommentsProps) {
   const [text, setText] = useState("");
@@ -339,6 +355,7 @@ export function FeedComments({
           onChangeEditText={setEditText}
           onChangeReplyText={setReplyText}
           onOpenActions={setActionSheetCommentId}
+          onOpenUserProfile={onOpenUserProfile}
           onStartReply={(target, depth, rootId) => {
             setReplyTarget(buildReplyTarget(target, rootId, depth));
             setReplyText("");

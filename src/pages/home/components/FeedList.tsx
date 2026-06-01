@@ -33,6 +33,7 @@ type FeedListProps = {
   onLoadComments: (postId: string) => void;
   onLoadMore: () => void;
   onOpenShare: (post: FeedPost) => void;
+  onOpenUserProfile: (userId: string) => void;
   onPrefetch: (visibleIndex: number) => void;
   onToggleCommentLike: (postId: string, commentId: string) => void;
   onToggleLike: (postId: string) => void;
@@ -57,6 +58,7 @@ export function FeedList({
   onLoadComments,
   onLoadMore,
   onOpenShare,
+  onOpenUserProfile,
   onPrefetch,
   onToggleCommentLike,
   onToggleLike,
@@ -94,6 +96,7 @@ export function FeedList({
         onEditComment={onEditComment}
         onLoadComments={onLoadComments}
         onOpenShare={onOpenShare}
+        onOpenUserProfile={onOpenUserProfile}
         onToggleCommentLike={onToggleCommentLike}
         onToggleLike={onToggleLike}
       />
@@ -106,6 +109,7 @@ export function FeedList({
       onEditComment,
       onLoadComments,
       onOpenShare,
+      onOpenUserProfile,
       onToggleCommentLike,
       onToggleLike,
     ],

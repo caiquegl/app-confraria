@@ -1,6 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 
+import { getCurrentUserId } from "@/lib/auth";
 import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
 
@@ -33,6 +34,16 @@ export function LikedFeedView() {
     toggleCommentLike,
   } = useLikedFeed();
   const { hasUnread } = useNotificationBadge();
+  const openUserProfile = (userId: string) => {
+    void getCurrentUserId().then((currentUserId) => {
+      if (currentUserId === userId) {
+        router.push("/profile");
+        return;
+      }
+
+      router.push({ pathname: "/users/[userId]", params: { userId } });
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -51,6 +62,7 @@ export function LikedFeedView() {
         onLoadComments={loadComments}
         onLoadMore={loadMoreFeed}
         onOpenShare={openShare}
+        onOpenUserProfile={openUserProfile}
         onPrefetch={handlePrefetch}
         onToggleCommentLike={toggleCommentLike}
         onToggleLike={toggleLike}

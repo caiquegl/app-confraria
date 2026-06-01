@@ -23,6 +23,7 @@ type FeedCardProps = {
   onEditComment: (postId: string, commentId: string, text: string) => void;
   onLoadComments: (postId: string) => void;
   onOpenShare: (post: FeedPost) => void;
+  onOpenUserProfile: (userId: string) => void;
   onToggleCommentLike: (postId: string, commentId: string) => void;
   onToggleLike: (postId: string) => void;
   post: FeedPost;
@@ -36,6 +37,7 @@ function FeedCardInner({
   onEditComment,
   onLoadComments,
   onOpenShare,
+  onOpenUserProfile,
   onToggleCommentLike,
   onToggleLike,
   post,
@@ -63,7 +65,7 @@ function FeedCardInner({
 
   return (
     <View style={styles.card}>
-      <FeedCardHeader post={post} />
+      <FeedCardHeader post={post} onOpenUserProfile={onOpenUserProfile} />
 
       {mediaPhotos.length > 0 && <FeedMediaCarousel photos={mediaPhotos} title={mediaTitle} />}
 
@@ -94,6 +96,7 @@ function FeedCardInner({
             }
             onDeleteComment={(commentId) => onDeleteComment(post.id, commentId)}
             onEditComment={(commentId, text) => onEditComment(post.id, commentId, text)}
+            onOpenUserProfile={onOpenUserProfile}
             onToggleCommentLike={(commentId) => onToggleCommentLike(post.id, commentId)}
           />
         </View>
