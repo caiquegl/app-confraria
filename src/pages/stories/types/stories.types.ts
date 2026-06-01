@@ -7,6 +7,8 @@ export type StoryItem = {
   createdAt: string;
   expiresAt: string;
   viewed: boolean;
+  isLiked: boolean;
+  likeCount: number;
   viewerCount: number;
   isMine: boolean;
 };
@@ -32,5 +34,11 @@ export type StoryViewerUser = {
   userId: string;
   userName: string;
   userAvatar: string | null;
+  liked: boolean;
   viewedAt: string;
+};
+
+export type StoryLikeResponse = {
+  liked: boolean;
+  likeCount: number;
 };

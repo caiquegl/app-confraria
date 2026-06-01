@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,8 +8,16 @@ import {
   Text,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 import { UserAvatar } from "@/components/UserAvatar";
+import { StoryViewer } from "@/pages/stories/components/StoryViewer";
+import {
+  fetchUserStories,
+  markStoryViewed,
+  toggleStoryLike,
+} from "@/pages/stories/services/stories.service";
+import type { StoryGroup, StoryItem } from "@/pages/stories/types/stories.types";
 import { colors } from "@/theme/colors";
 
 import { usePublicProfile } from "../business/usePublicProfile";
@@ -25,8 +33,26 @@ type PublicProfileViewProps = {
 
 export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [profileStoryGroup, setProfileStoryGroup] = useState<StoryGroup | null>(null);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const { error, isLoading, profile, retry, updateFollowState } =
     usePublicProfile(userId);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchUserStories(userId)
+      .then((storyGroup) => {
+        if (!cancelled) setProfileStoryGroup(storyGroup);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileStoryGroup(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const handleToggleFollow = async () => {
     if (isFollowLoading || !profile) return;
@@ -40,6 +66,63 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
       updateFollowState(result);
     } finally {
       setIsFollowLoading(false);
+    }
+  };
+
+  const handleStoryVisible = (story: StoryItem) => {
+    if (story.isMine || story.viewed) return;
+
+    setProfileStoryGroup((current) =>
+      current
+        ? {
+            ...current,
+            stories: current.stories.map((item) =>
+              item.id === story.id ? { ...item, viewed: true } : item,
+            ),
+          }
+        : current,
+    );
+
+    void markStoryViewed(story.id);
+  };
+
+  const updateProfileStory = (storyId: string, patch: Partial<StoryItem>) => {
+    setProfileStoryGroup((current) =>
+      current
+        ? {
+            ...current,
+            stories: current.stories.map((item) =>
+              item.id === storyId ? { ...item, ...patch } : item,
+            ),
+          }
+        : current,
+    );
+  };
+
+  const handleToggleStoryLike = async (story: StoryItem) => {
+    if (story.isMine) return;
+
+    updateProfileStory(story.id, {
+      isLiked: !story.isLiked,
+      likeCount: Math.max(0, story.likeCount + (story.isLiked ? -1 : 1)),
+    });
+
+    try {
+      const result = await toggleStoryLike(story.id);
+      updateProfileStory(story.id, {
+        isLiked: result.liked,
+        likeCount: result.likeCount,
+      });
+    } catch {
+      updateProfileStory(story.id, {
+        isLiked: story.isLiked,
+        likeCount: story.likeCount,
+      });
+      Toast.show({
+        type: "error",
+        text1: "Erro ao curtir story",
+        text2: "Não foi possível atualizar sua curtida.",
+      });
     }
   };
 
@@ -77,14 +160,27 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.profileCard}>
-            <View style={styles.avatarWrap}>
-              <UserAvatar avatarUrl={profile.avatar} name={profile.name} size={104} />
+            <Pressable
+              accessibilityLabel={`Ver story de ${profile.name}`}
+              accessibilityRole="button"
+              disabled={!profileStoryGroup}
+              style={styles.avatarWrap}
+              onPress={() => setStoryViewerOpen(true)}
+            >
+              <View
+                style={[
+                  styles.avatarRing,
+                  profileStoryGroup && styles.avatarRingActive,
+                ]}
+              >
+                <UserAvatar avatarUrl={profile.avatar} name={profile.name} size={104} />
+              </View>
               {profile.isVerified && (
                 <View style={styles.verifiedBadge}>
                   <Ionicons color="#FFFFFF" name="checkmark" size={14} />
                 </View>
               )}
-            </View>
+            </Pressable>
 
             <Text style={styles.name}>{profile.name}</Text>
             {profile.location ? (
@@ -119,12 +215,42 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
               </Text>
             </Pressable>
 
-            <Pressable style={[styles.actionButton, styles.messageButton]}>
-              <Ionicons color={colors.brandDark} name="chatbubble-outline" size={16} />
-              <Text style={styles.actionText}>Mensagem</Text>
+            <Pressable
+              disabled={!profile.isFollowing}
+              style={[
+                styles.actionButton,
+                styles.messageButton,
+                !profile.isFollowing && styles.messageButtonDisabled,
+              ]}
+            >
+              <Ionicons
+                color={profile.isFollowing ? colors.brandDark : "#9CA3AF"}
+                name="chatbubble-outline"
+                size={16}
+              />
+              <Text
+                style={[
+                  styles.actionText,
+                  !profile.isFollowing && styles.actionTextDisabled,
+                ]}
+              >
+                Mensagem
+              </Text>
             </Pressable>
           </View>
         </ScrollView>
+      )}
+
+      {profileStoryGroup && (
+        <StoryViewer
+          groups={[profileStoryGroup]}
+          initialGroupIndex={0}
+          visible={storyViewerOpen}
+          onClose={() => setStoryViewerOpen(false)}
+          onOpenViewers={() => undefined}
+          onStoryVisible={handleStoryVisible}
+          onToggleLike={(story) => void handleToggleStoryLike(story)}
+        />
       )}
     </View>
   );
@@ -157,6 +283,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  actionTextDisabled: {
+    color: "#9CA3AF",
+  },
   actionsRow: {
     flexDirection: "row",
     gap: 10,
@@ -165,6 +294,18 @@ const styles = StyleSheet.create({
   avatarWrap: {
     marginBottom: 14,
     position: "relative",
+  },
+  avatarRing: {
+    alignItems: "center",
+    borderColor: "transparent",
+    borderRadius: 999,
+    borderWidth: 3,
+    height: 114,
+    justifyContent: "center",
+    width: 114,
+  },
+  avatarRingActive: {
+    borderColor: colors.brandGreen,
   },
   backButton: {
     alignItems: "center",
@@ -235,6 +376,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderColor: "#E5E7EB",
     borderWidth: 1,
+  },
+  messageButtonDisabled: {
+    backgroundColor: "#F3F4F6",
+    opacity: 0.75,
   },
   name: {
     color: colors.brandDark,

@@ -24,7 +24,9 @@ export const apiRoutes = {
   stories: {
     create: "/stories",
     feed: "/stories/feed",
+    like: (storyId: string) => `/stories/${storyId}/like`,
     markViewed: (storyId: string) => `/stories/${storyId}/view`,
+    userStories: (userId: string) => `/stories/users/${userId}`,
     viewers: (storyId: string) => `/stories/${storyId}/viewers`,
   },
   users: {

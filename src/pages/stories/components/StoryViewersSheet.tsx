@@ -43,9 +43,9 @@ export function StoryViewersSheet({
         <View style={styles.handle} />
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>Visualizações</Text>
+            <Text style={styles.title}>Visualizações e curtidas</Text>
             <Text style={styles.subtitle}>
-              {story?.viewerCount ?? 0} pessoas viram este story
+              {story?.viewerCount ?? 0} visualizações • {story?.likeCount ?? 0} curtidas
             </Text>
           </View>
           <Pressable hitSlop={8} onPress={onClose}>
@@ -83,6 +83,11 @@ export function StoryViewersSheet({
                     {formatRelativeTime(item.viewedAt)}
                   </Text>
                 </View>
+                {item.liked && (
+                  <View style={styles.likeBadge}>
+                    <Ionicons color="#EF4444" name="heart" size={16} />
+                  </View>
+                )}
               </View>
             )}
           />
@@ -131,6 +136,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: 160,
     justifyContent: "center",
+  },
+  likeBadge: {
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
+    borderRadius: 999,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
   },
   sheet: {
     backgroundColor: "#FFFFFF",

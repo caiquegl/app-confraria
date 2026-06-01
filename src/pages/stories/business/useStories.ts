@@ -6,6 +6,7 @@ import {
   fetchStoriesFeed,
   fetchStoryViewers,
   markStoryViewed,
+  toggleStoryLike,
 } from "../services/stories.service";
 import type {
   StoriesFeed,
@@ -51,7 +52,9 @@ export function useStories() {
   }, []);
 
   useEffect(() => {
-    void loadStories();
+    queueMicrotask(() => {
+      void loadStories();
+    });
   }, [loadStories]);
 
   const addStory = useCallback(async (uri: string) => {
@@ -100,6 +103,43 @@ export function useStories() {
     setViewerState(null);
   }, []);
 
+  const updateStory = useCallback(
+    (storyId: string, patch: Partial<StoryItem>) => {
+      setFeed((current) =>
+        current
+          ? {
+              ...current,
+              groups: current.groups.map((group) => ({
+                ...group,
+                stories: group.stories.map((item) =>
+                  item.id === storyId ? { ...item, ...patch } : item,
+                ),
+              })),
+            }
+          : current,
+      );
+
+      setViewerState((current) =>
+        current
+          ? {
+              ...current,
+              groups: current.groups.map((group) => ({
+                ...group,
+                stories: group.stories.map((item) =>
+                  item.id === storyId ? { ...item, ...patch } : item,
+                ),
+              })),
+            }
+          : current,
+      );
+
+      setViewersStory((current) =>
+        current?.id === storyId ? { ...current, ...patch } : current,
+      );
+    },
+    [],
+  );
+
   const markAsViewed = useCallback(async (story: StoryItem) => {
     if (story.isMine || story.viewed) return;
 
@@ -123,6 +163,37 @@ export function useStories() {
       // A failed view marker should not interrupt story playback.
     }
   }, []);
+
+  const toggleLike = useCallback(
+    async (story: StoryItem) => {
+      if (story.isMine) return;
+
+      const optimisticPatch = {
+        isLiked: !story.isLiked,
+        likeCount: Math.max(0, story.likeCount + (story.isLiked ? -1 : 1)),
+      };
+      updateStory(story.id, optimisticPatch);
+
+      try {
+        const result = await toggleStoryLike(story.id);
+        updateStory(story.id, {
+          isLiked: result.liked,
+          likeCount: result.likeCount,
+        });
+      } catch {
+        updateStory(story.id, {
+          isLiked: story.isLiked,
+          likeCount: story.likeCount,
+        });
+        Toast.show({
+          type: "error",
+          text1: "Erro ao curtir story",
+          text2: "Não foi possível atualizar sua curtida.",
+        });
+      }
+    },
+    [updateStory],
+  );
 
   const openViewers = useCallback(async (story: StoryItem) => {
     if (!story.isMine) return;
@@ -164,6 +235,7 @@ export function useStories() {
     openStoryGroup,
     openViewers,
     otherStoryGroups,
+    toggleLike,
     viewerState,
     viewers,
     viewersStory,

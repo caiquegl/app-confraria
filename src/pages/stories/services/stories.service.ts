@@ -5,7 +5,9 @@ import { getToken } from "@/lib/auth";
 
 import type {
   StoriesFeed,
+  StoryGroup,
   StoryItem,
+  StoryLikeResponse,
   StoryViewerUser,
 } from "../types/stories.types";
 
@@ -36,8 +38,20 @@ export async function createStory(uri: string): Promise<StoryItem> {
   return JSON.parse(responseText) as StoryItem;
 }
 
+export async function fetchUserStories(userId: string): Promise<StoryGroup | null> {
+  const { data } = await api.get<StoryGroup | null>(
+    apiRoutes.stories.userStories(userId),
+  );
+  return data;
+}
+
 export async function markStoryViewed(storyId: string): Promise<void> {
   await api.post(apiRoutes.stories.markViewed(storyId));
+}
+
+export async function toggleStoryLike(storyId: string): Promise<StoryLikeResponse> {
+  const { data } = await api.post<StoryLikeResponse>(apiRoutes.stories.like(storyId));
+  return data;
 }
 
 export async function fetchStoryViewers(

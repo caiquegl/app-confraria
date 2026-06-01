@@ -207,6 +207,7 @@ export function HomeView() {
           onClose={stories.closeStoryViewer}
           onOpenViewers={stories.openViewers}
           onStoryVisible={stories.markAsViewed}
+          onToggleLike={stories.toggleLike}
         />
       )}
 

@@ -71,26 +71,30 @@ export function StoriesBar({
           </Text>
         </Pressable>
 
-        {stories.map((storyGroup, index) => (
-          <Pressable
-            key={storyGroup.userId}
-            accessibilityLabel={`Ver story de ${storyGroup.userName}`}
-            accessibilityRole="button"
-            style={styles.storyButton}
-            onPress={() => onOpenStory(index)}
-          >
-            <View style={styles.activeStoryRing}>
-              <UserAvatar
-                avatarUrl={storyGroup.userAvatar}
-                name={storyGroup.userName}
-                size={60}
-              />
-            </View>
-            <Text numberOfLines={1} style={styles.storyLabel}>
-              {storyGroup.userName}
-            </Text>
-          </Pressable>
-        ))}
+        {stories.map((storyGroup, index) => {
+          const hasUnseenStory = storyGroup.stories.some((story) => !story.viewed);
+
+          return (
+            <Pressable
+              key={storyGroup.userId}
+              accessibilityLabel={`Ver story de ${storyGroup.userName}`}
+              accessibilityRole="button"
+              style={styles.storyButton}
+              onPress={() => onOpenStory(index)}
+            >
+              <View style={[styles.storyRing, hasUnseenStory && styles.activeStoryRing]}>
+                <UserAvatar
+                  avatarUrl={storyGroup.userAvatar}
+                  name={storyGroup.userName}
+                  size={60}
+                />
+              </View>
+              <Text numberOfLines={1} style={styles.storyLabel}>
+                {storyGroup.userName}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -122,6 +126,15 @@ const styles = StyleSheet.create({
     borderColor: "#DADFD5",
     borderRadius: 999,
     borderStyle: "dashed",
+    borderWidth: 2,
+    height: 68,
+    justifyContent: "center",
+    width: 68,
+  },
+  storyRing: {
+    alignItems: "center",
+    borderColor: "transparent",
+    borderRadius: 999,
     borderWidth: 2,
     height: 68,
     justifyContent: "center",
