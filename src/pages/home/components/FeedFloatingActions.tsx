@@ -4,17 +4,21 @@ import { Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
 import { colors } from "@/theme/colors";
 
 type FeedFloatingActionsProps = {
+  hasUnreadMessages?: boolean;
   hasUnreadNotifications?: boolean;
   isLikedTabActive?: boolean;
   onOpenLiked: () => void;
+  onOpenMessages: () => void;
   onOpenNotifications: () => void;
   onOpenNewPost: () => void;
 };
 
 export function FeedFloatingActions({
+  hasUnreadMessages = false,
   hasUnreadNotifications = false,
   isLikedTabActive = false,
   onOpenLiked,
+  onOpenMessages,
   onOpenNotifications,
   onOpenNewPost,
 }: FeedFloatingActionsProps) {
@@ -34,6 +38,15 @@ export function FeedFloatingActions({
               name="heart-outline"
               size={18}
             />
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Abrir mensagens"
+            accessibilityRole="button"
+            style={styles.tab}
+            onPress={onOpenMessages}
+          >
+            <Ionicons color="#6B7280" name="chatbubble-ellipses-outline" size={18} />
+            {hasUnreadMessages && <View style={styles.tabUnreadDot} />}
           </Pressable>
         </View>
       </View>
@@ -107,6 +120,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 10,
+    position: "relative",
   },
   tabActive: {
     backgroundColor: colors.brandGreen,
@@ -127,7 +141,19 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 10, width: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 30,
-    maxWidth: "25%",
+    flexDirection: "row",
+    maxWidth: 100,
+  },
+  tabUnreadDot: {
+    backgroundColor: colors.brandGreen,
+    borderColor: "#FFFFFF",
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 10,
+    position: "absolute",
+    right: 10,
+    top: 8,
+    width: 10,
   },
   unreadDot: {
     backgroundColor: colors.brandGreen,

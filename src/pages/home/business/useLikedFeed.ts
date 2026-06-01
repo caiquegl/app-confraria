@@ -2,7 +2,10 @@ import Toast from "react-native-toast-message";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FlatList } from "react-native";
 
-import { MOCK_FEED_FRIENDS } from "@/mock/mockFeedFriends";
+import {
+  fetchChatConversations,
+  sendChatMessage,
+} from "@/pages/messages/services/messages.service";
 
 import {
   countFeedComments,
@@ -20,7 +23,7 @@ import {
   toggleFeedPostLike,
   updateFeedPostComment,
 } from "../services/feed.service";
-import type { FeedPost } from "../types/feed.types";
+import type { FeedPost, FeedShareFriend } from "../types/feed.types";
 
 export function useLikedFeed() {
   const listRef = useRef<FlatList<FeedPost>>(null);
@@ -46,6 +49,7 @@ export function useLikedFeed() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [commentsLoadingByPost, setCommentsLoadingByPost] = useState<Record<string, boolean>>({});
   const [sharePost, setSharePost] = useState<FeedPost | null>(null);
+  const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -168,6 +172,28 @@ export function useLikedFeed() {
     },
     [loadMoreFeed],
   );
+
+  const loadShareFriends = useCallback(async () => {
+    try {
+      const data = await fetchChatConversations();
+      if (!mountedRef.current) return;
+
+      setShareFriends(
+        data.contacts.map((contact) => ({
+          avatar: contact.userAvatar,
+          firstName: contact.userName,
+          id: contact.userId,
+          isFriend: true,
+          isPremium: false,
+          location: "Confraria",
+          userId: contact.userId,
+        })),
+      );
+    } catch {
+      if (!mountedRef.current) return;
+      setShareFriends([]);
+    }
+  }, []);
 
   const loadComments = useCallback(async (postId: string) => {
     if (loadedCommentsRef.current.has(postId)) return;
@@ -382,6 +408,7 @@ export function useLikedFeed() {
   const openShare = (post: FeedPost) => {
     setSharePost(post);
     setSentFriendId(null);
+    void loadShareFriends();
   };
 
   const closeShare = () => {
@@ -389,8 +416,29 @@ export function useLikedFeed() {
     setSentFriendId(null);
   };
 
-  const shareToFriend = (friendId: string) => {
+  const shareToFriend = async (friendId: string) => {
+    if (!sharePost) return null;
+
+    const text =
+      sharePost.caption?.trim() ||
+      sharePost.eventTitle ||
+      sharePost.routeTitle ||
+      "Compartilhou um post com você";
+
+    const result = await sendChatMessage({
+      recipientId: friendId,
+      sharedPostId: sharePost.id,
+      text,
+    });
+
     setSentFriendId(friendId);
+    const friend = shareFriends.find((item) => item.id === friendId);
+
+    return {
+      conversationId: result.senderConversation.id,
+      participantAvatar: friend?.avatar ?? result.senderConversation.participant.userAvatar,
+      participantName: friend?.firstName ?? result.senderConversation.participant.userName,
+    };
   };
 
   return {
@@ -400,7 +448,7 @@ export function useLikedFeed() {
     commentsLoadingByPost,
     deleteComment,
     editComment,
-    friends: MOCK_FEED_FRIENDS,
+    friends: shareFriends,
     handlePrefetch,
     isLoadingInitial,
     isLoadingMore,

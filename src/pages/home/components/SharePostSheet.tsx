@@ -9,10 +9,17 @@ import { colors } from "@/theme/colors";
 import type { FeedPost, FeedShareFriend } from "../types/feed.types";
 import { ShareFriendItem } from "./ShareFriendItem";
 
+export type ShareSendResult = {
+  conversationId: string;
+  participantAvatar: string | null;
+  participantName: string;
+};
+
 type SharePostSheetProps = {
   friends: FeedShareFriend[];
   onClose: () => void;
-  onSendToFriend: (friendId: string) => void;
+  onSent?: (result: ShareSendResult) => void;
+  onSendToFriend: (friendId: string) => Promise<ShareSendResult | null>;
   post: FeedPost | null;
   sentFriendId: string | null;
 };
@@ -20,6 +27,7 @@ type SharePostSheetProps = {
 export function SharePostSheet({
   friends,
   onClose,
+  onSent,
   onSendToFriend,
   post,
   sentFriendId,
@@ -31,14 +39,25 @@ export function SharePostSheet({
   const title = post.caption || post.eventTitle || post.routeTitle || "Post da Confraria";
   const context = post.eventTitle || post.routeTitle || "Post da confraria";
 
-  const handleSend = (friendId: string) => {
-    onSendToFriend(friendId);
-    Toast.show({
-      type: "success",
-      text1: "Post enviado",
-      text2: "Compartilhado com seu amigo.",
-      visibilityTime: 1800,
-    });
+  const handleSend = async (friendId: string) => {
+    try {
+      const result = await onSendToFriend(friendId);
+      Toast.show({
+        type: "success",
+        text1: "Post enviado",
+        text2: "Compartilhado por mensagem.",
+        visibilityTime: 1800,
+      });
+      if (result) {
+        onSent?.(result);
+      }
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao compartilhar",
+        text2: "Não foi possível enviar esse post por mensagem.",
+      });
+    }
   };
 
   return (
@@ -48,7 +67,7 @@ export function SharePostSheet({
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Compartilhar com amigos</Text>
+            <Text style={styles.title}>Compartilhar com quem sigo</Text>
             <Text style={styles.subtitle} numberOfLines={2}>
               {title}
             </Text>
@@ -75,7 +94,9 @@ export function SharePostSheet({
         <View style={styles.friends}>
           {friends.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>Nenhum amigo disponível para compartilhar agora.</Text>
+              <Text style={styles.emptyText}>
+                Você ainda não segue ninguém para compartilhar.
+              </Text>
             </View>
           ) : (
             friends.map((friend) => (

@@ -5,6 +5,15 @@ export const apiRoutes = {
     termsLatest: "/admin/terms/latest",
     tripStyles: "/admin/trip-styles",
   },
+  chat: {
+    conversations: "/chat/conversations",
+    conversationRead: (conversationId: string) =>
+      `/chat/conversations/${conversationId}/read`,
+    messages: (conversationId: string) =>
+      `/chat/conversations/${conversationId}/messages`,
+    sendMessage: "/chat/messages",
+    unreadCount: "/chat/unread-count",
+  },
   feed: {
     posts: "/feed/posts",
     likedPosts: "/feed/posts/liked",

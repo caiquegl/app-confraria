@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
 
 import type { FeedShareFriend } from "../types/feed.types";
@@ -9,13 +9,13 @@ import type { FeedShareFriend } from "../types/feed.types";
 type ShareFriendItemProps = {
   friend: FeedShareFriend;
   isSent: boolean;
-  onSend: (friendId: string) => void;
+  onSend: (friendId: string) => void | Promise<void>;
 };
 
 export function ShareFriendItem({ friend, isSent, onSend }: ShareFriendItemProps) {
   return (
     <View style={styles.container}>
-      <Image source={{ uri: friend.avatar }} style={styles.avatar} contentFit="cover" />
+      <UserAvatar avatarUrl={friend.avatar} name={friend.firstName} size={44} />
 
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>
@@ -43,11 +43,6 @@ export function ShareFriendItem({ friend, isSent, onSend }: ShareFriendItemProps
 }
 
 const styles = StyleSheet.create({
-  avatar: {
-    borderRadius: 22,
-    height: 44,
-    width: 44,
-  },
   button: {
     alignItems: "center",
     borderRadius: 999,

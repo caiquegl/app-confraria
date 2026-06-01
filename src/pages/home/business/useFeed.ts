@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { FlatList } from "react-native";
 
 import { consumeHighlightPostId } from "@/lib/feed-highlight-store";
-import { MOCK_FEED_FRIENDS } from "@/mock/mockFeedFriends";
+import {
+  fetchChatConversations,
+  sendChatMessage,
+} from "@/pages/messages/services/messages.service";
 
 import {
   countFeedComments,
@@ -24,7 +27,7 @@ import {
   toggleFeedPostLike,
   updateFeedPostComment,
 } from "../services/feed.service";
-import type { ComposeAudience, FeedPost } from "../types/feed.types";
+import type { ComposeAudience, FeedPost, FeedShareFriend } from "../types/feed.types";
 
 export function useFeed() {
   const listRef = useRef<FlatList<FeedPost>>(null);
@@ -52,6 +55,7 @@ export function useFeed() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [commentsLoadingByPost, setCommentsLoadingByPost] = useState<Record<string, boolean>>({});
   const [sharePost, setSharePost] = useState<FeedPost | null>(null);
+  const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
   const [composerPhotos, setComposerPhotos] = useState<string[]>([]);
   const [composeCaption, setComposeCaption] = useState("");
@@ -262,6 +266,28 @@ export function useFeed() {
     },
     [loadMoreFeed],
   );
+
+  const loadShareFriends = useCallback(async () => {
+    try {
+      const data = await fetchChatConversations();
+      if (!mountedRef.current) return;
+
+      setShareFriends(
+        data.contacts.map((contact) => ({
+          avatar: contact.userAvatar,
+          firstName: contact.userName,
+          id: contact.userId,
+          isFriend: true,
+          isPremium: false,
+          location: "Confraria",
+          userId: contact.userId,
+        })),
+      );
+    } catch {
+      if (!mountedRef.current) return;
+      setShareFriends([]);
+    }
+  }, []);
 
   const loadComments = useCallback(async (postId: string) => {
     if (loadedCommentsRef.current.has(postId)) return;
@@ -488,6 +514,7 @@ export function useFeed() {
   const openShare = (post: FeedPost) => {
     setSharePost(post);
     setSentFriendId(null);
+    void loadShareFriends();
   };
 
   const closeShare = () => {
@@ -495,8 +522,29 @@ export function useFeed() {
     setSentFriendId(null);
   };
 
-  const shareToFriend = (friendId: string) => {
+  const shareToFriend = async (friendId: string) => {
+    if (!sharePost) return null;
+
+    const text =
+      sharePost.caption?.trim() ||
+      sharePost.eventTitle ||
+      sharePost.routeTitle ||
+      "Compartilhou um post com você";
+
+    const result = await sendChatMessage({
+      recipientId: friendId,
+      sharedPostId: sharePost.id,
+      text,
+    });
+
     setSentFriendId(friendId);
+    const friend = shareFriends.find((item) => item.id === friendId);
+
+    return {
+      conversationId: result.senderConversation.id,
+      participantAvatar: friend?.avatar ?? result.senderConversation.participant.userAvatar,
+      participantName: friend?.firstName ?? result.senderConversation.participant.userName,
+    };
   };
 
   const openComposerWithPhotos = (uris: string[]) => {
@@ -665,7 +713,7 @@ export function useFeed() {
     composeAudience,
     composeCaption,
     composerPhotos,
-    friends: MOCK_FEED_FRIENDS,
+    friends: shareFriends,
     isCameraOpen,
     isComposerOpen,
     isLoadingInitial,

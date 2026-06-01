@@ -2,6 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 
 import { getCurrentUserId } from "@/lib/auth";
+import { useChatBadge } from "@/pages/messages";
 import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
 
@@ -35,6 +36,7 @@ export function LikedFeedView() {
     toggleLike,
     toggleCommentLike,
   } = useLikedFeed();
+  const { hasUnread: hasUnreadMessages } = useChatBadge();
   const { hasUnread } = useNotificationBadge();
   const openUserProfile = (userId: string) => {
     void getCurrentUserId().then((currentUserId) => {
@@ -77,13 +79,26 @@ export function LikedFeedView() {
         friends={friends}
         sentFriendId={sentFriendId}
         onClose={closeShare}
+        onSent={(result) => {
+          closeShare();
+          router.push({
+            pathname: "/messages/[conversationId]",
+            params: {
+              conversationId: result.conversationId,
+              participantAvatar: result.participantAvatar ?? "",
+              participantName: result.participantName,
+            },
+          });
+        }}
         onSendToFriend={shareToFriend}
       />
 
       <FeedFloatingActions
+        hasUnreadMessages={hasUnreadMessages}
         hasUnreadNotifications={hasUnread}
         isLikedTabActive
         onOpenLiked={() => router.replace("/feed")}
+        onOpenMessages={() => router.push("/messages")}
         onOpenNewPost={() => router.replace("/feed")}
         onOpenNotifications={() => router.push("/notifications")}
       />

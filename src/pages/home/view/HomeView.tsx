@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useCallback, useState } from "react";
 
 import { getCurrentUserId } from "@/lib/auth";
+import { useChatBadge } from "@/pages/messages";
 import { useNotificationBadge } from "@/pages/notifications";
 import { useStories } from "@/pages/stories/business/useStories";
 import { NewStoryCamera } from "@/pages/stories/components/NewStoryCamera";
@@ -67,6 +68,7 @@ export function HomeView() {
     toggleLike,
     toggleCommentLike,
   } = useFeed();
+  const { hasUnread: hasUnreadMessages } = useChatBadge();
   const { hasUnread } = useNotificationBadge();
   const stories = useStories();
   const [isStoryCameraOpen, setIsStoryCameraOpen] = useState(false);
@@ -151,6 +153,17 @@ export function HomeView() {
         friends={friends}
         sentFriendId={sentFriendId}
         onClose={closeShare}
+        onSent={(result) => {
+          closeShare();
+          router.push({
+            pathname: "/messages/[conversationId]",
+            params: {
+              conversationId: result.conversationId,
+              participantAvatar: result.participantAvatar ?? "",
+              participantName: result.participantName,
+            },
+          });
+        }}
         onSendToFriend={shareToFriend}
       />
 
@@ -220,8 +233,10 @@ export function HomeView() {
 
       {!isComposerOpen && !isCameraOpen && !isStoryCameraOpen && !isStorySuccessVisible && (
         <FeedFloatingActions
+          hasUnreadMessages={hasUnreadMessages}
           hasUnreadNotifications={hasUnread}
           onOpenLiked={() => router.push("/feed/liked")}
+          onOpenMessages={() => router.push("/messages")}
           onOpenNewPost={openNewPostCamera}
           onOpenNotifications={() => router.push("/notifications")}
         />

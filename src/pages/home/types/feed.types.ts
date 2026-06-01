@@ -62,7 +62,7 @@ export type FeedShareFriend = {
   id: string;
   userId: string;
   firstName: string;
-  avatar: string;
+  avatar: string | null;
   location?: string;
   isFriend: boolean;
   isPremium: boolean;

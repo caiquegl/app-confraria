@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,6 +12,7 @@ import {
 import Toast from "react-native-toast-message";
 
 import { UserAvatar } from "@/components/UserAvatar";
+import { createChatConversation } from "@/pages/messages/services/messages.service";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
 import {
   fetchUserStories,
@@ -33,6 +35,7 @@ type PublicProfileViewProps = {
 
 export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [isMessageLoading, setIsMessageLoading] = useState(false);
   const [profileStoryGroup, setProfileStoryGroup] = useState<StoryGroup | null>(null);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const { error, isLoading, profile, retry, updateFollowState } =
@@ -126,6 +129,31 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
     }
   };
 
+  const handleOpenMessage = async () => {
+    if (!profile?.isFollowing || isMessageLoading) return;
+
+    setIsMessageLoading(true);
+    try {
+      const conversation = await createChatConversation(profile.id);
+      router.push({
+        pathname: "/messages/[conversationId]",
+        params: {
+          conversationId: conversation.id,
+          participantAvatar: profile.avatar ?? "",
+          participantName: profile.name,
+        },
+      });
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao abrir conversa",
+        text2: "Não foi possível iniciar a conversa.",
+      });
+    } finally {
+      setIsMessageLoading(false);
+    }
+  };
+
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -216,12 +244,14 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
             </Pressable>
 
             <Pressable
-              disabled={!profile.isFollowing}
+              disabled={!profile.isFollowing || isMessageLoading}
               style={[
                 styles.actionButton,
                 styles.messageButton,
-                !profile.isFollowing && styles.messageButtonDisabled,
+                (!profile.isFollowing || isMessageLoading) &&
+                  styles.messageButtonDisabled,
               ]}
+              onPress={() => void handleOpenMessage()}
             >
               <Ionicons
                 color={profile.isFollowing ? colors.brandDark : "#9CA3AF"}
