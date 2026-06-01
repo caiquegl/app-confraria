@@ -43,6 +43,7 @@ export function useLikedFeed() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [commentsLoadingByPost, setCommentsLoadingByPost] = useState<Record<string, boolean>>({});
   const [sharePost, setSharePost] = useState<FeedPost | null>(null);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
@@ -129,6 +130,35 @@ export function useLikedFeed() {
       }
     }
   }, []);
+
+  const refreshFeed = useCallback(async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    loadingMoreRef.current = false;
+
+    try {
+      const page = await fetchLikedFeedPosts({ limit: FEED_PAGE_SIZE });
+      if (!mountedRef.current) return;
+
+      setPosts(page.data);
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+      loadedCommentsRef.current = new Set();
+    } catch {
+      if (!mountedRef.current) return;
+
+      Toast.show({
+        type: "error",
+        text1: "Erro ao atualizar curtidos",
+        text2: "Não foi possível recarregar os posts curtidos.",
+      });
+    } finally {
+      if (mountedRef.current) {
+        setIsRefreshing(false);
+      }
+    }
+  }, [isRefreshing]);
 
   const handlePrefetch = useCallback(
     (visibleIndex: number) => {
@@ -374,11 +404,13 @@ export function useLikedFeed() {
     handlePrefetch,
     isLoadingInitial,
     isLoadingMore,
+    isRefreshing,
     listRef,
     loadComments,
     loadMoreFeed,
     openShare,
     posts,
+    refreshFeed,
     sentFriendId,
     sharePost,
     shareToFriend,

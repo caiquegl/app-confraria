@@ -22,11 +22,13 @@ export function LikedFeedView() {
     handlePrefetch,
     isLoadingInitial,
     isLoadingMore,
+    isRefreshing,
     listRef,
     loadComments,
     loadMoreFeed,
     openShare,
     posts,
+    refreshFeed,
     sentFriendId,
     sharePost,
     shareToFriend,
@@ -55,6 +57,7 @@ export function LikedFeedView() {
         emptyTitle="Nenhum post curtido"
         isLoadingInitial={isLoadingInitial}
         isLoadingMore={isLoadingMore}
+        isRefreshing={isRefreshing}
         onAddComment={addComment}
         onAddReply={addReply}
         onDeleteComment={deleteComment}
@@ -64,6 +67,7 @@ export function LikedFeedView() {
         onOpenShare={openShare}
         onOpenUserProfile={openUserProfile}
         onPrefetch={handlePrefetch}
+        onRefresh={() => void refreshFeed()}
         onToggleCommentLike={toggleCommentLike}
         onToggleLike={toggleLike}
       />

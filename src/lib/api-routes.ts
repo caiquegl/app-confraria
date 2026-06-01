@@ -21,6 +21,12 @@ export const apiRoutes = {
     readAll: "/notifications/read-all",
     unreadCount: "/notifications/unread-count",
   },
+  stories: {
+    create: "/stories",
+    feed: "/stories/feed",
+    markViewed: (storyId: string) => `/stories/${storyId}/view`,
+    viewers: (storyId: string) => `/stories/${storyId}/viewers`,
+  },
   users: {
     checkEmail: (email: string) => `/users/check-email/${encodeURIComponent(email)}`,
     follow: (userId: string) => `/users/${userId}/follow`,

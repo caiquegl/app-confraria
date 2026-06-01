@@ -1,0 +1,110 @@
+import { api } from "@/lib/api";
+import { getApiBaseUrl } from "@/lib/api-environment";
+import { apiRoutes } from "@/lib/api-routes";
+import { getToken } from "@/lib/auth";
+
+import type {
+  StoriesFeed,
+  StoryItem,
+  StoryViewerUser,
+} from "../types/stories.types";
+
+export async function fetchStoriesFeed(): Promise<StoriesFeed> {
+  const { data } = await api.get<StoriesFeed>(apiRoutes.stories.feed);
+  return data;
+}
+
+export async function createStory(uri: string): Promise<StoryItem> {
+  const formData = new FormData();
+  const extension = getFileExtension(uri);
+  const type = getMimeType(extension);
+
+  formData.append("file", {
+    name: `story-${Date.now()}.${extension}`,
+    type,
+    uri,
+  } as unknown as Blob);
+
+  const baseURL = await getApiBaseUrl();
+  const token = await getToken();
+  const responseText = await sendStoryRequest({
+    formData,
+    token,
+    url: `${baseURL}${apiRoutes.stories.create}`,
+  });
+
+  return JSON.parse(responseText) as StoryItem;
+}
+
+export async function markStoryViewed(storyId: string): Promise<void> {
+  await api.post(apiRoutes.stories.markViewed(storyId));
+}
+
+export async function fetchStoryViewers(
+  storyId: string,
+): Promise<StoryViewerUser[]> {
+  const { data } = await api.get<StoryViewerUser[]>(
+    apiRoutes.stories.viewers(storyId),
+  );
+  return data;
+}
+
+function sendStoryRequest(params: {
+  formData: FormData;
+  token: string | null;
+  url: string;
+}): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("POST", params.url);
+    xhr.timeout = 60000;
+    xhr.setRequestHeader("Accept", "application/json");
+
+    if (params.token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${params.token}`);
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.responseText);
+        return;
+      }
+
+      reject(new Error(parseErrorMessage(xhr.responseText)));
+    };
+
+    xhr.onerror = () => reject(new Error("Falha de conexão ao enviar story."));
+    xhr.ontimeout = () => reject(new Error("Tempo esgotado ao enviar story."));
+    xhr.send(params.formData);
+  });
+}
+
+function parseErrorMessage(responseText: string): string {
+  try {
+    const parsed = JSON.parse(responseText) as { message?: string | string[] };
+    if (Array.isArray(parsed.message)) return parsed.message.join("\n");
+    if (parsed.message) return parsed.message;
+  } catch {
+    // Keep the generic message below when backend response is not JSON.
+  }
+
+  return "Não foi possível enviar o story.";
+}
+
+function getFileExtension(uri: string): string {
+  const cleanUri = uri.split("?")[0] ?? uri;
+  const extension = cleanUri.split(".").pop()?.toLowerCase();
+
+  if (extension && ["jpg", "jpeg", "png", "webp"].includes(extension)) {
+    return extension === "jpeg" ? "jpg" : extension;
+  }
+
+  return "jpg";
+}
+
+function getMimeType(extension: string): string {
+  if (extension === "png") return "image/png";
+  if (extension === "webp") return "image/webp";
+  return "image/jpeg";
+}

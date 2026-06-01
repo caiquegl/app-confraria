@@ -31,7 +31,7 @@ export function FeedFloatingActions({
           >
             <Ionicons
               color={isLikedTabActive ? colors.brandDark : "#6B7280"}
-              name="chatbubble-outline"
+              name="heart-outline"
               size={18}
             />
           </Pressable>

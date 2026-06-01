@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import type { ReactElement } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -20,6 +21,8 @@ type FeedListProps = {
   emptyTitle?: string;
   isLoadingInitial: boolean;
   isLoadingMore: boolean;
+  isRefreshing?: boolean;
+  listHeaderComponent?: ReactElement | null;
   listRef?: React.RefObject<FlatList<FeedPost> | null>;
   onAddComment: (postId: string, text: string) => void;
   onAddReply: (
@@ -35,6 +38,7 @@ type FeedListProps = {
   onOpenShare: (post: FeedPost) => void;
   onOpenUserProfile: (userId: string) => void;
   onPrefetch: (visibleIndex: number) => void;
+  onRefresh?: () => void;
   onToggleCommentLike: (postId: string, commentId: string) => void;
   onToggleLike: (postId: string) => void;
   posts: FeedPost[];
@@ -50,6 +54,8 @@ export function FeedList({
   emptyTitle,
   isLoadingInitial,
   isLoadingMore,
+  isRefreshing = false,
+  listHeaderComponent,
   listRef,
   onAddComment,
   onAddReply,
@@ -60,6 +66,7 @@ export function FeedList({
   onOpenShare,
   onOpenUserProfile,
   onPrefetch,
+  onRefresh,
   onToggleCommentLike,
   onToggleLike,
   posts,
@@ -133,6 +140,7 @@ export function FeedList({
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.content}
       ItemSeparatorComponent={Separator}
+      ListHeaderComponent={listHeaderComponent}
       ListEmptyComponent={
         <EmptyFeed emptyText={emptyText} emptyTitle={emptyTitle} />
       }
@@ -145,11 +153,13 @@ export function FeedList({
       }
       initialNumToRender={5}
       maxToRenderPerBatch={6}
+      refreshing={isRefreshing}
       windowSize={7}
       removeClippedSubviews
       updateCellsBatchingPeriod={50}
       onEndReached={handleEndReached}
       onEndReachedThreshold={0.4}
+      onRefresh={onRefresh}
       onMomentumScrollBegin={() => {
         endReachedDuringMountRef.current = false;
       }}
