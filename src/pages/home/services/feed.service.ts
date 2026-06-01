@@ -33,6 +33,20 @@ export async function fetchFeedPost(postId: string): Promise<FeedPost> {
   return data;
 }
 
+export async function fetchLikedFeedPosts(params?: {
+  cursor?: string | null;
+  limit?: number;
+}): Promise<FeedPostsPage> {
+  const { data } = await api.get<FeedPostsPage>(apiRoutes.feed.likedPosts, {
+    params: {
+      cursor: params?.cursor ?? undefined,
+      limit: params?.limit ?? FEED_PAGE_SIZE,
+    },
+  });
+
+  return data;
+}
+
 export async function toggleFeedPostLike(postId: string): Promise<FeedLikeResponse> {
   const { data } = await api.post<FeedLikeResponse>(apiRoutes.feed.postLike(postId));
   return data;

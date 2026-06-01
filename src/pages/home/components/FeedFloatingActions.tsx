@@ -1,21 +1,40 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
 type FeedFloatingActionsProps = {
   hasUnreadNotifications?: boolean;
+  isLikedTabActive?: boolean;
+  onOpenLiked: () => void;
   onOpenNotifications: () => void;
   onOpenNewPost: () => void;
 };
 
 export function FeedFloatingActions({
   hasUnreadNotifications = false,
+  isLikedTabActive = false,
+  onOpenLiked,
   onOpenNotifications,
   onOpenNewPost,
 }: FeedFloatingActionsProps) {
   return (
     <View style={styles.container}>
+      <View style={styles.tabsPillContainer}>
+        <View style={styles.tabsPill}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: isLikedTabActive }}
+            style={[styles.tab, isLikedTabActive && styles.tabActive]}
+            onPress={onOpenLiked}
+          >
+            <Text style={[styles.tabLabel, isLikedTabActive && styles.tabLabelActive]}>
+              Curtidos
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
       <TouchableOpacity
         activeOpacity={0.75}
         accessibilityLabel="Abrir notificações"
@@ -40,10 +59,11 @@ export function FeedFloatingActions({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignItems: "flex-end",
     bottom: 18,
     flexDirection: "row",
     gap: 10,
+    left: 12,
     position: "absolute",
     right: 12,
     zIndex: 20,
@@ -77,6 +97,44 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     width: 50,
   },
+  tab: {
+    alignItems: "center",
+    borderRadius: 999,
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  tabActive: {
+    backgroundColor: colors.brandGreen,
+    shadowColor: "#9FC132",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+  },
+  tabLabel: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  tabLabelActive: {
+    color: colors.brandDark,
+    fontWeight: "700",
+  },
+  tabsPill: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#DADFD5",
+    borderRadius: 999,
+    borderWidth: 1,
+    elevation: 8,
+    flex: 1,
+    padding: 4,
+    shadowColor: colors.brandDark,
+    shadowOffset: { height: 10, width: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 30,
+    maxWidth: "40%",
+  },
   unreadDot: {
     backgroundColor: colors.brandGreen,
     borderColor: "#FFFFFF",
@@ -87,5 +145,8 @@ const styles = StyleSheet.create({
     right: 12,
     top: 12,
     width: 10,
+  },
+  tabsPillContainer: {
+    flex: 1,
   },
 });

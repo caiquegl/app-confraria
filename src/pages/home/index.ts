@@ -1,4 +1,5 @@
 export { useFeed } from "./business/useFeed";
+export { useLikedFeed } from "./business/useLikedFeed";
 export { useHomeVersion } from "./business/useHomeVersion";
 export { FeedActions } from "./components/FeedActions";
 export { FeedCard } from "./components/FeedCard";
@@ -16,3 +17,4 @@ export { ShareFriendItem } from "./components/ShareFriendItem";
 export { SharePostSheet } from "./components/SharePostSheet";
 export type { FeedComment, FeedPost, FeedPostsPage, FeedPostType, FeedShareFriend } from "./types/feed.types";
 export { HomeView } from "./view/HomeView";
+export { LikedFeedView } from "./view/LikedFeedView";

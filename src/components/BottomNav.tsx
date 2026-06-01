@@ -24,7 +24,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/feed",
     icon: "people-outline",
     label: "Feed",
-    matchPaths: ["/feed"],
+    matchPaths: ["/feed", "/feed/liked"],
   },
   {
     href: "/events",

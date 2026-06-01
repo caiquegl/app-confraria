@@ -109,6 +109,7 @@ export function HomeView() {
       {!isComposerOpen && !isCameraOpen && (
         <FeedFloatingActions
           hasUnreadNotifications={hasUnread}
+          onOpenLiked={() => router.push("/feed/liked")}
           onOpenNewPost={openNewPostCamera}
           onOpenNotifications={() => router.push("/notifications")}
         />

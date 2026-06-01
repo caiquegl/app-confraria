@@ -1,0 +1,75 @@
+import { StyleSheet, View } from "react-native";
+import { router } from "expo-router";
+
+import { useNotificationBadge } from "@/pages/notifications";
+import { colors } from "@/theme/colors";
+
+import { useLikedFeed } from "../business/useLikedFeed";
+import { FeedFloatingActions } from "../components/FeedFloatingActions";
+import { FeedList } from "../components/FeedList";
+import { SharePostSheet } from "../components/SharePostSheet";
+
+export function LikedFeedView() {
+  const {
+    addComment,
+    closeShare,
+    commentsLoadingByPost,
+    friends,
+    handlePrefetch,
+    isLoadingInitial,
+    isLoadingMore,
+    listRef,
+    loadComments,
+    loadMoreFeed,
+    openShare,
+    posts,
+    sentFriendId,
+    sharePost,
+    shareToFriend,
+    toggleLike,
+  } = useLikedFeed();
+  const { hasUnread } = useNotificationBadge();
+
+  return (
+    <View style={styles.container}>
+      <FeedList
+        posts={posts}
+        listRef={listRef}
+        commentsLoadingByPost={commentsLoadingByPost}
+        emptyText="Curta publicações no feed para vê-las aqui."
+        emptyTitle="Nenhum post curtido"
+        isLoadingInitial={isLoadingInitial}
+        isLoadingMore={isLoadingMore}
+        onAddComment={addComment}
+        onLoadComments={loadComments}
+        onLoadMore={loadMoreFeed}
+        onOpenShare={openShare}
+        onPrefetch={handlePrefetch}
+        onToggleLike={toggleLike}
+      />
+
+      <SharePostSheet
+        post={sharePost}
+        friends={friends}
+        sentFriendId={sentFriendId}
+        onClose={closeShare}
+        onSendToFriend={shareToFriend}
+      />
+
+      <FeedFloatingActions
+        hasUnreadNotifications={hasUnread}
+        isLikedTabActive
+        onOpenLiked={() => router.replace("/feed")}
+        onOpenNewPost={() => router.replace("/feed")}
+        onOpenNotifications={() => router.push("/notifications")}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.brandGray,
+    flex: 1,
+  },
+});

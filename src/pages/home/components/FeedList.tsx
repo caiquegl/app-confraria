@@ -16,6 +16,8 @@ import { FeedCardSkeleton } from "./FeedCardSkeleton";
 
 type FeedListProps = {
   commentsLoadingByPost: Record<string, boolean>;
+  emptyText?: string;
+  emptyTitle?: string;
   isLoadingInitial: boolean;
   isLoadingMore: boolean;
   listRef?: React.RefObject<FlatList<FeedPost> | null>;
@@ -34,6 +36,8 @@ const viewabilityConfig = {
 
 export function FeedList({
   commentsLoadingByPost,
+  emptyText,
+  emptyTitle,
   isLoadingInitial,
   isLoadingMore,
   listRef,
@@ -98,7 +102,9 @@ export function FeedList({
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.content}
       ItemSeparatorComponent={Separator}
-      ListEmptyComponent={EmptyFeed}
+      ListEmptyComponent={
+        <EmptyFeed emptyText={emptyText} emptyTitle={emptyTitle} />
+      }
       ListFooterComponent={
         isLoadingMore ? (
           <View style={styles.footerSkeleton}>
@@ -126,13 +132,17 @@ function Separator() {
   return <View style={styles.separator} />;
 }
 
-function EmptyFeed() {
+function EmptyFeed({
+  emptyText = "Seja o primeiro a compartilhar um momento na Confraria.",
+  emptyTitle = "Nenhum post ainda",
+}: {
+  emptyText?: string;
+  emptyTitle?: string;
+}) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyTitle}>Nenhum post ainda</Text>
-      <Text style={styles.emptyText}>
-        Seja o primeiro a compartilhar um momento na Confraria.
-      </Text>
+      <Text style={styles.emptyTitle}>{emptyTitle}</Text>
+      <Text style={styles.emptyText}>{emptyText}</Text>
     </View>
   );
 }
@@ -140,7 +150,7 @@ function EmptyFeed() {
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
-    paddingBottom: 24,
+    paddingBottom: 96,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
