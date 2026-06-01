@@ -75,7 +75,9 @@ export function FeedMediaCarousel({ photos, title }: FeedMediaCarouselProps) {
               key={`${photo}-${index}`}
               source={{ uri: photo }}
               style={[styles.image, { height: slideHeight }]}
+              cachePolicy="memory-disk"
               contentFit="contain"
+              recyclingKey={photo}
               accessibilityLabel={`${title} ${index + 1}`}
               onLoad={({ source }) => handleImageLoad(index, source.width, source.height)}
             />
