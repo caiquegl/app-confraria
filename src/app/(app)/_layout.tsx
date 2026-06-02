@@ -3,13 +3,29 @@ import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { BottomNav } from "@/components/BottomNav";
-import { isAuthenticated } from "@/lib/auth";
+import { getCurrentUserId, isAuthenticated } from "@/lib/auth";
+import {
+  getStoredCurrentProfile,
+  setStoredCurrentProfile,
+  subscribeStoredCurrentProfile,
+} from "@/lib/current-profile-store";
+import { fetchPublicProfile } from "@/pages/public-profile/services/public-profile.service";
 import { colors } from "@/theme/colors";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
 export default function AppLayout() {
+  const storedProfile = getStoredCurrentProfile();
   const [authState, setAuthState] = useState<AuthState>("loading");
+  const [profileAvatar, setProfileAvatar] = useState<string | null>(storedProfile.avatar);
+  const [profileName, setProfileName] = useState<string | null>(storedProfile.name);
+
+  useEffect(() => {
+    return subscribeStoredCurrentProfile((profile) => {
+      setProfileAvatar(profile.avatar);
+      setProfileName(profile.name);
+    });
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -17,6 +33,27 @@ export default function AppLayout() {
     isAuthenticated().then((authenticated) => {
       if (!mounted) return;
       setAuthState(authenticated ? "authenticated" : "unauthenticated");
+
+      if (authenticated) {
+        void getCurrentUserId()
+          .then((userId) => {
+            if (!userId) return null;
+            return fetchPublicProfile(userId);
+          })
+          .then((profile) => {
+            if (!mounted || !profile) return;
+            setStoredCurrentProfile({
+              avatar: profile.avatar,
+              name: profile.name,
+            });
+          })
+          .catch(() => {
+            if (!mounted) return;
+            setStoredCurrentProfile({ avatar: null, name: null });
+          });
+      } else {
+        setStoredCurrentProfile({ avatar: null, name: null });
+      }
     });
 
     return () => {
@@ -41,7 +78,7 @@ export default function AppLayout() {
           }}
         />
       </View>
-      <BottomNav />
+      <BottomNav userAvatar={profileAvatar} userName={profileName} />
     </View>
   );
 }

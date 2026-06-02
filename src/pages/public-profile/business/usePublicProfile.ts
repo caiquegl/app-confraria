@@ -32,7 +32,9 @@ export function usePublicProfile(userId: string) {
   }, [userId]);
 
   useEffect(() => {
-    void loadProfile();
+    queueMicrotask(() => {
+      void loadProfile();
+    });
   }, [loadProfile]);
 
   const updateFollowState = useCallback((result: FollowProfileResponse) => {

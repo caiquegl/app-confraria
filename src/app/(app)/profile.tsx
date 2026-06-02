@@ -1,40 +1,142 @@
-import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 
-import { Button } from "@/components/Button";
-import { removeToken } from "@/lib/auth";
+import { getCurrentUserId } from "@/lib/auth";
+import { setStoredCurrentProfile } from "@/lib/current-profile-store";
+import { EditProfileModal } from "@/pages/profile/components/EditProfileModal";
+import {
+  fetchOwnProfile,
+  updateOwnProfile,
+} from "@/pages/profile/services/profile.service";
+import type {
+  OwnProfile,
+  UpdateProfilePayload,
+} from "@/pages/profile/types/profile.types";
+import { PublicProfileView } from "@/pages/public-profile/view/PublicProfileView";
 import { colors } from "@/theme/colors";
 
 export default function ProfileScreen() {
-  const handleLogout = async () => {
-    await removeToken();
-    router.replace("/landing");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [editProfile, setEditProfile] = useState<OwnProfile | null>(null);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isLoadingEditProfile, setIsLoadingEditProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getCurrentUserId()
+      .then((userId) => {
+        if (!cancelled) setCurrentUserId(userId);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingUser(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleOpenEditProfile = async () => {
+    if (isLoadingEditProfile) return;
+
+    setIsLoadingEditProfile(true);
+    try {
+      const profile = await fetchOwnProfile();
+      setEditProfile(profile);
+      setIsEditProfileOpen(true);
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao carregar perfil",
+        text2: "Não foi possível abrir a edição agora.",
+      });
+    } finally {
+      setIsLoadingEditProfile(false);
+    }
   };
 
+  const handleSaveProfile = async (payload: UpdateProfilePayload) => {
+    setIsSavingProfile(true);
+    try {
+      const updatedProfile = await updateOwnProfile(payload);
+      setEditProfile(updatedProfile);
+      setStoredCurrentProfile({
+        avatar: updatedProfile.avatar,
+        name: updatedProfile.name,
+      });
+      setProfileRefreshKey((current) => current + 1);
+      setIsEditProfileOpen(false);
+      Toast.show({
+        type: "success",
+        text1: "Perfil atualizado",
+        text2: "Suas informações foram salvas.",
+      });
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao salvar perfil",
+        text2: error instanceof Error ? error.message : "Tente novamente.",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  if (isLoadingUser) {
+    return (
+      <View style={styles.centerState}>
+        <ActivityIndicator color={colors.brandPrimary} />
+      </View>
+    );
+  }
+
+  if (!currentUserId) {
+    return (
+      <View style={styles.centerState}>
+        <Text style={styles.errorText}>Não foi possível carregar seu perfil.</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Perfil</Text>
-      <Button variant="secondary" size="lg" style={styles.logoutButton} onPress={handleLogout}>
-        Sair
-      </Button>
-    </View>
+    <>
+      <PublicProfileView
+        isOwnProfile
+        refreshKey={profileRefreshKey}
+        userId={currentUserId}
+        onEditProfile={() => void handleOpenEditProfile()}
+      />
+
+      {editProfile ? (
+        <EditProfileModal
+          isSaving={isSavingProfile}
+          profile={editProfile}
+          visible={isEditProfileOpen}
+          onClose={() => {
+            if (!isSavingProfile) setIsEditProfileOpen(false);
+          }}
+          onSave={handleSaveProfile}
+        />
+      ) : null}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  centerState: {
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
   },
-  logoutButton: {
-    marginTop: 24,
-    width: "100%",
-  },
-  title: {
-    color: colors.brandDark,
-    fontSize: 24,
-    fontWeight: "600",
+  errorText: {
+    color: "#6B7280",
+    fontSize: 14,
+    textAlign: "center",
   },
 });

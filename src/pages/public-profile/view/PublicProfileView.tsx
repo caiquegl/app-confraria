@@ -12,6 +12,8 @@ import {
 import Toast from "react-native-toast-message";
 
 import { UserAvatar } from "@/components/UserAvatar";
+import { getCurrentUserId } from "@/lib/auth";
+import { SharePostSheet } from "@/pages/home/components/SharePostSheet";
 import { createChatConversation } from "@/pages/messages/services/messages.service";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
 import {
@@ -23,6 +25,9 @@ import type { StoryGroup, StoryItem } from "@/pages/stories/types/stories.types"
 import { colors } from "@/theme/colors";
 
 import { usePublicProfile } from "../business/usePublicProfile";
+import { usePublicProfilePosts } from "../business/usePublicProfilePosts";
+import { PublicProfilePostsViewer } from "../components/PublicProfilePostsViewer";
+import { PublicProfileTabsGrid } from "../components/PublicProfileTabsGrid";
 import {
   followPublicProfile,
   unfollowPublicProfile,
@@ -30,16 +35,35 @@ import {
 
 type PublicProfileViewProps = {
   userId: string;
-  onBack: () => void;
+  isOwnProfile?: boolean;
+  refreshKey?: number;
+  onBack?: () => void;
+  onEditProfile?: () => void;
 };
 
-export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
+export function PublicProfileView({
+  isOwnProfile = false,
+  onBack,
+  onEditProfile,
+  refreshKey = 0,
+  userId,
+}: PublicProfileViewProps) {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [isMessageLoading, setIsMessageLoading] = useState(false);
   const [profileStoryGroup, setProfileStoryGroup] = useState<StoryGroup | null>(null);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [postsViewerIndex, setPostsViewerIndex] = useState<number | null>(null);
   const { error, isLoading, profile, retry, updateFollowState } =
     usePublicProfile(userId);
+  const profilePosts = usePublicProfilePosts(userId);
+
+  useEffect(() => {
+    if (refreshKey <= 0) return;
+
+    queueMicrotask(() => {
+      void retry();
+    });
+  }, [refreshKey, retry]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,21 +178,48 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
     }
   };
 
+  const openUserProfile = (targetUserId: string) => {
+    void getCurrentUserId().then((currentUserId) => {
+      if (currentUserId === targetUserId) {
+        router.push("/profile");
+        return;
+      }
+
+      router.push({ pathname: "/users/[userId]", params: { userId: targetUserId } });
+    });
+  };
+
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={styles.backButton}
-          onPress={onBack}
-        >
-          <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
-        </Pressable>
-        <Text numberOfLines={1} style={styles.headerTitle}>
-          {profile?.handle || profile?.name || "Perfil"}
-        </Text>
-      </View>
+      {isOwnProfile ? (
+        <View style={styles.ownHeader}>
+          <Text numberOfLines={1} style={styles.ownHeaderTitle}>
+            Minha área
+          </Text>
+          <Pressable
+            accessibilityLabel="Configurações do perfil"
+            accessibilityRole="button"
+            style={styles.settingsButton}
+            onPress={onEditProfile}
+          >
+            <Ionicons color="#6B7280" name="settings-outline" size={20} />
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.header}>
+          <Pressable
+            accessibilityLabel="Voltar"
+            accessibilityRole="button"
+            style={styles.backButton}
+            onPress={onBack}
+          >
+            <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
+          </Pressable>
+          <Text numberOfLines={1} style={styles.headerTitle}>
+            {profile?.handle || profile?.name || "Perfil"}
+          </Text>
+        </View>
+      )}
 
       {isLoading ? (
         <View style={styles.centerState}>
@@ -186,6 +237,17 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          onScroll={({ nativeEvent }) => {
+            const distanceToBottom =
+              nativeEvent.contentSize.height -
+              nativeEvent.layoutMeasurement.height -
+              nativeEvent.contentOffset.y;
+
+            if (distanceToBottom < 180) {
+              void profilePosts.loadMore();
+            }
+          }}
+          scrollEventThrottle={400}
         >
           <View style={styles.profileCard}>
             <Pressable
@@ -218,56 +280,92 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
 
             <View style={styles.statsRow}>
               <ProfileStat label="posts" value={profile.postsCount} />
-              <ProfileStat label="seguidores" value={profile.followersCount} />
-              <ProfileStat label="seguindo" value={profile.followingCount} />
+              <ProfileStat
+                label="seguidores"
+                value={profile.followersCount}
+                onPress={() =>
+                  router.push({
+                    pathname: "/users/[userId]/follows",
+                    params: { initialTab: "followers", userId: profile.id },
+                  })
+                }
+              />
+              <ProfileStat
+                label="seguindo"
+                value={profile.followingCount}
+                onPress={() =>
+                  router.push({
+                    pathname: "/users/[userId]/follows",
+                    params: { initialTab: "following", userId: profile.id },
+                  })
+                }
+              />
             </View>
           </View>
 
-          <View style={styles.actionsRow}>
-            <Pressable
-              style={[
-                styles.actionButton,
-                profile.isFollowing ? styles.followingButton : styles.followButton,
-                isFollowLoading && styles.actionButtonDisabled,
-              ]}
-              disabled={isFollowLoading}
-              onPress={() => void handleToggleFollow()}
-            >
-              <Ionicons
-                color={colors.brandDark}
-                name={profile.isFollowing ? "checkmark" : "person-add-outline"}
-                size={16}
-              />
-              <Text style={styles.actionText}>
-                {profile.isFollowing ? "Seguindo" : "Seguir"}
-              </Text>
-            </Pressable>
-
-            <Pressable
-              disabled={!profile.isFollowing || isMessageLoading}
-              style={[
-                styles.actionButton,
-                styles.messageButton,
-                (!profile.isFollowing || isMessageLoading) &&
-                  styles.messageButtonDisabled,
-              ]}
-              onPress={() => void handleOpenMessage()}
-            >
-              <Ionicons
-                color={profile.isFollowing ? colors.brandDark : "#9CA3AF"}
-                name="chatbubble-outline"
-                size={16}
-              />
-              <Text
-                style={[
-                  styles.actionText,
-                  !profile.isFollowing && styles.actionTextDisabled,
-                ]}
+          {isOwnProfile ? (
+            <View style={styles.actionsRow}>
+              <Pressable
+                style={[styles.actionButton, styles.messageButton]}
+                onPress={onEditProfile}
               >
-                Mensagem
-              </Text>
-            </Pressable>
-          </View>
+                <Ionicons color={colors.brandDark} name="create-outline" size={16} />
+                <Text style={styles.actionText}>Editar perfil</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.actionsRow}>
+              <Pressable
+                style={[
+                  styles.actionButton,
+                  profile.isFollowing ? styles.followingButton : styles.followButton,
+                  isFollowLoading && styles.actionButtonDisabled,
+                ]}
+                disabled={isFollowLoading}
+                onPress={() => void handleToggleFollow()}
+              >
+                <Ionicons
+                  color={colors.brandDark}
+                  name={profile.isFollowing ? "checkmark" : "person-add-outline"}
+                  size={16}
+                />
+                <Text style={styles.actionText}>
+                  {profile.isFollowing ? "Seguindo" : "Seguir"}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                disabled={!profile.isFollowing || isMessageLoading}
+                style={[
+                  styles.actionButton,
+                  styles.messageButton,
+                  (!profile.isFollowing || isMessageLoading) &&
+                    styles.messageButtonDisabled,
+                ]}
+                onPress={() => void handleOpenMessage()}
+              >
+                <Ionicons
+                  color={profile.isFollowing ? colors.brandDark : "#9CA3AF"}
+                  name="chatbubble-outline"
+                  size={16}
+                />
+                <Text
+                  style={[
+                    styles.actionText,
+                    !profile.isFollowing && styles.actionTextDisabled,
+                  ]}
+                >
+                  Mensagem
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          <PublicProfileTabsGrid
+            isLoading={profilePosts.isLoading}
+            posts={profilePosts.posts}
+            onPostPress={setPostsViewerIndex}
+          />
         </ScrollView>
       )}
 
@@ -282,15 +380,77 @@ export function PublicProfileView({ onBack, userId }: PublicProfileViewProps) {
           onToggleLike={(story) => void handleToggleStoryLike(story)}
         />
       )}
+
+      <PublicProfilePostsViewer
+        commentsLoadingByPost={profilePosts.commentsLoadingByPost}
+        hasMore={profilePosts.hasMore}
+        initialIndex={postsViewerIndex ?? 0}
+        isLoadingMore={profilePosts.isLoadingMore}
+        posts={profilePosts.posts}
+        visible={postsViewerIndex !== null}
+        onAddComment={profilePosts.addComment}
+        onAddReply={profilePosts.addReply}
+        onClose={() => setPostsViewerIndex(null)}
+        onDeleteComment={profilePosts.deleteComment}
+        onEditComment={profilePosts.editComment}
+        onLoadComments={profilePosts.loadComments}
+        onLoadMore={profilePosts.loadMore}
+        onOpenShare={profilePosts.openShare}
+        onOpenUserProfile={openUserProfile}
+        onToggleCommentLike={profilePosts.toggleCommentLike}
+        onToggleLike={profilePosts.toggleLike}
+      />
+
+      <SharePostSheet
+        friends={profilePosts.friends}
+        post={profilePosts.sharePost}
+        sentFriendId={profilePosts.sentFriendId}
+        onClose={profilePosts.closeShare}
+        onSent={(result) => {
+          profilePosts.closeShare();
+          setPostsViewerIndex(null);
+          router.push({
+            pathname: "/messages/[conversationId]",
+            params: {
+              conversationId: result.conversationId,
+              participantAvatar: result.participantAvatar ?? "",
+              participantName: result.participantName,
+            },
+          });
+        }}
+        onSendToFriend={profilePosts.shareToFriend}
+      />
     </View>
   );
 }
 
-function ProfileStat({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={styles.statItem}>
+function ProfileStat({
+  label,
+  value,
+  onPress,
+}: {
+  label: string;
+  value: number;
+  onPress?: () => void;
+}) {
+  const Content = (
+    <>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable style={styles.statItem} onPress={onPress}>
+        {Content}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={styles.statItem}>
+      {Content}
     </View>
   );
 }
@@ -346,6 +506,9 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     width: 40,
+  },
+  backButtonHidden: {
+    opacity: 0,
   },
   bio: {
     color: "#4B5563",
@@ -416,6 +579,21 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "800",
   },
+  ownHeader: {
+    alignItems: "center",
+    backgroundColor: colors.brandGray,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: 10,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  ownHeaderTitle: {
+    color: colors.brandDark,
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "800",
+  },
   profileCard: {
     alignItems: "center",
     paddingHorizontal: 24,
@@ -436,6 +614,16 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: colors.brandGray,
     flex: 1,
+  },
+  settingsButton: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F3F4F6",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
   },
   statItem: {
     alignItems: "center",

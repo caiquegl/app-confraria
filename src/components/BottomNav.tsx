@@ -1,13 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { router, usePathname } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
-
-const DEFAULT_AVATAR =
-  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop";
 
 type AuthRoute = "/feed" | "/events" | "/routes" | "/services" | "/profile";
 
@@ -54,10 +51,11 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 type BottomNavProps = {
-  userAvatar?: string;
+  userAvatar?: string | null;
+  userName?: string | null;
 };
 
-export function BottomNav({ userAvatar }: BottomNavProps) {
+export function BottomNav({ userAvatar, userName }: BottomNavProps) {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
 
@@ -79,11 +77,12 @@ export function BottomNav({ userAvatar }: BottomNavProps) {
             <View style={[styles.indicator, active && styles.indicatorActive]} />
 
             {item.isProfile ? (
-              <View style={[styles.avatarRing, active && styles.avatarRingActive]}>
-                <Image
-                  source={{ uri: userAvatar ?? DEFAULT_AVATAR }}
+              <View style={styles.avatarRing}>
+                <UserAvatar
+                  avatarUrl={userAvatar}
+                  name={userName || "Perfil"}
+                  size={24}
                   style={styles.avatar}
-                  contentFit="cover"
                 />
               </View>
             ) : (
@@ -104,7 +103,8 @@ export function BottomNav({ userAvatar }: BottomNavProps) {
 
 const styles = StyleSheet.create({
   avatar: {
-    borderColor: "#FFFFFF",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
     borderRadius: 12,
     borderWidth: 1,
     height: 24,
@@ -113,9 +113,6 @@ const styles = StyleSheet.create({
   avatarRing: {
     borderRadius: 14,
     padding: 2,
-  },
-  avatarRingActive: {
-    backgroundColor: colors.brandPrimary,
   },
   bar: {
     backgroundColor: "#FFFFFF",

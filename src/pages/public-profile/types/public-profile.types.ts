@@ -17,3 +17,14 @@ export type FollowProfileResponse = {
   followersCount: number;
   followingCount: number;
 };
+
+export type PublicProfileFollowUser = {
+  userId: string;
+  name: string;
+  avatar: string | null;
+  location: string | null;
+  isFollowing: boolean;
+  isSelf: boolean;
+};
+
+export type PublicProfileFollowTab = "followers" | "following";

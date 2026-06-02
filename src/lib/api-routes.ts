@@ -24,6 +24,7 @@ export const apiRoutes = {
     postCommentLike: (postId: string, commentId: string) =>
       `/feed/posts/${postId}/comments/${commentId}/like`,
     postLike: (postId: string) => `/feed/posts/${postId}/like`,
+    userPosts: (userId: string) => `/feed/users/${userId}/posts`,
   },
   notifications: {
     list: "/notifications",
@@ -41,8 +42,11 @@ export const apiRoutes = {
   users: {
     checkEmail: (email: string) => `/users/check-email/${encodeURIComponent(email)}`,
     follow: (userId: string) => `/users/${userId}/follow`,
+    followers: (userId: string) => `/users/${userId}/followers`,
+    following: (userId: string) => `/users/${userId}/following`,
     forgotPassword: "/users/forgot-password",
     login: "/users/login",
+    me: "/users/me",
     publicProfile: (userId: string) => `/users/${userId}/public-profile`,
     register: "/users/register",
     resetPassword: "/users/reset-password",
