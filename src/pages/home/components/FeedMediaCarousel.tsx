@@ -17,6 +17,7 @@ const CARD_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING;
 const DEFAULT_MEDIA_HEIGHT = Math.round(CARD_WIDTH * 0.75);
 
 type FeedMediaCarouselProps = {
+  onDoublePress?: () => void;
   photos: string[];
   title: string;
 };
@@ -26,10 +27,11 @@ function resolveImageHeight(width: number, height: number): number {
   return Math.round((CARD_WIDTH / width) * height);
 }
 
-export function FeedMediaCarousel({ photos, title }: FeedMediaCarouselProps) {
+export function FeedMediaCarousel({ onDoublePress, photos, title }: FeedMediaCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [imageHeights, setImageHeights] = useState<Record<number, number>>({});
   const scrollRef = useRef<ScrollView>(null);
+  const lastPressAtRef = useRef(0);
 
   if (photos.length === 0) return null;
 
@@ -55,6 +57,18 @@ export function FeedMediaCarousel({ photos, title }: FeedMediaCarouselProps) {
     }));
   };
 
+  const handlePhotoPress = () => {
+    const now = Date.now();
+
+    if (now - lastPressAtRef.current < 280) {
+      lastPressAtRef.current = 0;
+      onDoublePress?.();
+      return;
+    }
+
+    lastPressAtRef.current = now;
+  };
+
   return (
     <View style={[styles.wrapper, { height: activeHeight }]}>
       <ScrollView
@@ -71,16 +85,22 @@ export function FeedMediaCarousel({ photos, title }: FeedMediaCarouselProps) {
           const slideHeight = imageHeights[index] ?? activeHeight;
 
           return (
-            <Image
+            <Pressable
               key={`${photo}-${index}`}
-              source={{ uri: photo }}
-              style={[styles.image, { height: slideHeight }]}
-              cachePolicy="memory-disk"
-              contentFit="contain"
-              recyclingKey={photo}
-              accessibilityLabel={`${title} ${index + 1}`}
-              onLoad={({ source }) => handleImageLoad(index, source.width, source.height)}
-            />
+              accessibilityLabel={`Foto ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
+              accessibilityRole="imagebutton"
+              style={[styles.slide, { height: slideHeight }]}
+              onPress={handlePhotoPress}
+            >
+              <Image
+                source={{ uri: photo }}
+                style={[styles.image, { height: slideHeight }]}
+                cachePolicy="memory-disk"
+                contentFit="contain"
+                recyclingKey={photo}
+                onLoad={({ source }) => handleImageLoad(index, source.width, source.height)}
+              />
+            </Pressable>
           );
         })}
       </ScrollView>
@@ -162,6 +182,9 @@ const styles = StyleSheet.create({
   },
   image: {
     backgroundColor: "#E5E7EB",
+    width: CARD_WIDTH,
+  },
+  slide: {
     width: CARD_WIDTH,
   },
   wrapper: {

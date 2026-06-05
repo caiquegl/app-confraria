@@ -1,3 +1,8 @@
+export type OwnProfileBikeCategory = {
+  id: string;
+  name: string;
+};
+
 export type OwnProfile = {
   id: string;
   name: string;
@@ -12,6 +17,7 @@ export type OwnProfile = {
   postsCount: number;
   followersCount: number;
   followingCount: number;
+  bikeCategories: OwnProfileBikeCategory[];
 };
 
 export type UpdateProfilePayload = {
@@ -22,4 +28,5 @@ export type UpdateProfilePayload = {
   bio: string;
   phone: string;
   avatarUri?: string | null;
+  bikeCategoryIds?: string[];
 };

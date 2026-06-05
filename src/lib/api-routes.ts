@@ -1,5 +1,6 @@
 export const apiRoutes = {
   admin: {
+    bikeBrands: "/admin/bike-brands",
     bikeCategories: "/admin/bike-categories",
     ridingCompanions: "/admin/riding-companions",
     termsLatest: "/admin/terms/latest",
@@ -39,6 +40,10 @@ export const apiRoutes = {
     userStories: (userId: string) => `/stories/users/${userId}`,
     viewers: (storyId: string) => `/stories/${storyId}/viewers`,
   },
+  userBikes: {
+    list: "/user-bikes",
+    detail: (bikeId: string) => `/user-bikes/${bikeId}`,
+  },
   users: {
     checkEmail: (email: string) => `/users/check-email/${encodeURIComponent(email)}`,
     follow: (userId: string) => `/users/${userId}/follow`,
@@ -47,6 +52,7 @@ export const apiRoutes = {
     forgotPassword: "/users/forgot-password",
     login: "/users/login",
     me: "/users/me",
+    mePassword: "/users/me/password",
     publicProfile: (userId: string) => `/users/${userId}/public-profile`,
     register: "/users/register",
     resetPassword: "/users/reset-password",

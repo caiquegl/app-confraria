@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
+import { router } from "expo-router";
 
 import { getCurrentUserId } from "@/lib/auth";
 import { setStoredCurrentProfile } from "@/lib/current-profile-store";
@@ -110,6 +111,7 @@ export default function ProfileScreen() {
         refreshKey={profileRefreshKey}
         userId={currentUserId}
         onEditProfile={() => void handleOpenEditProfile()}
+        onOpenSettings={() => router.push("/profile/settings")}
       />
 
       {editProfile ? (

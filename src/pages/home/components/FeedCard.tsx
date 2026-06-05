@@ -67,7 +67,13 @@ function FeedCardInner({
     <View style={styles.card}>
       <FeedCardHeader post={post} onOpenUserProfile={onOpenUserProfile} />
 
-      {mediaPhotos.length > 0 && <FeedMediaCarousel photos={mediaPhotos} title={mediaTitle} />}
+      {mediaPhotos.length > 0 && (
+        <FeedMediaCarousel
+          photos={mediaPhotos}
+          title={mediaTitle}
+          onDoublePress={() => onToggleLike(post.id)}
+        />
+      )}
 
       {post.caption && <FeedCaption text={post.caption} />}
 

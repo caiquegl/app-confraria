@@ -44,6 +44,27 @@ export async function updateOwnProfile(
   return JSON.parse(responseText) as OwnProfile;
 }
 
+export async function updateOwnProfileBikeCategories(
+  bikeCategoryIds: string[],
+): Promise<OwnProfile> {
+  const { data } = await api.patch<OwnProfile>(apiRoutes.users.me, {
+    bikeCategoryIds,
+  });
+  return data;
+}
+
+export async function changeOwnPassword(password: string): Promise<{ message: string }> {
+  const { data } = await api.patch<{ message: string }>(apiRoutes.users.mePassword, {
+    password,
+  });
+  return data;
+}
+
+export async function deleteOwnAccount(): Promise<{ message: string }> {
+  const { data } = await api.delete<{ message: string }>(apiRoutes.users.me);
+  return data;
+}
+
 function sendProfileRequest(params: {
   formData: FormData;
   token: string | null;

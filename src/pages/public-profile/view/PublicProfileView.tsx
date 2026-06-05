@@ -39,12 +39,14 @@ type PublicProfileViewProps = {
   refreshKey?: number;
   onBack?: () => void;
   onEditProfile?: () => void;
+  onOpenSettings?: () => void;
 };
 
 export function PublicProfileView({
   isOwnProfile = false,
   onBack,
   onEditProfile,
+  onOpenSettings,
   refreshKey = 0,
   userId,
 }: PublicProfileViewProps) {
@@ -200,7 +202,7 @@ export function PublicProfileView({
             accessibilityLabel="Configurações do perfil"
             accessibilityRole="button"
             style={styles.settingsButton}
-            onPress={onEditProfile}
+            onPress={onOpenSettings}
           >
             <Ionicons color="#6B7280" name="settings-outline" size={20} />
           </Pressable>

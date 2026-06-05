@@ -1,4 +1,4 @@
-import { Redirect, Stack } from "expo-router";
+import { Redirect, Stack, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -15,10 +15,12 @@ import { colors } from "@/theme/colors";
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
 export default function AppLayout() {
+  const pathname = usePathname();
   const storedProfile = getStoredCurrentProfile();
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [profileAvatar, setProfileAvatar] = useState<string | null>(storedProfile.avatar);
   const [profileName, setProfileName] = useState<string | null>(storedProfile.name);
+  const shouldHideBottomNav = pathname.startsWith("/profile/bikes");
 
   useEffect(() => {
     return subscribeStoredCurrentProfile((profile) => {
@@ -78,7 +80,7 @@ export default function AppLayout() {
           }}
         />
       </View>
-      <BottomNav userAvatar={profileAvatar} userName={profileName} />
+      {!shouldHideBottomNav && <BottomNav userAvatar={profileAvatar} userName={profileName} />}
     </View>
   );
 }
