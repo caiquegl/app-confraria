@@ -13,6 +13,9 @@ export type OwnProfile = {
   cpf: string | null;
   bio: string | null;
   phone: string | null;
+  showEmail: boolean;
+  showPhone: boolean;
+  isPublicProfile: boolean;
   isVerified: boolean;
   postsCount: number;
   followersCount: number;
@@ -29,4 +32,10 @@ export type UpdateProfilePayload = {
   phone: string;
   avatarUri?: string | null;
   bikeCategoryIds?: string[];
+};
+
+export type UpdateContactVisibilityPayload = {
+  showEmail: boolean;
+  showPhone: boolean;
+  isPublicProfile: boolean;
 };

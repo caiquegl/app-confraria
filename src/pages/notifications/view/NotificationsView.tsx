@@ -40,7 +40,9 @@ export function NotificationsView({ onBack, onOpenPost }: NotificationsViewProps
           <NotificationsList
             newNotifications={newNotifications}
             oldNotifications={oldNotifications}
-            onPressNotification={(notification) => onOpenPost(notification.postId)}
+            onPressNotification={(notification) => {
+              if (notification.postId) onOpenPost(notification.postId);
+            }}
           />
         )}
       </View>

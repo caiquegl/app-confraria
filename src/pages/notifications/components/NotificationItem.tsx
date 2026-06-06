@@ -13,7 +13,8 @@ type NotificationItemProps = {
 export function NotificationItem({ notification, onPress }: NotificationItemProps) {
   const isLike =
     notification.type === "post_like" || notification.type === "comment_like";
-  const iconName = isLike ? "heart" : "chatbubble";
+  const isFollowRequest = notification.type === "follow_request";
+  const iconName = isLike ? "heart" : isFollowRequest ? "person-add" : "chatbubble";
   const iconBg = isLike ? "#EF4444" : colors.brandPrimary;
 
   return (

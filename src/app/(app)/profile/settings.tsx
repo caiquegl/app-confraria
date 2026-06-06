@@ -12,6 +12,7 @@ import {
   changeOwnPassword,
   deleteOwnAccount,
   fetchOwnProfile,
+  updateOwnProfileContactVisibility,
   updateOwnProfileBikeCategories,
 } from "@/pages/profile/services/profile.service";
 import type { OwnProfile } from "@/pages/profile/types/profile.types";
@@ -34,7 +35,9 @@ export default function ProfileSettingsScreen() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isLoadingBikeCategories, setIsLoadingBikeCategories] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   const [isSavingBikeCategories, setIsSavingBikeCategories] = useState(false);
+  const [isSavingPrivacy, setIsSavingPrivacy] = useState(false);
 
   const openOwnFollowers = () => {
     void getCurrentUserId().then((userId) => {
@@ -98,6 +101,25 @@ export default function ProfileSettingsScreen() {
     }
   };
 
+  const openSettings = async () => {
+    if (isLoadingSettings) return;
+
+    setIsLoadingSettings(true);
+    try {
+      const profile = await fetchOwnProfile();
+      setOwnProfile(profile);
+      setIsSettingsOpen(true);
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao carregar configurações",
+        text2: "Não foi possível abrir suas configurações agora.",
+      });
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
   const handleLogout = async () => {
     await removeToken();
     setStoredCurrentProfile({ avatar: null, name: null });
@@ -151,6 +173,45 @@ export default function ProfileSettingsScreen() {
     }
   };
 
+  const handleSavePrivacy = async (payload: {
+    isPublicProfile: boolean;
+    showEmail: boolean;
+    showPhone: boolean;
+  }, options?: {
+    close?: boolean;
+    showToast?: boolean;
+  }) => {
+    if (isSavingPrivacy) return;
+
+    const shouldClose = options?.close ?? true;
+    const shouldShowToast = options?.showToast ?? true;
+
+    setIsSavingPrivacy(true);
+    try {
+      const updatedProfile = await updateOwnProfileContactVisibility(payload);
+      setOwnProfile(updatedProfile);
+      if (shouldClose) {
+        setIsSettingsOpen(false);
+      }
+      if (shouldShowToast) {
+        Toast.show({
+          type: "success",
+          text1: "Configurações salvas",
+          text2: "Sua privacidade de contato foi atualizada.",
+        });
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao salvar configurações",
+        text2: error instanceof Error ? error.message : "Tente novamente.",
+      });
+      throw error;
+    } finally {
+      setIsSavingPrivacy(false);
+    }
+  };
+
   const cards: SettingsCard[] = [
     {
       icon: "notifications-outline",
@@ -180,7 +241,7 @@ export default function ProfileSettingsScreen() {
     {
       icon: "settings-outline",
       label: "Configurações",
-      onPress: () => setIsSettingsOpen(true),
+      onPress: () => void openSettings(),
     },
     {
       icon: "options-outline",
@@ -210,19 +271,26 @@ export default function ProfileSettingsScreen() {
             <TouchableOpacity
               key={card.label}
               activeOpacity={0.75}
-              disabled={card.label === "Estilo de Estrada" && isLoadingBikeCategories}
+              disabled={
+                (card.label === "Estilo de Estrada" && isLoadingBikeCategories) ||
+                (card.label === "Configurações" && isLoadingSettings)
+              }
               style={[
                 styles.card,
                 card.wide && styles.cardWide,
                 card.label === "Estilo de Estrada" &&
                   isLoadingBikeCategories &&
                   styles.cardDisabled,
+                card.label === "Configurações" &&
+                  isLoadingSettings &&
+                  styles.cardDisabled,
               ]}
               onPress={card.onPress}
             >
               <Ionicons color={colors.brandPrimary} name={card.icon} size={24} />
               <Text style={styles.cardText}>
-                {card.label === "Estilo de Estrada" && isLoadingBikeCategories
+                {(card.label === "Estilo de Estrada" && isLoadingBikeCategories) ||
+                (card.label === "Configurações" && isLoadingSettings)
                   ? "Carregando..."
                   : card.label}
               </Text>
@@ -245,13 +313,18 @@ export default function ProfileSettingsScreen() {
       ) : null}
 
       <SettingsModal
+        initialIsPublicProfile={ownProfile?.isPublicProfile ?? true}
+        initialShowEmail={ownProfile?.showEmail ?? false}
+        initialShowPhone={ownProfile?.showPhone ?? false}
         isChangingPassword={isChangingPassword}
         isDeletingAccount={isDeletingAccount}
+        isSavingPrivacy={isSavingPrivacy}
         visible={isSettingsOpen}
         onChangePassword={handleChangePassword}
         onClose={() => setIsSettingsOpen(false)}
         onDeleteAccount={handleDeleteAccount}
         onLogout={() => void handleLogout()}
+        onSavePrivacy={handleSavePrivacy}
       />
     </View>
   );

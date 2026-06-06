@@ -1,12 +1,20 @@
+export type PublicProfileFollowStatus = "none" | "following" | "pending";
+
 export type PublicProfile = {
   id: string;
   name: string;
   handle: string;
   avatar: string | null;
   location: string | null;
+  email: string | null;
   bio: string | null;
+  phone: string | null;
   isVerified: boolean;
   isFollowing: boolean;
+  isPrivate: boolean;
+  canViewPrivateContent: boolean;
+  followStatus: PublicProfileFollowStatus;
+  hasPendingFollowRequest: boolean;
   postsCount: number;
   followersCount: number;
   followingCount: number;
@@ -14,6 +22,8 @@ export type PublicProfile = {
 
 export type FollowProfileResponse = {
   isFollowing: boolean;
+  followStatus: PublicProfileFollowStatus;
+  hasPendingFollowRequest: boolean;
   followersCount: number;
   followingCount: number;
 };
@@ -27,4 +37,13 @@ export type PublicProfileFollowUser = {
   isSelf: boolean;
 };
 
-export type PublicProfileFollowTab = "followers" | "following";
+export type PublicProfileFollowRequest = {
+  requestId: string;
+  userId: string;
+  name: string;
+  avatar: string | null;
+  location: string | null;
+  requestedAt: string;
+};
+
+export type PublicProfileFollowTab = "followers" | "following" | "requests";

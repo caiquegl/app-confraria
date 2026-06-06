@@ -2,12 +2,13 @@ export type NotificationType =
   | "post_like"
   | "post_comment"
   | "comment_reply"
-  | "comment_like";
+  | "comment_like"
+  | "follow_request";
 
 export type AppNotification = {
   id: string;
   type: NotificationType;
-  postId: string;
+  postId: string | null;
   title: string;
   message: string;
   time: string;

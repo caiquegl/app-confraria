@@ -43,7 +43,9 @@ export function usePublicProfile(userId: string) {
         ? {
             ...current,
             followersCount: result.followersCount,
+            followStatus: result.followStatus,
             followingCount: result.followingCount,
+            hasPendingFollowRequest: result.hasPendingFollowRequest,
             isFollowing: result.isFollowing,
           }
         : current,

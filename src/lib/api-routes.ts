@@ -47,6 +47,11 @@ export const apiRoutes = {
   users: {
     checkEmail: (email: string) => `/users/check-email/${encodeURIComponent(email)}`,
     follow: (userId: string) => `/users/${userId}/follow`,
+    followRequests: "/users/me/follow-requests",
+    followRequestAccept: (requestId: string) =>
+      `/users/follow-requests/${requestId}/accept`,
+    followRequestDecline: (requestId: string) =>
+      `/users/follow-requests/${requestId}`,
     followers: (userId: string) => `/users/${userId}/followers`,
     following: (userId: string) => `/users/${userId}/following`,
     forgotPassword: "/users/forgot-password",
@@ -56,6 +61,7 @@ export const apiRoutes = {
     publicProfile: (userId: string) => `/users/${userId}/public-profile`,
     register: "/users/register",
     resetPassword: "/users/reset-password",
+    search: (query: string) => `/users/search?q=${encodeURIComponent(query)}`,
     verifyResetCode: "/users/verify-reset-code",
   },
 } as const;

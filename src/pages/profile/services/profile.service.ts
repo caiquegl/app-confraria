@@ -3,7 +3,11 @@ import { getApiBaseUrl } from "@/lib/api-environment";
 import { apiRoutes } from "@/lib/api-routes";
 import { getToken } from "@/lib/auth";
 
-import type { OwnProfile, UpdateProfilePayload } from "../types/profile.types";
+import type {
+  OwnProfile,
+  UpdateContactVisibilityPayload,
+  UpdateProfilePayload,
+} from "../types/profile.types";
 
 export async function fetchOwnProfile(): Promise<OwnProfile> {
   const { data } = await api.get<OwnProfile>(apiRoutes.users.me);
@@ -50,6 +54,13 @@ export async function updateOwnProfileBikeCategories(
   const { data } = await api.patch<OwnProfile>(apiRoutes.users.me, {
     bikeCategoryIds,
   });
+  return data;
+}
+
+export async function updateOwnProfileContactVisibility(
+  payload: UpdateContactVisibilityPayload,
+): Promise<OwnProfile> {
+  const { data } = await api.patch<OwnProfile>(apiRoutes.users.me, payload);
   return data;
 }
 

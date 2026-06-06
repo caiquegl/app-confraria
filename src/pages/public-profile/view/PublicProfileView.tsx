@@ -13,6 +13,7 @@ import Toast from "react-native-toast-message";
 
 import { UserAvatar } from "@/components/UserAvatar";
 import { getCurrentUserId } from "@/lib/auth";
+import { fetchUserBikes } from "@/pages/bikes/services/bikes.service";
 import { SharePostSheet } from "@/pages/home/components/SharePostSheet";
 import { createChatConversation } from "@/pages/messages/services/messages.service";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
@@ -55,6 +56,7 @@ export function PublicProfileView({
   const [profileStoryGroup, setProfileStoryGroup] = useState<StoryGroup | null>(null);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [postsViewerIndex, setPostsViewerIndex] = useState<number | null>(null);
+  const [bikeCount, setBikeCount] = useState(0);
   const { error, isLoading, profile, retry, updateFollowState } =
     usePublicProfile(userId);
   const profilePosts = usePublicProfilePosts(userId);
@@ -83,8 +85,26 @@ export function PublicProfileView({
     };
   }, [userId]);
 
+  useEffect(() => {
+    if (!isOwnProfile) return;
+
+    let cancelled = false;
+
+    void fetchUserBikes()
+      .then((bikes) => {
+        if (!cancelled) setBikeCount(bikes.length);
+      })
+      .catch(() => {
+        if (!cancelled) setBikeCount(0);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, refreshKey]);
+
   const handleToggleFollow = async () => {
-    if (isFollowLoading || !profile) return;
+    if (isFollowLoading || !profile || profile.followStatus === "pending") return;
 
     setIsFollowLoading(true);
     try {
@@ -97,6 +117,17 @@ export function PublicProfileView({
       setIsFollowLoading(false);
     }
   };
+  const isFollowPending = profile?.followStatus === "pending";
+  const followButtonLabel = profile?.isFollowing
+    ? "Seguindo"
+    : isFollowPending
+      ? "Pedido feito"
+      : "Seguir";
+  const followButtonIcon = profile?.isFollowing
+    ? "checkmark"
+    : isFollowPending
+      ? "time-outline"
+      : "person-add-outline";
 
   const handleStoryVisible = (story: StoryItem) => {
     if (story.isMine || story.viewed) return;
@@ -278,6 +309,18 @@ export function PublicProfileView({
             {profile.location ? (
               <Text style={styles.location}>{profile.location}</Text>
             ) : null}
+            {profile.email ? (
+              <View style={styles.contactRow}>
+                <Ionicons color="#6B7280" name="mail-outline" size={14} />
+                <Text style={styles.contactText}>{profile.email}</Text>
+              </View>
+            ) : null}
+            {profile.phone ? (
+              <View style={styles.contactRow}>
+                <Ionicons color="#6B7280" name="call-outline" size={14} />
+                <Text style={styles.contactText}>{formatPhone(profile.phone)}</Text>
+              </View>
+            ) : null}
             {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
 
             <View style={styles.statsRow}>
@@ -320,20 +363,20 @@ export function PublicProfileView({
               <Pressable
                 style={[
                   styles.actionButton,
-                  profile.isFollowing ? styles.followingButton : styles.followButton,
+                  profile.isFollowing || isFollowPending
+                    ? styles.followingButton
+                    : styles.followButton,
                   isFollowLoading && styles.actionButtonDisabled,
                 ]}
-                disabled={isFollowLoading}
+                disabled={isFollowLoading || isFollowPending}
                 onPress={() => void handleToggleFollow()}
               >
                 <Ionicons
                   color={colors.brandDark}
-                  name={profile.isFollowing ? "checkmark" : "person-add-outline"}
+                  name={followButtonIcon}
                   size={16}
                 />
-                <Text style={styles.actionText}>
-                  {profile.isFollowing ? "Seguindo" : "Seguir"}
-                </Text>
+                <Text style={styles.actionText}>{followButtonLabel}</Text>
               </Pressable>
 
               <Pressable
@@ -363,11 +406,24 @@ export function PublicProfileView({
             </View>
           )}
 
-          <PublicProfileTabsGrid
-            isLoading={profilePosts.isLoading}
-            posts={profilePosts.posts}
-            onPostPress={setPostsViewerIndex}
-          />
+          {isOwnProfile ? (
+            <ProfileStatsBar
+              bikeCount={bikeCount}
+              eventsAttended={0}
+              favoriteCount={0}
+              onGaragePress={() => router.push("/profile/bikes")}
+            />
+          ) : null}
+
+          {profile.canViewPrivateContent ? (
+            <PublicProfileTabsGrid
+              isLoading={profilePosts.isLoading}
+              posts={profilePosts.posts}
+              onPostPress={setPostsViewerIndex}
+            />
+          ) : (
+            <PrivateProfileNotice />
+          )}
         </ScrollView>
       )}
 
@@ -426,6 +482,77 @@ export function PublicProfileView({
   );
 }
 
+function PrivateProfileNotice() {
+  return (
+    <View style={styles.privateNotice}>
+      <Ionicons color="#9CA3AF" name="lock-closed-outline" size={34} />
+      <Text style={styles.privateNoticeTitle}>Esta conta é privada</Text>
+      <Text style={styles.privateNoticeText}>
+        Siga este perfil para ver posts, lugares e eventos.
+      </Text>
+    </View>
+  );
+}
+
+function ProfileStatsBar({
+  bikeCount,
+  eventsAttended,
+  favoriteCount,
+  onGaragePress,
+}: {
+  bikeCount: number;
+  eventsAttended: number;
+  favoriteCount: number;
+  onGaragePress: () => void;
+}) {
+  return (
+    <View style={styles.shortcutWrap}>
+      <View style={styles.shortcutCard}>
+        <ProfileShortcut icon="heart-outline" label="Favoritos" value={favoriteCount} />
+        <View style={styles.shortcutDivider} />
+        <ProfileShortcut icon="calendar-outline" label="Eventos" value={eventsAttended} />
+        <View style={styles.shortcutDivider} />
+        <ProfileShortcut
+          icon="bicycle-outline"
+          label="Garagem"
+          value={bikeCount}
+          onPress={onGaragePress}
+        />
+      </View>
+    </View>
+  );
+}
+
+function ProfileShortcut({
+  icon,
+  label,
+  value,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: number;
+  onPress?: () => void;
+}) {
+  const content = (
+    <>
+      <Ionicons color={colors.brandPrimary} name={icon} size={18} />
+      <Text style={styles.shortcutValue}>{value}</Text>
+      <Text style={styles.shortcutLabel}>{label}</Text>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable style={styles.shortcutItem} onPress={onPress}>
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.shortcutItem}>{content}</View>;
+}
+
 function ProfileStat({
   label,
   value,
@@ -455,6 +582,20 @@ function ProfileStat({
       {Content}
     </View>
   );
+}
+
+function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+
+  return phone;
 }
 
 const styles = StyleSheet.create({
@@ -527,6 +668,16 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 120,
+  },
+  contactRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 6,
+  },
+  contactText: {
+    color: "#6B7280",
+    fontSize: 13,
   },
   errorText: {
     color: "#6B7280",
@@ -613,9 +764,62 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  privateNotice: {
+    alignItems: "center",
+    paddingHorizontal: 36,
+    paddingVertical: 34,
+  },
+  privateNoticeText: {
+    color: "#6B7280",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+    textAlign: "center",
+  },
+  privateNoticeTitle: {
+    color: colors.brandDark,
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 10,
+  },
   screen: {
     backgroundColor: colors.brandGray,
     flex: 1,
+  },
+  shortcutCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 1,
+    padding: 8,
+  },
+  shortcutDivider: {
+    backgroundColor: "#F3F4F6",
+    width: 1,
+  },
+  shortcutItem: {
+    alignItems: "center",
+    flex: 1,
+    minWidth: 80,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  shortcutLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  shortcutValue: {
+    color: colors.brandDark,
+    fontSize: 18,
+    fontWeight: "800",
+    marginTop: 4,
+  },
+  shortcutWrap: {
+    paddingHorizontal: 24,
+    paddingTop: 18,
   },
   settingsButton: {
     alignItems: "center",

@@ -7,7 +7,7 @@ import type { AppNotification } from "../types/notifications.types";
 type NotificationApiItem = {
   id: string;
   type: AppNotification["type"];
-  postId: string;
+  postId: string | null;
   title: string;
   message: string;
   createdAt: string;

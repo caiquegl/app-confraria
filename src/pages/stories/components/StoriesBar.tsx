@@ -16,6 +16,7 @@ type StoriesBarProps = {
   stories: StoryGroup[];
   onAddStory: () => void;
   onOpenMyStories: () => void;
+  onOpenSearch: () => void;
   onOpenStory: (index: number) => void;
 };
 
@@ -26,6 +27,7 @@ export function StoriesBar({
   stories,
   onAddStory,
   onOpenMyStories,
+  onOpenSearch,
   onOpenStory,
 }: StoriesBarProps) {
   if (!currentUser) return null;
@@ -34,11 +36,13 @@ export function StoriesBar({
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        contentContainerStyle={styles.scrollContent}
-        showsHorizontalScrollIndicator={false}
-      >
+      <View style={styles.row}>
+        <ScrollView
+          horizontal
+          contentContainerStyle={styles.scrollContent}
+          showsHorizontalScrollIndicator={false}
+          style={styles.scrollView}
+        >
         <Pressable
           accessibilityLabel={hasMyStory ? "Ver seu story" : "Adicionar seu story"}
           accessibilityRole="button"
@@ -95,7 +99,18 @@ export function StoriesBar({
             </Pressable>
           );
         })}
-      </ScrollView>
+        </ScrollView>
+
+        <Pressable
+          accessibilityLabel="Buscar perfis"
+          accessibilityRole="button"
+          hitSlop={8}
+          style={styles.searchButton}
+          onPress={onOpenSearch}
+        >
+          <Ionicons color="#6B7280" name="search-outline" size={20} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -120,6 +135,25 @@ const styles = StyleSheet.create({
   },
   container: {
     marginBottom: 14,
+  },
+  row: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 8,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  searchButton: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    marginTop: 12,
+    width: 44,
   },
   myStoryRing: {
     alignItems: "center",

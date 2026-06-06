@@ -42,6 +42,7 @@ export function HomeView() {
     handlePrefetch,
     isCameraOpen,
     isComposerOpen,
+    isComposerRestrictedToFollowers,
     isLoadingInitial,
     isLoadingMore,
     isRefreshing,
@@ -131,6 +132,7 @@ export function HomeView() {
             stories={stories.otherStoryGroups}
             onAddStory={openStoryCamera}
             onOpenMyStories={stories.openMyStories}
+            onOpenSearch={() => router.push("/feed/search")}
             onOpenStory={stories.openStoryGroup}
           />
         }
@@ -182,6 +184,7 @@ export function HomeView() {
         caption={composeCaption}
         photos={composerPhotos}
         publishing={isPublishingPost}
+        restrictToFollowers={isComposerRestrictedToFollowers}
         visible={isComposerOpen}
         onBack={closeComposer}
         onChangeActivePhotoIndex={setComposeActivePhotoIndex}

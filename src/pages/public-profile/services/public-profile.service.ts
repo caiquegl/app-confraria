@@ -4,6 +4,7 @@ import { apiRoutes } from "@/lib/api-routes";
 import type {
   FollowProfileResponse,
   PublicProfile,
+  PublicProfileFollowRequest,
   PublicProfileFollowUser,
 } from "../types/public-profile.types";
 
@@ -42,4 +43,21 @@ export async function unfollowPublicProfile(
 ): Promise<FollowProfileResponse> {
   const { data } = await api.delete<FollowProfileResponse>(apiRoutes.users.follow(userId));
   return data;
+}
+
+export async function fetchReceivedFollowRequests(): Promise<
+  PublicProfileFollowRequest[]
+> {
+  const { data } = await api.get<PublicProfileFollowRequest[]>(
+    apiRoutes.users.followRequests,
+  );
+  return data;
+}
+
+export async function acceptFollowRequest(requestId: string): Promise<void> {
+  await api.post(apiRoutes.users.followRequestAccept(requestId));
+}
+
+export async function declineFollowRequest(requestId: string): Promise<void> {
+  await api.delete(apiRoutes.users.followRequestDecline(requestId));
 }

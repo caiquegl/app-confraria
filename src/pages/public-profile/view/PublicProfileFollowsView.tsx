@@ -14,6 +14,7 @@ import { colors } from "@/theme/colors";
 
 import { usePublicProfileFollows } from "../business/usePublicProfileFollows";
 import type {
+  PublicProfileFollowRequest,
   PublicProfileFollowTab,
   PublicProfileFollowUser,
 } from "../types/public-profile.types";
@@ -28,6 +29,7 @@ type PublicProfileFollowsViewProps = {
 const TABS: { key: PublicProfileFollowTab; label: string }[] = [
   { key: "followers", label: "Seguidores" },
   { key: "following", label: "Seguindo" },
+  { key: "requests", label: "Pedidos" },
 ];
 
 export function PublicProfileFollowsView({
@@ -37,24 +39,35 @@ export function PublicProfileFollowsView({
   onOpenProfile,
 }: PublicProfileFollowsViewProps) {
   const {
+    acceptRequest,
     activeTab,
+    canViewRequests,
+    declineRequest,
     error,
+    filteredRequests,
     filteredUsers,
     followersCount,
     followingCount,
     followingLoadingById,
     isLoading,
+    requestLoadingById,
+    requestsCount,
     retry,
     searchQuery,
     setActiveTab,
     setSearchQuery,
     followUser,
   } = usePublicProfileFollows(userId, initialTab);
+  const visibleTabs = canViewRequests
+    ? TABS
+    : TABS.filter((tab) => tab.key !== "requests");
 
   const emptyMessage =
     activeTab === "followers"
       ? "Este usuário ainda não tem seguidores."
-      : "Este usuário ainda não segue ninguém.";
+      : activeTab === "following"
+        ? "Este usuário ainda não segue ninguém."
+        : "Você ainda não recebeu pedidos.";
 
   return (
     <View style={styles.screen}>
@@ -77,9 +90,14 @@ export function PublicProfileFollowsView({
       </View>
 
       <View style={styles.tabsWrap}>
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const active = tab.key === activeTab;
-          const count = tab.key === "followers" ? followersCount : followingCount;
+          const count =
+            tab.key === "followers"
+              ? followersCount
+              : tab.key === "following"
+                ? followingCount
+                : requestsCount;
 
           return (
             <Pressable
@@ -106,6 +124,22 @@ export function PublicProfileFollowsView({
             <Text style={styles.retryText}>Tentar novamente</Text>
           </Pressable>
         </View>
+      ) : activeTab === "requests" ? (
+        <FlatList
+          data={filteredRequests}
+          keyExtractor={(item) => item.requestId}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={<EmptyState message={emptyMessage} />}
+          renderItem={({ item }) => (
+            <FollowRequestCard
+              request={item}
+              isLoading={requestLoadingById[item.requestId] ?? false}
+              onAccept={() => void acceptRequest(item)}
+              onDecline={() => void declineRequest(item)}
+              onOpenProfile={() => onOpenProfile(item.userId)}
+            />
+          )}
+        />
       ) : (
         <FlatList
           data={filteredUsers}
@@ -122,6 +156,53 @@ export function PublicProfileFollowsView({
           )}
         />
       )}
+    </View>
+  );
+}
+
+function FollowRequestCard({
+  isLoading,
+  request,
+  onAccept,
+  onDecline,
+  onOpenProfile,
+}: {
+  isLoading: boolean;
+  request: PublicProfileFollowRequest;
+  onAccept: () => void;
+  onDecline: () => void;
+  onOpenProfile: () => void;
+}) {
+  return (
+    <View style={styles.card}>
+      <Pressable style={styles.userRow} onPress={onOpenProfile}>
+        <UserAvatar avatarUrl={request.avatar} name={request.name} size={54} />
+        <View style={styles.userInfo}>
+          <Text numberOfLines={1} style={styles.userName}>
+            {request.name}
+          </Text>
+          <Text style={styles.locationText}>
+            {request.location ?? "Solicitou seguir você"}
+          </Text>
+        </View>
+      </Pressable>
+
+      <View style={styles.requestActions}>
+        <Pressable
+          disabled={isLoading}
+          style={[styles.acceptButton, isLoading && styles.followButtonDisabled]}
+          onPress={onAccept}
+        >
+          <Text style={styles.acceptText}>Aceitar</Text>
+        </Pressable>
+        <Pressable
+          disabled={isLoading}
+          style={[styles.declineButton, isLoading && styles.followButtonDisabled]}
+          onPress={onDecline}
+        >
+          <Text style={styles.declineText}>Recusar</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -198,6 +279,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 40,
   },
+  acceptButton: {
+    alignItems: "center",
+    backgroundColor: colors.brandGreen,
+    borderRadius: 12,
+    minWidth: 74,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  acceptText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "800",
+  },
   card: {
     backgroundColor: "#FFFFFF",
     borderColor: "#F3F4F6",
@@ -205,6 +299,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
     padding: 12,
+  },
+  declineButton: {
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    minWidth: 74,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  declineText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "800",
   },
   centerState: {
     alignItems: "center",
@@ -288,6 +395,11 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 13,
     fontWeight: "800",
+  },
+  requestActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
   },
   screen: {
     backgroundColor: colors.brandGray,

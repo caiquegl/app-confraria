@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import { getCurrentUserId } from "@/lib/auth";
 import { setStoredCurrentProfile } from "@/lib/current-profile-store";
@@ -25,6 +25,7 @@ export default function ProfileScreen() {
   const [isLoadingEditProfile, setIsLoadingEditProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
+  const hasFocusedOnce = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +42,17 @@ export default function ProfileScreen() {
       cancelled = true;
     };
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedOnce.current) {
+        hasFocusedOnce.current = true;
+        return;
+      }
+
+      setProfileRefreshKey((current) => current + 1);
+    }, []),
+  );
 
   const handleOpenEditProfile = async () => {
     if (isLoadingEditProfile) return;

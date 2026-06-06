@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,20 +10,33 @@ type SettingsModalProps = {
   visible: boolean;
   isChangingPassword?: boolean;
   isDeletingAccount?: boolean;
+  isSavingPrivacy?: boolean;
+  initialIsPublicProfile?: boolean;
+  initialShowEmail?: boolean;
+  initialShowPhone?: boolean;
   onClose: () => void;
   onChangePassword: (password: string) => Promise<void>;
   onDeleteAccount: () => Promise<void>;
   onLogout: () => void;
+  onSavePrivacy: (
+    payload: { isPublicProfile: boolean; showEmail: boolean; showPhone: boolean },
+    options?: { close?: boolean; showToast?: boolean },
+  ) => Promise<void>;
 };
 
 export function SettingsModal({
   isChangingPassword = false,
   isDeletingAccount = false,
+  isSavingPrivacy = false,
+  initialIsPublicProfile = true,
+  initialShowEmail = false,
+  initialShowPhone = false,
   visible,
   onChangePassword,
   onClose,
   onDeleteAccount,
   onLogout,
+  onSavePrivacy,
 }: SettingsModalProps) {
   const insets = useSafeAreaInsets();
   const [isPublic, setIsPublic] = useState(true);
@@ -32,6 +45,52 @@ export function SettingsModal({
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    queueMicrotask(() => {
+      setIsPublic(initialIsPublicProfile);
+      setShowEmail(initialShowEmail);
+      setShowPhone(initialShowPhone);
+    });
+  }, [initialIsPublicProfile, initialShowEmail, initialShowPhone, visible]);
+
+  const handleIsPublicChange = (value: boolean) => {
+    const previousValue = isPublic;
+    setIsPublic(value);
+
+    void onSavePrivacy(
+      { isPublicProfile: value, showEmail, showPhone },
+      { close: false, showToast: false },
+    ).catch(() => {
+      setIsPublic(previousValue);
+    });
+  };
+
+  const handleShowEmailChange = (value: boolean) => {
+    const previousValue = showEmail;
+    setShowEmail(value);
+
+    void onSavePrivacy(
+      { isPublicProfile: isPublic, showEmail: value, showPhone },
+      { close: false, showToast: false },
+    ).catch(() => {
+      setShowEmail(previousValue);
+    });
+  };
+
+  const handleShowPhoneChange = (value: boolean) => {
+    const previousValue = showPhone;
+    setShowPhone(value);
+
+    void onSavePrivacy(
+      { isPublicProfile: isPublic, showEmail, showPhone: value },
+      { close: false, showToast: false },
+    ).catch(() => {
+      setShowPhone(previousValue);
+    });
+  };
 
   if (!visible) return null;
 
@@ -52,24 +111,27 @@ export function SettingsModal({
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Privacidade</Text>
               <SettingSwitch
+                disabled={isSavingPrivacy}
                 label="Perfil Público"
                 value={isPublic}
-                onValueChange={setIsPublic}
+                onValueChange={handleIsPublicChange}
               />
               <Text style={styles.helperText}>
                 Quando ativado, outros usuários podem ver seu perfil e dados.
               </Text>
               <SettingSwitch
                 bordered
+                disabled={isSavingPrivacy}
                 label="Mostrar Email"
                 value={showEmail}
-                onValueChange={setShowEmail}
+                onValueChange={handleShowEmailChange}
               />
               <SettingSwitch
                 bordered
+                disabled={isSavingPrivacy}
                 label="Mostrar Telefone"
                 value={showPhone}
-                onValueChange={setShowPhone}
+                onValueChange={handleShowPhoneChange}
               />
             </View>
 
@@ -94,14 +156,7 @@ export function SettingsModal({
               </Text>
             </View>
 
-            <View style={styles.actions}>
-              <Button size="lg" style={styles.actionButton} variant="secondary" onPress={onClose}>
-                Cancelar
-              </Button>
-              <Button size="lg" style={styles.actionButton} onPress={onClose}>
-                Salvar
-              </Button>
-            </View>
+         
           </ScrollView>
         </View>
 
@@ -151,11 +206,13 @@ export function SettingsModal({
 
 function SettingSwitch({
   bordered = false,
+  disabled = false,
   label,
   value,
   onValueChange,
 }: {
   bordered?: boolean;
+  disabled?: boolean;
   label: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
@@ -164,6 +221,7 @@ function SettingSwitch({
     <View style={[styles.switchRow, bordered && styles.switchRowBordered]}>
       <Text style={styles.switchLabel}>{label}</Text>
       <Switch
+        disabled={disabled}
         thumbColor={value ? colors.brandDark : "#F9FAFB"}
         trackColor={{ false: "#D1D5DB", true: colors.brandGreen }}
         value={value}

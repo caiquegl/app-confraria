@@ -8,6 +8,7 @@ import {
   fetchChatConversations,
   sendChatMessage,
 } from "@/pages/messages/services/messages.service";
+import { fetchOwnProfile } from "@/pages/profile/services/profile.service";
 
 import {
   countFeedComments,
@@ -60,6 +61,8 @@ export function useFeed() {
   const [composerPhotos, setComposerPhotos] = useState<string[]>([]);
   const [composeCaption, setComposeCaption] = useState("");
   const [composeAudience, setComposeAudience] = useState<ComposeAudience>("all");
+  const [isComposerRestrictedToFollowers, setIsComposerRestrictedToFollowers] =
+    useState(false);
   const [composeActivePhotoIndex, setComposeActivePhotoIndex] = useState(0);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -547,13 +550,22 @@ export function useFeed() {
     };
   };
 
-  const openComposerWithPhotos = (uris: string[]) => {
+  const openComposerWithPhotos = async (uris: string[]) => {
     if (uris.length === 0) return;
+
+    let restrictToFollowers = false;
+    try {
+      const profile = await fetchOwnProfile();
+      restrictToFollowers = !profile.isPublicProfile;
+    } catch {
+      restrictToFollowers = false;
+    }
 
     setComposerPhotos(uris);
     setComposeActivePhotoIndex(0);
     setComposeCaption("");
-    setComposeAudience("all");
+    setIsComposerRestrictedToFollowers(restrictToFollowers);
+    setComposeAudience(restrictToFollowers ? "friends" : "all");
     setIsComposerOpen(true);
   };
 
@@ -581,13 +593,13 @@ export function useFeed() {
       return;
     }
 
-    openComposerWithPhotos(cameraPhotos);
+    void openComposerWithPhotos(cameraPhotos);
     setCameraPhotos([]);
     setIsCameraOpen(false);
   };
 
   const openComposerFromGallery = (uris: string[]) => {
-    openComposerWithPhotos(uris);
+    void openComposerWithPhotos(uris);
     setCameraPhotos([]);
     setIsCameraOpen(false);
   };
@@ -596,6 +608,7 @@ export function useFeed() {
     setIsComposerOpen(false);
     setComposerPhotos([]);
     setComposeCaption("");
+    setIsComposerRestrictedToFollowers(false);
     setComposeAudience("all");
     setComposeActivePhotoIndex(0);
   };
@@ -612,6 +625,7 @@ export function useFeed() {
       if (next.length === 0) {
         setIsComposerOpen(false);
         setComposeCaption("");
+        setIsComposerRestrictedToFollowers(false);
         setComposeAudience("all");
         setComposeActivePhotoIndex(0);
         return [];
@@ -716,6 +730,7 @@ export function useFeed() {
     friends: shareFriends,
     isCameraOpen,
     isComposerOpen,
+    isComposerRestrictedToFollowers,
     isLoadingInitial,
     isLoadingMore,
     isRefreshing,

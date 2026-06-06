@@ -39,6 +39,7 @@ type NewPostComposerProps = {
   onReorderPhotos: (fromIndex: number, toIndex: number) => void;
   photos: string[];
   publishing?: boolean;
+  restrictToFollowers?: boolean;
   visible: boolean;
 };
 
@@ -55,10 +56,17 @@ export function NewPostComposer({
   onReorderPhotos,
   photos,
   publishing = false,
+  restrictToFollowers = false,
   visible,
 }: NewPostComposerProps) {
   const insets = useSafeAreaInsets();
   const activePhoto = photos[activePhotoIndex] ?? photos[0];
+
+  useEffect(() => {
+    if (restrictToFollowers && audience !== "friends") {
+      onChangeAudience("friends");
+    }
+  }, [audience, onChangeAudience, restrictToFollowers]);
 
   const handlePublishPress = () => {
     console.log("[NewPostComposer] compartilhar clicado", {
@@ -140,20 +148,22 @@ export function NewPostComposer({
           />
 
           <View style={styles.audienceRow}>
-            <Pressable
-              style={[styles.audienceButton, audience === "all" && styles.audienceButtonActive]}
-              onPress={() => onChangeAudience("all")}
-            >
-              <Ionicons name="earth-outline" size={18} color={colors.brandDark} />
-              <Text style={styles.audienceText}>Todos</Text>
-            </Pressable>
+            {!restrictToFollowers ? (
+              <Pressable
+                style={[styles.audienceButton, audience === "all" && styles.audienceButtonActive]}
+                onPress={() => onChangeAudience("all")}
+              >
+                <Ionicons name="earth-outline" size={18} color={colors.brandDark} />
+                <Text style={styles.audienceText}>Todos</Text>
+              </Pressable>
+            ) : null}
 
             <Pressable
               style={[styles.audienceButton, audience === "friends" && styles.audienceButtonActive]}
               onPress={() => onChangeAudience("friends")}
             >
               <Ionicons name="people-outline" size={18} color={colors.brandDark} />
-              <Text style={styles.audienceText}>Amigos</Text>
+              <Text style={styles.audienceText}>Seguidores</Text>
             </Pressable>
           </View>
         </ScrollView>

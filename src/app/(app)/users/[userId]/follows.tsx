@@ -21,9 +21,14 @@ export default function PublicProfileFollowsScreen() {
     });
   };
 
+  const resolvedInitialTab: PublicProfileFollowTab =
+    initialTab === "following" || initialTab === "requests"
+      ? initialTab
+      : "followers";
+
   return (
     <PublicProfileFollowsView
-      initialTab={initialTab === "following" ? "following" : "followers"}
+      initialTab={resolvedInitialTab}
       userId={userId ?? ""}
       onBack={() => router.back()}
       onOpenProfile={openProfile}
