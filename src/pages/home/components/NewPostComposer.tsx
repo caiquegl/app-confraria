@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
+import * as VideoThumbnails from "expo-video-thumbnails";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -261,14 +262,7 @@ function DraggableThumbnail({
   media,
   total,
 }: DraggableThumbnailProps) {
-  const translateXRef = useRef(new Animated.Value(0));
-  const currentIndexRef = useRef(index);
-
-  const translateX = translateXRef.current;
-
-  useEffect(() => {
-    currentIndexRef.current = index;
-  }, [index]);
+  const [translateX] = useState(() => new Animated.Value(0));
 
   const panResponder = useMemo(
     () =>
@@ -280,15 +274,15 @@ function DraggableThumbnail({
         },
         onPanResponderRelease: (_, gesture) => {
           const offset = Math.round(gesture.dx / THUMBNAIL_STEP);
-          const targetIndex = Math.max(0, Math.min(currentIndexRef.current + offset, total - 1));
+          const targetIndex = Math.max(0, Math.min(index + offset, total - 1));
 
           Animated.spring(translateX, {
             toValue: 0,
             useNativeDriver: true,
           }).start();
 
-          if (targetIndex !== currentIndexRef.current) {
-            onMove(currentIndexRef.current, targetIndex);
+          if (targetIndex !== index) {
+            onMove(index, targetIndex);
           }
         },
         onPanResponderTerminate: () => {
@@ -298,7 +292,7 @@ function DraggableThumbnail({
           }).start();
         },
       }),
-    [onMove, total, translateX],
+    [index, onMove, total, translateX],
   );
 
   return (
@@ -351,8 +345,64 @@ function ComposerMediaPreview({ media }: { media: ComposeFeedMedia }) {
 }
 
 function ComposerVideoPreview({ uri }: { uri: string }) {
+  const [shouldLoadPreview, setShouldLoadPreview] = useState(false);
+  const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void VideoThumbnails.getThumbnailAsync(uri, {
+      quality: 0.55,
+      time: 500,
+    })
+      .then((thumbnail) => {
+        if (isMounted) {
+          setThumbnailUri(thumbnail.uri);
+        }
+      })
+      .catch((error) => {
+        console.log("[post-composer] erro ao gerar thumb do preview", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [uri]);
+
+  if (!shouldLoadPreview) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        style={styles.videoPreviewPlaceholder}
+        onPress={() => setShouldLoadPreview(true)}
+      >
+        {thumbnailUri ? (
+          <Image
+            source={{ uri: thumbnailUri }}
+            style={styles.videoPreviewThumbnail}
+            cachePolicy="memory-disk"
+            contentFit="cover"
+            recyclingKey={thumbnailUri}
+          />
+        ) : null}
+        <View style={styles.videoPreviewScrim} />
+        <View style={styles.videoPreviewIcon}>
+          <Ionicons name="play" size={30} color="#FFFFFF" />
+        </View>
+        <Text style={styles.videoPreviewTitle}>Vídeo adicionado</Text>
+        <Text style={styles.videoPreviewText}>Toque para visualizar.</Text>
+      </Pressable>
+    );
+  }
+
+  return <ComposerVideoPlayer uri={uri} />;
+}
+
+function ComposerVideoPlayer({ uri }: { uri: string }) {
   const player = useVideoPlayer({ uri }, (instance) => {
-    instance.loop = true;
+    instance.loop = false;
     instance.play();
   });
 
@@ -453,6 +503,54 @@ const styles = StyleSheet.create({
   previewImage: {
     aspectRatio: 4 / 5,
     width: "100%",
+  },
+  videoPreviewIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 999,
+    height: 68,
+    justifyContent: "center",
+    width: 68,
+    zIndex: 2,
+  },
+  videoPreviewPlaceholder: {
+    alignItems: "center",
+    aspectRatio: 4 / 5,
+    backgroundColor: "#111827",
+    gap: 10,
+    justifyContent: "center",
+    overflow: "hidden",
+    paddingHorizontal: 24,
+    width: "100%",
+  },
+  videoPreviewScrim: {
+    backgroundColor: "rgba(0,0,0,0.42)",
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 1,
+  },
+  videoPreviewText: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
+    zIndex: 2,
+  },
+  videoPreviewThumbnail: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  videoPreviewTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+    zIndex: 2,
   },
   publishButton: {
     width: "100%",
