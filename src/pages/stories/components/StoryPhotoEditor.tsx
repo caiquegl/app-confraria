@@ -920,11 +920,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.14)",
     borderRadius: 22,
     borderWidth: 1,
-    bottom: 104,
     left: 16,
+    maxHeight: 210,
     padding: 12,
     position: "absolute",
     right: 16,
+    top: 96,
   },
   stickerRemoveButton: {
     alignItems: "center",
