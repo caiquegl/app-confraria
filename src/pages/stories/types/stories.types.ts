@@ -1,9 +1,20 @@
 export type StoryMediaType = "image" | "video";
 
+export type StoryStickerOverlay = {
+  type: "sticker";
+  imageUrl: string;
+  xRatio: number;
+  yRatio: number;
+  sizeRatio: number;
+};
+
+export type StoryOverlay = StoryStickerOverlay;
+
 export type StoryDraftMedia = {
   uri: string;
   mediaType: StoryMediaType;
   durationMs?: number | null;
+  overlays?: StoryOverlay[];
 };
 
 export type StoryItem = {
@@ -14,6 +25,7 @@ export type StoryItem = {
   image: string;
   mediaType: StoryMediaType;
   durationMs: number | null;
+  overlays?: StoryOverlay[];
   createdAt: string;
   expiresAt: string;
   viewed: boolean;

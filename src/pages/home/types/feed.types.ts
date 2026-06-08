@@ -10,12 +10,14 @@ export type FeedPostMedia = {
   url: string;
   mediaType: FeedMediaType;
   durationMs: number | null;
+  thumbnailUrl?: string | null;
 };
 
 export type ComposeFeedMedia = {
   uri: string;
   mediaType: FeedMediaType;
   durationMs?: number | null;
+  thumbnailUri?: string | null;
 };
 
 export type FeedComment = {

@@ -98,10 +98,11 @@ export function HomeView() {
     setSelectedStoryMedia(null);
     setIsStoryCameraOpen(false);
   };
-  const publishStory = () => {
-    if (!selectedStoryMedia) return;
+  const publishStory = (mediaOverride?: StoryDraftMedia) => {
+    const storyMedia = mediaOverride ?? selectedStoryMedia;
+    if (!storyMedia) return;
 
-    void stories.addStory(selectedStoryMedia).then((published) => {
+    void stories.addStory(storyMedia).then((published) => {
       if (published) {
         setSelectedStoryMedia(null);
         setIsStoryCameraOpen(false);

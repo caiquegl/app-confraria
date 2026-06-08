@@ -20,7 +20,8 @@ export default function AppLayout() {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [profileAvatar, setProfileAvatar] = useState<string | null>(storedProfile.avatar);
   const [profileName, setProfileName] = useState<string | null>(storedProfile.name);
-  const shouldHideBottomNav = pathname.startsWith("/profile/bikes");
+  const shouldHideBottomNav =
+    pathname.startsWith("/profile/bikes") || pathname.startsWith("/profile/settings");
 
   useEffect(() => {
     return subscribeStoredCurrentProfile((profile) => {

@@ -56,7 +56,6 @@
         {
           "backgroundColor": "#C8F763",
           "image": "./assets/images/Splash_Screen.png",
-          "imageWidth": 220,
           "resizeMode": "contain"
         }
       ],

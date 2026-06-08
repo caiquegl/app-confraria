@@ -1,6 +1,8 @@
+import * as VideoThumbnails from "expo-video-thumbnails";
+
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
-import { getApiBaseUrl, getApiEnvironment } from "@/lib/api-environment";
+import { getApiBaseUrl } from "@/lib/api-environment";
 import { getToken } from "@/lib/auth";
 import { optimizeImageForUpload } from "@/lib/media-optimization";
 
@@ -128,12 +130,6 @@ export async function createFeedPost(params: {
   media: ComposeFeedMedia[];
   onUploadProgress?: UploadProgressHandler;
 }): Promise<FeedPost> {
-  console.log("[feed.service] createFeedPost preparando FormData", {
-    audience: params.audience,
-    captionLength: params.caption.trim().length,
-    mediaCount: params.media.length,
-  });
-
   const formData = new FormData();
 
   formData.append("audience", params.audience);
@@ -155,25 +151,18 @@ export async function createFeedPost(params: {
         };
       }
 
+      const thumbnailUri = media.thumbnailUri ?? await generateVideoThumbnail(media.uri);
       const extension = getFileExtension(media.uri, media.mediaType);
       return {
         ...media,
         extension,
         mimeType: getMimeType(extension, media.mediaType),
+        thumbnailUri,
       };
     }),
   );
 
   uploadMedia.forEach((media, index) => {
-
-    console.log("[feed.service] anexando mídia", {
-      extension: media.extension,
-      index,
-      mediaType: media.mediaType,
-      type: media.mimeType,
-      uri: media.uri,
-    });
-
     formData.append("files", {
       name: `feed-${Date.now()}-${index}.${media.extension}`,
       type: media.mimeType,
@@ -183,18 +172,20 @@ export async function createFeedPost(params: {
       "durationMs",
       media.mediaType === "video" && media.durationMs ? String(media.durationMs) : "",
     );
+
+    if (media.mediaType === "video" && media.thumbnailUri) {
+      formData.append("thumbnailIndexes", String(index));
+      formData.append("thumbnails", {
+        name: `feed-video-thumb-${Date.now()}-${index}.jpg`,
+        type: "image/jpeg",
+        uri: media.thumbnailUri,
+      } as unknown as Blob);
+    }
   });
 
-  const environment = await getApiEnvironment();
   const baseURL = await getApiBaseUrl();
   const token = await getToken();
   const url = `${baseURL}${apiRoutes.feed.posts}`;
-
-  console.log("[feed.service] enviando POST /feed/posts via XHR", {
-    environment,
-    hasToken: Boolean(token),
-    url,
-  });
 
   const responseText = await sendFeedPostRequest({
     formData,
@@ -203,8 +194,6 @@ export async function createFeedPost(params: {
     url,
   });
   const data = JSON.parse(responseText) as FeedPost;
-
-  console.log("[feed.service] POST /feed/posts sucesso", { postId: data.id });
 
   return data;
 }
@@ -227,22 +216,12 @@ function sendFeedPostRequest(params: {
     }
 
     xhr.upload.onprogress = (event) => {
-      console.log("[feed.service] upload progresso", {
-        loaded: event.loaded,
-        total: event.lengthComputable ? event.total : undefined,
-      });
-
       if (!event.lengthComputable || !params.onUploadProgress) return;
 
       params.onUploadProgress(Math.min(event.loaded / event.total, 1));
     };
 
     xhr.onload = () => {
-      console.log("[feed.service] XHR onload", {
-        response: xhr.responseText?.slice(0, 300),
-        status: xhr.status,
-      });
-
       if (xhr.status >= 200 && xhr.status < 300) {
         params.onUploadProgress?.(1);
         resolve(xhr.responseText);
@@ -253,15 +232,10 @@ function sendFeedPostRequest(params: {
     };
 
     xhr.onerror = () => {
-      console.log("[feed.service] XHR onerror", {
-        response: xhr.responseText,
-        status: xhr.status,
-      });
       reject(new Error("Erro de rede ao enviar imagens. Verifique se o backend está acessível pelo celular."));
     };
 
     xhr.ontimeout = () => {
-      console.log("[feed.service] XHR ontimeout");
       reject(new Error("Tempo esgotado ao enviar o post."));
     };
 
@@ -317,6 +291,19 @@ function getMimeType(extension: string, mediaType: ComposeFeedMedia["mediaType"]
   if (extension === "webp") return "image/webp";
   if (extension === "heic") return "image/heic";
   return "image/jpeg";
+}
+
+async function generateVideoThumbnail(uri: string): Promise<string | null> {
+  try {
+    const thumbnail = await VideoThumbnails.getThumbnailAsync(uri, {
+      quality: 0.72,
+      time: 500,
+    });
+
+    return thumbnail.uri;
+  } catch {
+    return null;
+  }
 }
 
 export function formatRelativeTime(isoDate: string): string {

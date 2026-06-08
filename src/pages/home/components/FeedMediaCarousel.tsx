@@ -165,7 +165,6 @@ function FeedVideoSlide({
   const player = useVideoPlayer({ uri, useCaching: true }, (instance) => {
     instance.loop = true;
     instance.muted = true;
-    instance.play();
   });
 
   useEffect(() => {

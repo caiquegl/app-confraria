@@ -5,10 +5,9 @@ import {
   useMicrophonePermissions,
   type CameraType,
 } from "expo-camera";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -16,6 +15,7 @@ import Toast from "react-native-toast-message";
 import { Button } from "@/components/Button";
 import { colors } from "@/theme/colors";
 
+import { StoryPhotoEditor, type StoryPhotoEditorHandle } from "./StoryPhotoEditor";
 import type { StoryDraftMedia } from "../types/stories.types";
 
 const MAX_VIDEO_DURATION_MS = 30_000;
@@ -28,7 +28,7 @@ type NewStoryCameraProps = {
   visible: boolean;
   onClose: () => void;
   onSelectMedia: (media: StoryDraftMedia | null) => void;
-  onPublish: () => void;
+  onPublish: (media: StoryDraftMedia) => void;
 };
 
 export function NewStoryCamera({
@@ -42,6 +42,7 @@ export function NewStoryCamera({
 }: NewStoryCameraProps) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
+  const photoEditorRef = useRef<StoryPhotoEditorHandle | null>(null);
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRecordingRef = useRef(false);
   const recordingStartedAtRef = useRef<number | null>(null);
@@ -52,8 +53,10 @@ export function NewStoryCamera({
   const [cameraMode, setCameraMode] = useState<"picture" | "video">("picture");
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
+  const [isExportingPhoto, setIsExportingPhoto] = useState(false);
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const isBusy = isPublishing || isExportingPhoto;
   const uploadPercent = Math.round(Math.min(Math.max(uploadProgress, 0), 1) * 100);
 
   const clearPressTimer = useCallback(() => {
@@ -231,6 +234,33 @@ export function NewStoryCamera({
     setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
+  const handlePublish = async () => {
+    if (!selectedMedia || isBusy) return;
+
+    if (selectedMedia.mediaType !== "image") {
+      onPublish(selectedMedia);
+      return;
+    }
+
+    setIsExportingPhoto(true);
+    try {
+      const editedPhoto = await photoEditorRef.current?.captureEditedPhoto();
+      onPublish({
+        ...selectedMedia,
+        overlays: editedPhoto?.overlays ?? [],
+        uri: editedPhoto?.uri ?? selectedMedia.uri,
+      });
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao editar foto",
+        text2: "Não foi possível preparar a imagem para publicação.",
+      });
+    } finally {
+      setIsExportingPhoto(false);
+    }
+  };
+
   useEffect(() => {
     if (visible) return;
 
@@ -283,7 +313,11 @@ export function NewStoryCamera({
     <Modal animationType="slide" visible={visible} statusBarTranslucent>
       <View style={styles.screen}>
         {selectedMedia ? (
-          <StoryMediaPreview media={selectedMedia} />
+          <StoryMediaPreview
+            ref={photoEditorRef}
+            disabled={isBusy}
+            media={selectedMedia}
+          />
         ) : (
           <CameraView
             ref={cameraRef}
@@ -291,16 +325,15 @@ export function NewStoryCamera({
             facing={facing}
             mode={cameraMode}
             style={styles.camera}
-            videoBitrate={5_000_000}
-            videoQuality="720p"
+            videoQuality="1080p"
             onCameraReady={() => setIsCameraReady(true)}
           />
         )}
 
         <View style={[styles.topControls, { paddingTop: insets.top + 12 }]}>
           <Pressable
-            disabled={isPublishing}
-            style={[styles.iconButton, isPublishing && styles.controlDisabled]}
+            disabled={isBusy}
+            style={[styles.iconButton, isBusy && styles.controlDisabled]}
             onPress={onClose}
           >
             <Ionicons name="close" size={24} color="#FFFFFF" />
@@ -309,12 +342,12 @@ export function NewStoryCamera({
           <Pressable
             style={[
               styles.checkButton,
-              (!selectedMedia || isPublishing) && styles.checkButtonDisabled,
+              (!selectedMedia || isBusy) && styles.checkButtonDisabled,
             ]}
-            disabled={!selectedMedia || isPublishing}
-            onPress={onPublish}
+            disabled={!selectedMedia || isBusy}
+            onPress={() => void handlePublish()}
           >
-            {isPublishing ? (
+            {isBusy ? (
               <ActivityIndicator color={colors.brandDark} size="small" />
             ) : (
               <Ionicons name="checkmark" size={24} color={colors.brandDark} />
@@ -333,8 +366,8 @@ export function NewStoryCamera({
 
         <View style={[styles.bottomControls, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
           <Pressable
-            disabled={isPublishing}
-            style={[styles.galleryButton, isPublishing && styles.controlDisabled]}
+            disabled={isBusy}
+            style={[styles.galleryButton, isBusy && styles.controlDisabled]}
             onPress={handleOpenGallery}
           >
             <Ionicons name="images-outline" size={26} color="#FFFFFF" />
@@ -342,8 +375,8 @@ export function NewStoryCamera({
 
           {selectedMedia ? (
             <Pressable
-              disabled={isPublishing}
-              style={[styles.retakeButton, isPublishing && styles.controlDisabled]}
+              disabled={isBusy}
+              style={[styles.retakeButton, isBusy && styles.controlDisabled]}
               onPress={() => onSelectMedia(null)}
             >
               <Text style={styles.retakeText}>Trocar mídia</Text>
@@ -364,23 +397,29 @@ export function NewStoryCamera({
           )}
 
           <Pressable
-            disabled={isPublishing}
-            style={[styles.flipButton, isPublishing && styles.controlDisabled]}
+            disabled={isBusy}
+            style={[styles.flipButton, isBusy && styles.controlDisabled]}
             onPress={toggleFacing}
           >
             <Ionicons name="camera-reverse-outline" size={26} color="#FFFFFF" />
           </Pressable>
         </View>
 
-        {isPublishing && (
+        {isBusy && (
           <View style={styles.uploadOverlay}>
             <View style={styles.uploadCard}>
               <ActivityIndicator color={colors.brandGreen} size="large" />
               <Text style={styles.uploadTitle}>
-                {uploadPercent >= 100 ? "Processando story..." : "Publicando story..."}
+                {isExportingPhoto
+                  ? "Preparando foto..."
+                  : uploadPercent >= 100
+                    ? "Processando story..."
+                    : "Publicando story..."}
               </Text>
               <Text style={styles.uploadSubtitle}>
-                {uploadPercent >= 100
+                {isExportingPhoto
+                  ? "Aplicando textos e efeitos na imagem."
+                  : uploadPercent >= 100
                   ? "Finalizando o envio no servidor."
                   : "Mantenha a tela aberta até concluir."}
               </Text>
@@ -401,21 +440,16 @@ function formatRecordingTime(durationMs: number): string {
   return `0:${String(seconds).padStart(2, "0")}`;
 }
 
-function StoryMediaPreview({ media }: { media: StoryDraftMedia }) {
+const StoryMediaPreview = forwardRef<
+  StoryPhotoEditorHandle,
+  { disabled?: boolean; media: StoryDraftMedia }
+>(function StoryMediaPreview({ disabled = false, media }, ref) {
   if (media.mediaType === "video") {
     return <StoryVideoPreview uri={media.uri} />;
   }
 
-  return (
-    <Image
-      source={{ uri: media.uri }}
-      style={styles.camera}
-      cachePolicy="memory-disk"
-      contentFit="cover"
-      recyclingKey={media.uri}
-    />
-  );
-}
+  return <StoryPhotoEditor ref={ref} disabled={disabled} uri={media.uri} />;
+});
 
 function StoryVideoPreview({ uri }: { uri: string }) {
   const player = useVideoPlayer({ uri }, (instance) => {

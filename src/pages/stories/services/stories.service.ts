@@ -44,6 +44,10 @@ export async function createStory(
     formData.append("durationMs", String(media.durationMs));
   }
 
+  if (media.overlays && media.overlays.length > 0) {
+    formData.append("overlays", JSON.stringify(media.overlays));
+  }
+
   const baseURL = await getApiBaseUrl();
   const token = await getToken();
   const responseText = await sendStoryRequest({

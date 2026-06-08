@@ -311,8 +311,7 @@ export function NewPostCamera({
           facing={facing}
           mode={cameraMode}
           style={styles.camera}
-          videoBitrate={5_000_000}
-          videoQuality="720p"
+          videoQuality="1080p"
           onCameraReady={() => setIsCameraReady(true)}
         />
 

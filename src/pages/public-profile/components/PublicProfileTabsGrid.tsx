@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useState } from "react";
 import {
@@ -97,22 +98,45 @@ function PublicProfilePostGridItem({
   post: FeedPost;
   onPress: () => void;
 }) {
-  const image = post.photos?.[0] ?? post.eventImage;
+  const [hasImageError, setHasImageError] = useState(false);
+  const videoThumbnail = post.media?.find((item) => item.mediaType === "video")?.thumbnailUrl;
+  const image = post.media?.find((item) => item.mediaType === "image")?.url
+    ?? videoThumbnail
+    ?? post.photos?.[0]
+    ?? post.eventImage;
+  const hasVideo = post.media?.some((item) => item.mediaType === "video") ?? false;
   const label = post.caption || post.eventTitle || post.routeTitle;
 
   return (
     <Pressable style={styles.item} onPress={onPress}>
-      {image ? (
+      {image && !hasImageError ? (
         <Image
           source={{ uri: image }}
           style={styles.image}
           cachePolicy="memory-disk"
           contentFit="cover"
-          recyclingKey={image}
+          recyclingKey={`${post.id}-${image}`}
+          onError={() => setHasImageError(true)}
         />
+      ) : hasVideo ? (
+        <View style={styles.videoFallback}>
+          <Ionicons color="#FFFFFF" name="play" size={26} />
+        </View>
       ) : (
-        <View style={styles.imageFallback} />
+        <View style={styles.imageFallback}>
+          <Ionicons color="#9CA3AF" name="image-outline" size={24} />
+        </View>
       )}
+      {post.media && post.media.length > 1 ? (
+        <View style={styles.mediaCountBadge}>
+          <Ionicons color="#FFFFFF" name="copy-outline" size={13} />
+        </View>
+      ) : null}
+      {hasVideo && image && !hasImageError ? (
+        <View style={styles.videoPlayBadge}>
+          <Ionicons color="#FFFFFF" name="play" size={16} />
+        </View>
+      ) : null}
       {label ? (
         <View style={styles.labelBadge}>
           <Text numberOfLines={1} style={styles.labelText}>
@@ -149,8 +173,10 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   imageFallback: {
+    alignItems: "center",
     backgroundColor: "#E5E7EB",
     flex: 1,
+    justifyContent: "center",
   },
   item: {
     backgroundColor: "#E5E7EB",
@@ -174,6 +200,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 9,
     fontWeight: "700",
+  },
+  mediaCountBadge: {
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 999,
+    padding: 5,
+    position: "absolute",
+    right: 6,
+    top: 6,
   },
   tab: {
     alignItems: "center",
@@ -200,5 +234,24 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: colors.brandDark,
     fontWeight: "900",
+  },
+  videoFallback: {
+    alignItems: "center",
+    backgroundColor: "#111827",
+    flex: 1,
+    justifyContent: "center",
+  },
+  videoPlayBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 999,
+    height: 34,
+    justifyContent: "center",
+    left: "50%",
+    marginLeft: -17,
+    marginTop: -17,
+    position: "absolute",
+    top: "50%",
+    width: 34,
   },
 });

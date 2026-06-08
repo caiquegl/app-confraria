@@ -94,12 +94,6 @@ export function NewPostComposer({
   }, []);
 
   const handlePublishPress = () => {
-    console.log("[NewPostComposer] compartilhar clicado", {
-      captionLength: caption.trim().length,
-      mediaCount: media.length,
-      publishing,
-    });
-
     void onPublish();
   };
 

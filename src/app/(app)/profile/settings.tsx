@@ -6,6 +6,7 @@ import Toast from "react-native-toast-message";
 
 import { getCurrentUserId, removeToken } from "@/lib/auth";
 import { setStoredCurrentProfile } from "@/lib/current-profile-store";
+import { getUpdateInfo } from "@/lib/updates";
 import { BikeCategoriesEditorModal } from "@/pages/profile/components/BikeCategoriesEditorModal";
 import { SettingsModal } from "@/pages/profile/components/SettingsModal";
 import {
@@ -28,6 +29,8 @@ type SettingsCard = {
 };
 
 export default function ProfileSettingsScreen() {
+  const updateInfo = getUpdateInfo();
+  const easUpdateLabel = isAppliedEasUpdate(updateInfo.label) ? updateInfo.label : null;
   const [bikeCategories, setBikeCategories] = useState<BikeCategory[]>([]);
   const [ownProfile, setOwnProfile] = useState<OwnProfile | null>(null);
   const [isBikeCategoriesOpen, setIsBikeCategoriesOpen] = useState(false);
@@ -297,6 +300,16 @@ export default function ProfileSettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        <View style={styles.versionFooter}>
+          <Text style={styles.versionText}>Versão instalada {updateInfo.appVersion}</Text>
+          {easUpdateLabel ? (
+            <Text style={styles.versionText}>
+              EAS Update {easUpdateLabel}
+              {updateInfo.updatedAt ? ` • ${updateInfo.updatedAt}` : ""}
+            </Text>
+          ) : null}
+        </View>
       </ScrollView>
 
       {ownProfile ? (
@@ -338,6 +351,10 @@ function showComingSoon(label: string) {
   });
 }
 
+function isAppliedEasUpdate(label: string) {
+  return !["Build nativa", "Dev (sem OTA)", "OTA desabilitado"].includes(label);
+}
+
 const styles = StyleSheet.create({
   backButton: {
     alignItems: "center",
@@ -373,7 +390,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   content: {
-    paddingBottom: 120,
+    flexGrow: 1,
+    paddingBottom: 28,
     paddingHorizontal: 24,
     paddingTop: 16,
   },
@@ -399,5 +417,16 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 18,
     fontWeight: "800",
+  },
+  versionFooter: {
+    alignItems: "flex-end",
+    marginTop: "auto",
+    paddingTop: 32,
+  },
+  versionText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 18,
   },
 });

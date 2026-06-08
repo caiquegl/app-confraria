@@ -285,14 +285,43 @@ function StoryMedia({
   }
 
   return (
-    <Image
-      source={{ uri: story.image }}
-      style={styles.image}
-      cachePolicy="memory-disk"
-      contentFit="cover"
-      recyclingKey={story.image}
-      onLoad={onLoaded}
-    />
+    <View style={styles.image}>
+      <Image
+        source={{ uri: story.image }}
+        style={styles.mediaFill}
+        cachePolicy="memory-disk"
+        contentFit="cover"
+        recyclingKey={story.image}
+        onLoad={onLoaded}
+      />
+      <StoryOverlays overlays={story.overlays ?? []} />
+    </View>
+  );
+}
+
+function StoryOverlays({ overlays }: { overlays: StoryItem["overlays"] }) {
+  if (!overlays || overlays.length === 0) return null;
+
+  return (
+    <View pointerEvents="none" style={styles.mediaFill}>
+      {overlays.map((overlay, index) => (
+        <Image
+          key={`${overlay.imageUrl}-${index}`}
+          source={{ uri: overlay.imageUrl }}
+          style={[
+            styles.storyStickerOverlay,
+            {
+              left: `${overlay.xRatio * 100}%`,
+              top: `${overlay.yRatio * 100}%`,
+              width: `${overlay.sizeRatio * 100}%`,
+            },
+          ]}
+          cachePolicy="memory-disk"
+          contentFit="contain"
+          recyclingKey={overlay.imageUrl}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -361,6 +390,13 @@ const styles = StyleSheet.create({
     top: 0,
     zIndex: 1,
   },
+  mediaFill: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
   likeButton: {
     alignItems: "center",
     alignSelf: "center",
@@ -426,6 +462,10 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: "#000000",
     flex: 1,
+  },
+  storyStickerOverlay: {
+    aspectRatio: 1,
+    position: "absolute",
   },
   timeText: {
     color: "rgba(255,255,255,0.72)",

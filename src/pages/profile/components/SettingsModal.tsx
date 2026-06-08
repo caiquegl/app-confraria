@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
+import { getUpdateInfo } from "@/lib/updates";
 import { colors } from "@/theme/colors";
 
 type SettingsModalProps = {
@@ -39,6 +40,7 @@ export function SettingsModal({
   onSavePrivacy,
 }: SettingsModalProps) {
   const insets = useSafeAreaInsets();
+  const updateInfo = getUpdateInfo();
   const [isPublic, setIsPublic] = useState(true);
   const [showEmail, setShowEmail] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
@@ -140,6 +142,17 @@ export function SettingsModal({
               <MenuButton label="Alterar Senha" onPress={() => setShowChangePassword(true)} />
             </View>
 
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Sobre o app</Text>
+              <View style={styles.versionCard}>
+                <InfoRow label="Versão do app" value={updateInfo.appVersion} />
+                <InfoRow label="EAS Update" value={updateInfo.label} />
+                {updateInfo.updatedAt ? (
+                  <InfoRow label="Atualizado em" value={updateInfo.updatedAt} />
+                ) : null}
+              </View>
+            </View>
+
             <View style={[styles.section, styles.dangerSection]}>
               <Text style={styles.dangerTitle}>Zona de Perigo</Text>
               <Pressable style={styles.dangerButtonSoft} onPress={() => setShowLogoutConfirm(true)}>
@@ -236,6 +249,17 @@ function MenuButton({ label, onPress }: { label: string; onPress: () => void }) 
     <Pressable style={styles.menuButton} onPress={onPress}>
       <Text style={styles.menuButtonText}>{label}</Text>
     </Pressable>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text numberOfLines={1} style={styles.infoValue}>
+        {value}
+      </Text>
+    </View>
   );
 }
 
@@ -487,6 +511,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
+  infoLabel: {
+    color: "#6B7280",
+    fontSize: 13,
+  },
+  infoRow: {
+    alignItems: "center",
+    borderTopColor: "#F3F4F6",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  infoValue: {
+    color: colors.brandDark,
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    marginLeft: 12,
+    textAlign: "right",
+  },
   menuButton: {
     borderColor: "#E5E7EB",
     borderRadius: 14,
@@ -561,5 +605,12 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 24,
     fontWeight: "800",
+  },
+  versionCard: {
+    backgroundColor: "#F9FAFB",
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 14,
   },
 });
