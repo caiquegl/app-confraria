@@ -288,7 +288,9 @@ function StoryMedia({
     <Image
       source={{ uri: story.image }}
       style={styles.image}
+      cachePolicy="memory-disk"
       contentFit="cover"
+      recyclingKey={story.image}
       onLoad={onLoaded}
     />
   );
@@ -303,7 +305,7 @@ function StoryVideo({
   uri: string;
   onLoaded: () => void;
 }) {
-  const player = useVideoPlayer({ uri }, (instance) => {
+  const player = useVideoPlayer({ uri, useCaching: true }, (instance) => {
     instance.loop = false;
     instance.play();
   });

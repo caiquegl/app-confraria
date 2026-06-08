@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { getApiBaseUrl } from "@/lib/api-environment";
 import { apiRoutes } from "@/lib/api-routes";
 import { getToken } from "@/lib/auth";
+import { optimizeImageForUpload } from "@/lib/media-optimization";
 
 import type {
   StoriesFeed,
@@ -24,13 +25,19 @@ export async function createStory(
   onUploadProgress?: UploadProgressHandler,
 ): Promise<StoryItem> {
   const formData = new FormData();
-  const extension = getFileExtension(media.uri, media.mediaType);
-  const type = getMimeType(extension, media.mediaType);
+  const uploadMedia =
+    media.mediaType === "image"
+      ? await optimizeImageForUpload(media.uri)
+      : {
+          extension: getFileExtension(media.uri, media.mediaType),
+          mimeType: getMimeType(getFileExtension(media.uri, media.mediaType), media.mediaType),
+          uri: media.uri,
+        };
 
   formData.append("file", {
-    name: `story-${Date.now()}.${extension}`,
-    type,
-    uri: media.uri,
+    name: `story-${Date.now()}.${uploadMedia.extension}`,
+    type: uploadMedia.mimeType,
+    uri: uploadMedia.uri,
   } as unknown as Blob);
 
   if (media.mediaType === "video" && media.durationMs) {

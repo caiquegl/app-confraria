@@ -311,7 +311,8 @@ export function NewPostCamera({
           facing={facing}
           mode={cameraMode}
           style={styles.camera}
-          videoQuality="1080p"
+          videoBitrate={5_000_000}
+          videoQuality="720p"
           onCameraReady={() => setIsCameraReady(true)}
         />
 
@@ -365,7 +366,13 @@ export function NewPostCamera({
         {capturedMedia.length > 0 && (
           <View style={[styles.mediaCounter, { bottom: Math.max(insets.bottom, 16) + 98 }]}>
             {latestMedia?.mediaType === "image" ? (
-              <Image source={{ uri: latestMedia.uri }} style={styles.latestThumb} contentFit="cover" />
+              <Image
+                source={{ uri: latestMedia.uri }}
+                style={styles.latestThumb}
+                cachePolicy="memory-disk"
+                contentFit="cover"
+                recyclingKey={latestMedia.uri}
+              />
             ) : (
               <View style={styles.latestVideoThumb}>
                 <Ionicons name="play" size={16} color="#FFFFFF" />

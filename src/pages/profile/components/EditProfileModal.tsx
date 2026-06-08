@@ -187,7 +187,13 @@ export function EditProfileModal({
             <View style={styles.avatarSection}>
               <View style={styles.avatarPreview}>
                 {previewAvatar ? (
-                  <Image source={{ uri: previewAvatar }} style={styles.avatarImage} contentFit="cover" />
+                  <Image
+                    source={{ uri: previewAvatar }}
+                    style={styles.avatarImage}
+                    cachePolicy="memory-disk"
+                    contentFit="cover"
+                    recyclingKey={previewAvatar}
+                  />
                 ) : (
                   <UserAvatar avatarUrl={null} name={name || profile.name} size={96} />
                 )}

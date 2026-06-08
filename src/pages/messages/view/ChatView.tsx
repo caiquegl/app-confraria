@@ -125,16 +125,6 @@ export function ChatView({
           },
         ]}
       >
-        <View style={styles.nextStepCard}>
-          <Text style={styles.nextStepTitle}>Próximo passo</Text>
-          <Text style={styles.nextStepText}>
-            Daqui você já pode evoluir essa conversa para uma rota em dupla.
-          </Text>
-          <Pressable style={styles.routeButton}>
-            <Text style={styles.routeButtonText}>Criar rota juntos</Text>
-          </Pressable>
-        </View>
-
         <View style={styles.composerRow}>
           <TextInput
             multiline
@@ -200,7 +190,9 @@ function SharedPostCard({ message }: { message: ChatMessage }) {
         <Image
           source={{ uri: sharedPost.thumbnail }}
           style={styles.sharedImage}
+          cachePolicy="memory-disk"
           contentFit="cover"
+          recyclingKey={sharedPost.thumbnail}
         />
       ) : (
         <View style={styles.sharedImageFallback}>

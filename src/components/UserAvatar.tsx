@@ -20,7 +20,9 @@ export function UserAvatar({ avatarUrl, name, size = 40, style }: UserAvatarProp
       <Image
         source={{ uri: avatarUrl }}
         style={[{ borderRadius: radius, height: size, width: size }, style as StyleProp<ImageStyle>]}
+        cachePolicy="memory-disk"
         contentFit="cover"
+        recyclingKey={avatarUrl}
       />
     );
   }

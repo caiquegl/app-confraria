@@ -230,7 +230,13 @@ function BikeCard({ bike, onPress }: { bike: UserBike; onPress: () => void }) {
   return (
     <Pressable style={styles.bikeCard} onPress={onPress}>
       {bike.imageUrl ? (
-        <Image source={{ uri: bike.imageUrl }} style={styles.bikeImage} contentFit="cover" />
+        <Image
+          source={{ uri: bike.imageUrl }}
+          style={styles.bikeImage}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          recyclingKey={bike.imageUrl}
+        />
       ) : (
         <View style={styles.bikeImageFallback}>
           <Ionicons color="#9CA3AF" name="bicycle-outline" size={26} />

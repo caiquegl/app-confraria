@@ -3,9 +3,12 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { EnvironmentBanner } from "@/components/EnvironmentBanner";
+import { useConfigureVideoCache } from "@/lib/video-cache";
 import { colors } from "@/theme/colors";
 
 export default function RootLayout() {
+  useConfigureVideoCache();
+
   return (
     <SafeAreaProvider>
       <SafeAreaView

@@ -103,7 +103,13 @@ function PublicProfilePostGridItem({
   return (
     <Pressable style={styles.item} onPress={onPress}>
       {image ? (
-        <Image source={{ uri: image }} style={styles.image} contentFit="cover" />
+        <Image
+          source={{ uri: image }}
+          style={styles.image}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          recyclingKey={image}
+        />
       ) : (
         <View style={styles.imageFallback} />
       )}

@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
 import { getApiBaseUrl, getApiEnvironment } from "@/lib/api-environment";
 import { getToken } from "@/lib/auth";
+import { optimizeImageForUpload } from "@/lib/media-optimization";
 
 import type {
   ComposeFeedMedia,
@@ -142,21 +143,40 @@ export async function createFeedPost(params: {
     formData.append("caption", caption);
   }
 
-  params.media.forEach((media, index) => {
-    const extension = getFileExtension(media.uri, media.mediaType);
-    const type = getMimeType(extension, media.mediaType);
+  const uploadMedia = await Promise.all(
+    params.media.map(async (media) => {
+      if (media.mediaType === "image") {
+        const optimizedImage = await optimizeImageForUpload(media.uri);
+        return {
+          ...media,
+          extension: optimizedImage.extension,
+          mimeType: optimizedImage.mimeType,
+          uri: optimizedImage.uri,
+        };
+      }
+
+      const extension = getFileExtension(media.uri, media.mediaType);
+      return {
+        ...media,
+        extension,
+        mimeType: getMimeType(extension, media.mediaType),
+      };
+    }),
+  );
+
+  uploadMedia.forEach((media, index) => {
 
     console.log("[feed.service] anexando mídia", {
-      extension,
+      extension: media.extension,
       index,
       mediaType: media.mediaType,
-      type,
+      type: media.mimeType,
       uri: media.uri,
     });
 
     formData.append("files", {
-      name: `feed-${Date.now()}-${index}.${extension}`,
-      type,
+      name: `feed-${Date.now()}-${index}.${media.extension}`,
+      type: media.mimeType,
       uri: media.uri,
     } as unknown as Blob);
     formData.append(

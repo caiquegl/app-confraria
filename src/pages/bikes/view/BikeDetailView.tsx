@@ -255,7 +255,13 @@ export function BikeDetailView({
             <FieldLabel text="Foto (opcional)" />
             {previewImage ? (
               <View style={styles.photoPreviewWrap}>
-                <Image source={{ uri: previewImage }} style={styles.photoPreview} contentFit="cover" />
+                <Image
+                  source={{ uri: previewImage }}
+                  style={styles.photoPreview}
+                  cachePolicy="memory-disk"
+                  contentFit="cover"
+                  recyclingKey={previewImage}
+                />
                 <Button variant="secondary" onPress={() => setPhotoPickerOpen(true)}>
                   Trocar foto
                 </Button>

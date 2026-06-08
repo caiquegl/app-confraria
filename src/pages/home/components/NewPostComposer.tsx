@@ -323,7 +323,13 @@ function DraggableThumbnail({
         onPress={onPress}
       >
         {media.mediaType === "image" ? (
-          <Image source={{ uri: media.uri }} style={styles.thumbnailImage} contentFit="cover" />
+          <Image
+            source={{ uri: media.uri }}
+            style={styles.thumbnailImage}
+            cachePolicy="memory-disk"
+            contentFit="cover"
+            recyclingKey={media.uri}
+          />
         ) : (
           <View style={styles.thumbnailVideo}>
             <Ionicons name="play" size={18} color="#FFFFFF" />
@@ -339,7 +345,15 @@ function ComposerMediaPreview({ media }: { media: ComposeFeedMedia }) {
     return <ComposerVideoPreview uri={media.uri} />;
   }
 
-  return <Image source={{ uri: media.uri }} style={styles.previewImage} contentFit="cover" />;
+  return (
+    <Image
+      source={{ uri: media.uri }}
+      style={styles.previewImage}
+      cachePolicy="memory-disk"
+      contentFit="cover"
+      recyclingKey={media.uri}
+    />
+  );
 }
 
 function ComposerVideoPreview({ uri }: { uri: string }) {

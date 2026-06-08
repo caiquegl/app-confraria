@@ -291,7 +291,8 @@ export function NewStoryCamera({
             facing={facing}
             mode={cameraMode}
             style={styles.camera}
-            videoQuality="1080p"
+            videoBitrate={5_000_000}
+            videoQuality="720p"
             onCameraReady={() => setIsCameraReady(true)}
           />
         )}
@@ -405,7 +406,15 @@ function StoryMediaPreview({ media }: { media: StoryDraftMedia }) {
     return <StoryVideoPreview uri={media.uri} />;
   }
 
-  return <Image source={{ uri: media.uri }} style={styles.camera} contentFit="cover" />;
+  return (
+    <Image
+      source={{ uri: media.uri }}
+      style={styles.camera}
+      cachePolicy="memory-disk"
+      contentFit="cover"
+      recyclingKey={media.uri}
+    />
+  );
 }
 
 function StoryVideoPreview({ uri }: { uri: string }) {
