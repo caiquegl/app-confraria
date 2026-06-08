@@ -12,6 +12,7 @@ import type {
   StoriesFeed,
   StoryGroup,
   StoryItem,
+  StoryDraftMedia,
   StoryViewerUser,
 } from "../types/stories.types";
 
@@ -25,6 +26,7 @@ export function useStories() {
   const [feed, setFeed] = useState<StoriesFeed | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [viewerState, setViewerState] = useState<StoryViewerState>(null);
   const [viewersStory, setViewersStory] = useState<StoryItem | null>(null);
   const [viewers, setViewers] = useState<StoryViewerUser[]>([]);
@@ -57,12 +59,13 @@ export function useStories() {
     });
   }, [loadStories]);
 
-  const addStory = useCallback(async (uri: string) => {
+  const addStory = useCallback(async (media: StoryDraftMedia) => {
     if (isUploading) return false;
 
     setIsUploading(true);
+    setUploadProgress(0);
     try {
-      await createStory(uri);
+      await createStory(media, setUploadProgress);
       await loadStories();
       return true;
     } catch (error) {
@@ -77,6 +80,7 @@ export function useStories() {
       return false;
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   }, [isUploading, loadStories]);
 
@@ -236,6 +240,7 @@ export function useStories() {
     openViewers,
     otherStoryGroups,
     toggleLike,
+    uploadProgress,
     viewerState,
     viewers,
     viewersStory,

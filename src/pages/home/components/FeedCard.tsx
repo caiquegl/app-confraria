@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
-import type { FeedPost } from "../types/feed.types";
+import type { FeedPost, FeedPostMedia } from "../types/feed.types";
 import { FeedActions } from "./FeedActions";
 import { FeedCaption } from "./FeedCaption";
 import { FeedCardHeader } from "./FeedCardHeader";
@@ -44,13 +44,23 @@ function FeedCardInner({
 }: FeedCardProps) {
   const [commentsVisible, setCommentsVisible] = useState(false);
 
-  const mediaPhotos = useMemo(() => {
-    if (post.photos && post.photos.length > 0) {
-      return post.photos;
+  const mediaItems = useMemo<FeedPostMedia[]>(() => {
+    if (post.media && post.media.length > 0) {
+      return post.media;
     }
 
-    return post.eventImage ? [post.eventImage] : [];
-  }, [post.eventImage, post.photos]);
+    if (post.photos && post.photos.length > 0) {
+      return post.photos.map((photo) => ({
+        durationMs: null,
+        mediaType: "image",
+        url: photo,
+      }));
+    }
+
+    return post.eventImage
+      ? [{ durationMs: null, mediaType: "image", url: post.eventImage }]
+      : [];
+  }, [post.eventImage, post.media, post.photos]);
 
   const mediaTitle = post.eventTitle || post.routeTitle || post.caption || "Post da Confraria";
 
@@ -67,9 +77,9 @@ function FeedCardInner({
     <View style={styles.card}>
       <FeedCardHeader post={post} onOpenUserProfile={onOpenUserProfile} />
 
-      {mediaPhotos.length > 0 && (
+      {mediaItems.length > 0 && (
         <FeedMediaCarousel
-          photos={mediaPhotos}
+          media={mediaItems}
           title={mediaTitle}
           onDoublePress={() => onToggleLike(post.id)}
         />

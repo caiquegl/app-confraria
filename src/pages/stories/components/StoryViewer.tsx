@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,6 +19,7 @@ import { formatRelativeTime } from "@/pages/home/services/feed.service";
 import type { StoryGroup, StoryItem } from "../types/stories.types";
 
 const STORY_DURATION_MS = 5000;
+const MAX_VIDEO_DURATION_MS = 30000;
 
 type StoryViewerProps = {
   groups: StoryGroup[];
@@ -46,11 +48,16 @@ export function StoryViewer({
   const progressValueRef = useRef(0);
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [loadedStoryId, setLoadedStoryId] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const [storyIndex, setStoryIndex] = useState(initialStoryIndex);
 
   const group = groups[groupIndex];
   const story = group?.stories[storyIndex];
-  const isImageLoaded = Boolean(story && loadedStoryId === story.id);
+  const isStoryLoaded = Boolean(story && loadedStoryId === story.id);
+  const storyDurationMs =
+    story?.mediaType === "video"
+      ? Math.min(story.durationMs ?? MAX_VIDEO_DURATION_MS, MAX_VIDEO_DURATION_MS)
+      : STORY_DURATION_MS;
 
   const goNext = useCallback(() => {
     const currentGroup = groups[groupIndex];
@@ -93,7 +100,7 @@ export function StoryViewer({
 
       const remainingDuration = Math.max(
         0,
-        STORY_DURATION_MS * (1 - fromValue),
+        storyDurationMs * (1 - fromValue),
       );
 
       const animation = Animated.timing(progress, {
@@ -108,17 +115,19 @@ export function StoryViewer({
 
       return animation;
     },
-    [goNext, progress],
+    [goNext, progress, storyDurationMs],
   );
 
   const pauseProgress = useCallback(() => {
     didLongPressRef.current = true;
+    setIsPaused(true);
     progress.stopAnimation((value) => {
       progressValueRef.current = value;
     });
   }, [progress]);
 
   const resumeProgress = useCallback(() => {
+    setIsPaused(false);
     startProgressAnimation(progressValueRef.current);
   }, [startProgressAnimation]);
 
@@ -149,27 +158,26 @@ export function StoryViewer({
   }, [onStoryVisible, progress, story, visible]);
 
   useEffect(() => {
-    if (!visible || !story || !isImageLoaded) return;
+    if (!visible || !story || !isStoryLoaded) return;
 
     const animation = startProgressAnimation(progressValueRef.current);
 
     return () => animation.stop();
-  }, [isImageLoaded, startProgressAnimation, story, visible]);
+  }, [isStoryLoaded, startProgressAnimation, story, visible]);
 
   if (!visible || !group || !story) return null;
 
   return (
     <Modal animationType="fade" visible={visible} statusBarTranslucent>
       <View style={styles.screen}>
-        <Image
-          source={{ uri: story.image }}
-          style={styles.image}
-          contentFit="cover"
-          onLoad={() => setLoadedStoryId(story.id)}
+        <StoryMedia
+          isPaused={isPaused}
+          story={story}
+          onLoaded={() => setLoadedStoryId(story.id)}
         />
         <View style={styles.overlay} />
 
-        {!isImageLoaded && (
+        {!isStoryLoaded && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator color="#FFFFFF" size="large" />
           </View>
@@ -253,6 +261,70 @@ export function StoryViewer({
         )}
       </View>
     </Modal>
+  );
+}
+
+function StoryMedia({
+  isPaused,
+  story,
+  onLoaded,
+}: {
+  isPaused: boolean;
+  story: StoryItem;
+  onLoaded: () => void;
+}) {
+  if (story.mediaType === "video") {
+    return (
+      <StoryVideo
+        key={story.id}
+        isPaused={isPaused}
+        uri={story.image}
+        onLoaded={onLoaded}
+      />
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri: story.image }}
+      style={styles.image}
+      contentFit="cover"
+      onLoad={onLoaded}
+    />
+  );
+}
+
+function StoryVideo({
+  isPaused,
+  uri,
+  onLoaded,
+}: {
+  isPaused: boolean;
+  uri: string;
+  onLoaded: () => void;
+}) {
+  const player = useVideoPlayer({ uri }, (instance) => {
+    instance.loop = false;
+    instance.play();
+  });
+
+  useEffect(() => {
+    if (isPaused) {
+      player.pause();
+      return;
+    }
+
+    player.play();
+  }, [isPaused, player]);
+
+  return (
+    <VideoView
+      contentFit="cover"
+      nativeControls={false}
+      player={player}
+      style={styles.image}
+      onFirstFrameRender={onLoaded}
+    />
   );
 }
 

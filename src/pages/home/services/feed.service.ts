@@ -4,6 +4,7 @@ import { getApiBaseUrl, getApiEnvironment } from "@/lib/api-environment";
 import { getToken } from "@/lib/auth";
 
 import type {
+  ComposeFeedMedia,
   ComposeAudience,
   FeedComment,
   FeedCommentLikeResponse,
@@ -14,6 +15,8 @@ import type {
 
 export const FEED_PAGE_SIZE = 20;
 export const FEED_PREFETCH_INDEX = 9;
+
+type UploadProgressHandler = (progress: number) => void;
 
 export async function fetchFeedPosts(params?: {
   cursor?: string | null;
@@ -121,12 +124,13 @@ export async function toggleFeedPostCommentLike(
 export async function createFeedPost(params: {
   audience: ComposeAudience;
   caption: string;
-  photos: string[];
+  media: ComposeFeedMedia[];
+  onUploadProgress?: UploadProgressHandler;
 }): Promise<FeedPost> {
   console.log("[feed.service] createFeedPost preparando FormData", {
     audience: params.audience,
     captionLength: params.caption.trim().length,
-    photosCount: params.photos.length,
+    mediaCount: params.media.length,
   });
 
   const formData = new FormData();
@@ -138,22 +142,27 @@ export async function createFeedPost(params: {
     formData.append("caption", caption);
   }
 
-  params.photos.forEach((uri, index) => {
-    const extension = getFileExtension(uri);
-    const type = getMimeType(extension);
+  params.media.forEach((media, index) => {
+    const extension = getFileExtension(media.uri, media.mediaType);
+    const type = getMimeType(extension, media.mediaType);
 
-    console.log("[feed.service] anexando foto", {
+    console.log("[feed.service] anexando mídia", {
       extension,
       index,
+      mediaType: media.mediaType,
       type,
-      uri,
+      uri: media.uri,
     });
 
     formData.append("files", {
       name: `feed-${Date.now()}-${index}.${extension}`,
       type,
-      uri,
+      uri: media.uri,
     } as unknown as Blob);
+    formData.append(
+      "durationMs",
+      media.mediaType === "video" && media.durationMs ? String(media.durationMs) : "",
+    );
   });
 
   const environment = await getApiEnvironment();
@@ -169,6 +178,7 @@ export async function createFeedPost(params: {
 
   const responseText = await sendFeedPostRequest({
     formData,
+    onUploadProgress: params.onUploadProgress,
     token,
     url,
   });
@@ -181,6 +191,7 @@ export async function createFeedPost(params: {
 
 function sendFeedPostRequest(params: {
   formData: FormData;
+  onUploadProgress?: UploadProgressHandler;
   token: string | null;
   url: string;
 }): Promise<string> {
@@ -188,7 +199,7 @@ function sendFeedPostRequest(params: {
     const xhr = new XMLHttpRequest();
 
     xhr.open("POST", params.url);
-    xhr.timeout = 60000;
+    xhr.timeout = 120000;
     xhr.setRequestHeader("Accept", "application/json");
 
     if (params.token) {
@@ -200,6 +211,10 @@ function sendFeedPostRequest(params: {
         loaded: event.loaded,
         total: event.lengthComputable ? event.total : undefined,
       });
+
+      if (!event.lengthComputable || !params.onUploadProgress) return;
+
+      params.onUploadProgress(Math.min(event.loaded / event.total, 1));
     };
 
     xhr.onload = () => {
@@ -209,6 +224,7 @@ function sendFeedPostRequest(params: {
       });
 
       if (xhr.status >= 200 && xhr.status < 300) {
+        params.onUploadProgress?.(1);
         resolve(xhr.responseText);
         return;
       }
@@ -245,20 +261,41 @@ function resolveApiErrorMessage(responseText: string, status: number): string {
   return `Não foi possível publicar o post. Status ${status}`;
 }
 
-function getFileExtension(uri: string): string {
+function getFileExtension(uri: string, mediaType: ComposeFeedMedia["mediaType"]): string {
   const cleanUri = uri.split("?")[0] ?? uri;
   const extension = cleanUri.split(".").pop()?.toLowerCase();
 
-  if (extension === "png" || extension === "webp" || extension === "jpg" || extension === "jpeg") {
+  if (mediaType === "video") {
+    if (extension && ["mp4", "mov", "m4v"].includes(extension)) {
+      return extension;
+    }
+
+    return "mp4";
+  }
+
+  if (
+    extension === "png" ||
+    extension === "webp" ||
+    extension === "jpg" ||
+    extension === "jpeg" ||
+    extension === "heic"
+  ) {
     return extension === "jpeg" ? "jpg" : extension;
   }
 
   return "jpg";
 }
 
-function getMimeType(extension: string): string {
+function getMimeType(extension: string, mediaType: ComposeFeedMedia["mediaType"]): string {
+  if (mediaType === "video") {
+    if (extension === "mov") return "video/quicktime";
+    if (extension === "m4v") return "video/x-m4v";
+    return "video/mp4";
+  }
+
   if (extension === "png") return "image/png";
   if (extension === "webp") return "image/webp";
+  if (extension === "heic") return "image/heic";
   return "image/jpeg";
 }
 

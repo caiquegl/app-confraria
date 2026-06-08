@@ -40,7 +40,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Permita que o Confraria acesse sua câmera para criar postagens."
+          "cameraPermission": "Permita que o Confraria acesse sua câmera para criar postagens.",
+          "microphonePermission": "Permita que o Confraria acesse seu microfone para gravar vídeos nos stories."
         }
       ],
       [
@@ -58,7 +59,8 @@
           "imageWidth": 220,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

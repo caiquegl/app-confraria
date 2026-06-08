@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useEffect, useMemo, useRef } from "react";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   PanResponder,
@@ -20,7 +23,7 @@ import Toast from "react-native-toast-message";
 import { Button } from "@/components/Button";
 import { colors } from "@/theme/colors";
 
-import type { ComposeAudience } from "../types/feed.types";
+import type { ComposeAudience, ComposeFeedMedia } from "../types/feed.types";
 
 const THUMBNAIL_SIZE = 80;
 const THUMBNAIL_GAP = 12;
@@ -37,7 +40,8 @@ type NewPostComposerProps = {
   onPublish: () => void | Promise<void>;
   onRemovePhoto: (index: number) => void;
   onReorderPhotos: (fromIndex: number, toIndex: number) => void;
-  photos: string[];
+  media: ComposeFeedMedia[];
+  postUploadProgress?: number;
   publishing?: boolean;
   restrictToFollowers?: boolean;
   visible: boolean;
@@ -54,13 +58,18 @@ export function NewPostComposer({
   onPublish,
   onRemovePhoto,
   onReorderPhotos,
-  photos,
+  media,
+  postUploadProgress = 0,
   publishing = false,
   restrictToFollowers = false,
   visible,
 }: NewPostComposerProps) {
   const insets = useSafeAreaInsets();
-  const activePhoto = photos[activePhotoIndex] ?? photos[0];
+  const scrollRef = useRef<ScrollView>(null);
+  const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
+  const activeMedia = media[activePhotoIndex] ?? media[0];
+  const uploadPercent = Math.round(Math.min(Math.max(postUploadProgress, 0), 1) * 100);
+  const isAndroidKeyboardVisible = Platform.OS === "android" && androidKeyboardHeight > 0;
 
   useEffect(() => {
     if (restrictToFollowers && audience !== "friends") {
@@ -68,20 +77,45 @@ export function NewPostComposer({
     }
   }, [audience, onChangeAudience, restrictToFollowers]);
 
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const showSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
+      setAndroidKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setAndroidKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   const handlePublishPress = () => {
     console.log("[NewPostComposer] compartilhar clicado", {
       captionLength: caption.trim().length,
-      photosCount: photos.length,
+      mediaCount: media.length,
       publishing,
     });
 
     void onPublish();
   };
 
+  const handleCaptionFocus = () => {
+    if (Platform.OS !== "android") return;
+
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 120);
+  };
+
   return (
     <Modal animationType="slide" visible={visible} statusBarTranslucent>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        enabled={Platform.OS === "ios"}
         style={styles.screen}
       >
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
@@ -99,16 +133,22 @@ export function NewPostComposer({
         </View>
 
         <ScrollView
+          ref={scrollRef}
           style={styles.content}
-          contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={[
+            styles.contentContainer,
+            isAndroidKeyboardVisible && {
+              paddingBottom: androidKeyboardHeight + 56,
+            },
+          ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {activePhoto && (
+          {activeMedia && (
             <View style={styles.previewCard}>
-              <Image source={{ uri: activePhoto }} style={styles.previewImage} contentFit="cover" />
+              <ComposerMediaPreview media={activeMedia} />
               <Pressable
-                accessibilityLabel="Remover foto"
+                accessibilityLabel="Remover mídia"
                 hitSlop={8}
                 style={styles.removePreviewButton}
                 onPress={() => onRemovePhoto(activePhotoIndex)}
@@ -118,18 +158,18 @@ export function NewPostComposer({
             </View>
           )}
 
-          {photos.length > 1 && (
+          {media.length > 1 && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.thumbnails}
             >
-              {photos.map((photo, index) => (
+              {media.map((item, index) => (
                 <DraggableThumbnail
-                  key={`${photo}-${index}`}
-                  photo={photo}
+                  key={`${item.uri}-${index}`}
+                  media={item}
                   index={index}
-                  total={photos.length}
+                  total={media.length}
                   active={activePhotoIndex === index}
                   onPress={() => onChangeActivePhotoIndex(index)}
                   onMove={onReorderPhotos}
@@ -144,6 +184,7 @@ export function NewPostComposer({
             placeholder="Adicione uma legenda obrigatória..."
             placeholderTextColor="#7B8493"
             style={styles.captionInput}
+            onFocus={handleCaptionFocus}
             onChangeText={onChangeCaption}
           />
 
@@ -168,16 +209,41 @@ export function NewPostComposer({
           </View>
         </ScrollView>
 
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: Math.max(insets.bottom, 16) },
+            isAndroidKeyboardVisible && styles.footerHidden,
+          ]}
+        >
           <Button
             size="lg"
             style={styles.publishButton}
-            disabled={photos.length === 0 || publishing}
+            disabled={media.length === 0 || publishing}
             onPress={handlePublishPress}
           >
             {publishing ? "Publicando..." : "Compartilhar"}
           </Button>
         </View>
+        {publishing && (
+          <View style={styles.uploadOverlay}>
+            <View style={styles.uploadCard}>
+              <ActivityIndicator color={colors.brandGreen} size="large" />
+              <Text style={styles.uploadTitle}>
+                {uploadPercent >= 100 ? "Processando post..." : "Publicando post..."}
+              </Text>
+              <Text style={styles.uploadSubtitle}>
+                {uploadPercent >= 100
+                  ? "Finalizando o envio no servidor."
+                  : "Mantenha a tela aberta até concluir."}
+              </Text>
+              <View style={styles.uploadProgressTrack}>
+                <View style={[styles.uploadProgressFill, { width: `${uploadPercent}%` }]} />
+              </View>
+              <Text style={styles.uploadPercent}>{uploadPercent}%</Text>
+            </View>
+          </View>
+        )}
         <Toast topOffset={insets.top + 12} />
       </KeyboardAvoidingView>
     </Modal>
@@ -189,7 +255,7 @@ type DraggableThumbnailProps = {
   index: number;
   onMove: (fromIndex: number, toIndex: number) => void;
   onPress: () => void;
-  photo: string;
+  media: ComposeFeedMedia;
   total: number;
 };
 
@@ -198,7 +264,7 @@ function DraggableThumbnail({
   index,
   onMove,
   onPress,
-  photo,
+  media,
   total,
 }: DraggableThumbnailProps) {
   const translateXRef = useRef(new Animated.Value(0));
@@ -256,9 +322,39 @@ function DraggableThumbnail({
         style={[styles.thumbnailButton, active && styles.thumbnailButtonActive]}
         onPress={onPress}
       >
-        <Image source={{ uri: photo }} style={styles.thumbnailImage} contentFit="cover" />
+        {media.mediaType === "image" ? (
+          <Image source={{ uri: media.uri }} style={styles.thumbnailImage} contentFit="cover" />
+        ) : (
+          <View style={styles.thumbnailVideo}>
+            <Ionicons name="play" size={18} color="#FFFFFF" />
+          </View>
+        )}
       </Pressable>
     </Animated.View>
+  );
+}
+
+function ComposerMediaPreview({ media }: { media: ComposeFeedMedia }) {
+  if (media.mediaType === "video") {
+    return <ComposerVideoPreview uri={media.uri} />;
+  }
+
+  return <Image source={{ uri: media.uri }} style={styles.previewImage} contentFit="cover" />;
+}
+
+function ComposerVideoPreview({ uri }: { uri: string }) {
+  const player = useVideoPlayer({ uri }, (instance) => {
+    instance.loop = true;
+    instance.play();
+  });
+
+  return (
+    <VideoView
+      contentFit="cover"
+      nativeControls={false}
+      player={player}
+      style={styles.previewImage}
+    />
   );
 }
 
@@ -314,6 +410,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: 24,
     paddingTop: 14,
+  },
+  footerHidden: {
+    display: "none",
   },
   header: {
     alignItems: "center",
@@ -378,11 +477,71 @@ const styles = StyleSheet.create({
     height: THUMBNAIL_SIZE,
     width: THUMBNAIL_SIZE,
   },
+  thumbnailVideo: {
+    alignItems: "center",
+    backgroundColor: "rgba(17,24,39,0.86)",
+    height: THUMBNAIL_SIZE,
+    justifyContent: "center",
+    width: THUMBNAIL_SIZE,
+  },
   thumbnailDragWrapper: {
     borderRadius: 16,
   },
   thumbnails: {
     gap: 12,
     paddingTop: 16,
+  },
+  uploadCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(17,24,39,0.92)",
+    borderColor: "rgba(255,255,255,0.16)",
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+    width: 280,
+  },
+  uploadOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    bottom: 0,
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 20,
+  },
+  uploadPercent: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 8,
+  },
+  uploadProgressFill: {
+    backgroundColor: colors.brandGreen,
+    borderRadius: 999,
+    height: "100%",
+  },
+  uploadProgressTrack: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 999,
+    height: 7,
+    marginTop: 18,
+    overflow: "hidden",
+    width: "100%",
+  },
+  uploadSubtitle: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 6,
+    textAlign: "center",
+  },
+  uploadTitle: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "800",
+    marginTop: 16,
   },
 });

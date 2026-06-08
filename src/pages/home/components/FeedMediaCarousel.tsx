@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRef, useState } from "react";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Pressable,
@@ -11,14 +12,16 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 
+import type { FeedPostMedia } from "../types/feed.types";
+
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = 32;
 const CARD_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING;
 const DEFAULT_MEDIA_HEIGHT = Math.round(CARD_WIDTH * 0.75);
 
 type FeedMediaCarouselProps = {
+  media: FeedPostMedia[];
   onDoublePress?: () => void;
-  photos: string[];
   title: string;
 };
 
@@ -27,18 +30,18 @@ function resolveImageHeight(width: number, height: number): number {
   return Math.round((CARD_WIDTH / width) * height);
 }
 
-export function FeedMediaCarousel({ onDoublePress, photos, title }: FeedMediaCarouselProps) {
+export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [imageHeights, setImageHeights] = useState<Record<number, number>>({});
   const scrollRef = useRef<ScrollView>(null);
   const lastPressAtRef = useRef(0);
 
-  if (photos.length === 0) return null;
+  if (media.length === 0) return null;
 
   const activeHeight = imageHeights[activeIndex] ?? DEFAULT_MEDIA_HEIGHT;
 
   const scrollToIndex = (index: number) => {
-    const clamped = Math.max(0, Math.min(index, photos.length - 1));
+    const clamped = Math.max(0, Math.min(index, media.length - 1));
     scrollRef.current?.scrollTo({ animated: true, x: CARD_WIDTH * clamped });
     setActiveIndex(clamped);
   };
@@ -57,7 +60,7 @@ export function FeedMediaCarousel({ onDoublePress, photos, title }: FeedMediaCar
     }));
   };
 
-  const handlePhotoPress = () => {
+  const handleMediaPress = () => {
     const now = Date.now();
 
     if (now - lastPressAtRef.current < 280) {
@@ -81,34 +84,42 @@ export function FeedMediaCarousel({ onDoublePress, photos, title }: FeedMediaCar
         snapToInterval={CARD_WIDTH}
         onMomentumScrollEnd={handleScrollEnd}
       >
-        {photos.map((photo, index) => {
+        {media.map((item, index) => {
           const slideHeight = imageHeights[index] ?? activeHeight;
 
           return (
             <Pressable
-              key={`${photo}-${index}`}
-              accessibilityLabel={`Foto ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
+              key={`${item.url}-${index}`}
+              accessibilityLabel={`Mídia ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
               accessibilityRole="imagebutton"
               style={[styles.slide, { height: slideHeight }]}
-              onPress={handlePhotoPress}
+              onPress={handleMediaPress}
             >
-              <Image
-                source={{ uri: photo }}
-                style={[styles.image, { height: slideHeight }]}
-                cachePolicy="memory-disk"
-                contentFit="contain"
-                recyclingKey={photo}
-                onLoad={({ source }) => handleImageLoad(index, source.width, source.height)}
-              />
+              {item.mediaType === "video" ? (
+                <FeedVideoSlide
+                  active={activeIndex === index}
+                  height={slideHeight}
+                  uri={item.url}
+                />
+              ) : (
+                <Image
+                  source={{ uri: item.url }}
+                  style={[styles.image, { height: slideHeight }]}
+                  cachePolicy="memory-disk"
+                  contentFit="contain"
+                  recyclingKey={item.url}
+                  onLoad={({ source }) => handleImageLoad(index, source.width, source.height)}
+                />
+              )}
             </Pressable>
           );
         })}
       </ScrollView>
 
-      {photos.length > 1 && (
+      {media.length > 1 && (
         <>
           <View style={styles.dots}>
-            {photos.map((_, index) => (
+            {media.map((_, index) => (
               <View
                 key={index}
                 style={[styles.dot, index === activeIndex ? styles.dotActive : styles.dotIdle]}
@@ -126,7 +137,7 @@ export function FeedMediaCarousel({ onDoublePress, photos, title }: FeedMediaCar
             </Pressable>
           )}
 
-          {activeIndex < photos.length - 1 && (
+          {activeIndex < media.length - 1 && (
             <Pressable
               style={[styles.arrow, styles.arrowRight]}
               hitSlop={8}
@@ -137,6 +148,65 @@ export function FeedMediaCarousel({ onDoublePress, photos, title }: FeedMediaCar
           )}
         </>
       )}
+    </View>
+  );
+}
+
+function FeedVideoSlide({
+  active,
+  height,
+  uri,
+}: {
+  active: boolean;
+  height: number;
+  uri: string;
+}) {
+  const [isMuted, setIsMuted] = useState(true);
+  const player = useVideoPlayer({ uri }, (instance) => {
+    instance.loop = true;
+    instance.muted = true;
+    instance.play();
+  });
+
+  useEffect(() => {
+    if (active) {
+      player.play();
+      return;
+    }
+
+    player.pause();
+  }, [active, player]);
+
+  const toggleMute = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    player.muted = nextMuted;
+  };
+
+  return (
+    <View style={[styles.videoContainer, { height }]}>
+      <VideoView
+        contentFit="contain"
+        nativeControls={false}
+        player={player}
+        style={[styles.video, { height }]}
+      />
+      <Pressable
+        accessibilityLabel={isMuted ? "Ativar áudio do vídeo" : "Mutar áudio do vídeo"}
+        accessibilityRole="button"
+        hitSlop={8}
+        style={styles.muteButton}
+        onPress={(event) => {
+          event.stopPropagation();
+          toggleMute();
+        }}
+      >
+        <Ionicons
+          name={isMuted ? "volume-mute" : "volume-high"}
+          size={18}
+          color="#FFFFFF"
+        />
+      </Pressable>
     </View>
   );
 }
@@ -184,7 +254,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
     width: CARD_WIDTH,
   },
+  muteButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderColor: "rgba(255,255,255,0.22)",
+    borderRadius: 999,
+    borderWidth: 1,
+    bottom: 12,
+    height: 38,
+    justifyContent: "center",
+    position: "absolute",
+    right: 12,
+    width: 38,
+  },
   slide: {
+    width: CARD_WIDTH,
+  },
+  video: {
+    width: CARD_WIDTH,
+  },
+  videoContainer: {
+    alignItems: "center",
+    backgroundColor: "#000000",
+    justifyContent: "center",
     width: CARD_WIDTH,
   },
   wrapper: {

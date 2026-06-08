@@ -11,6 +11,7 @@ import { StoriesBar } from "@/pages/stories/components/StoriesBar";
 import { StorySuccessModal } from "@/pages/stories/components/StorySuccessModal";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
 import { StoryViewersSheet } from "@/pages/stories/components/StoryViewersSheet";
+import type { StoryDraftMedia } from "@/pages/stories/types/stories.types";
 import { colors } from "@/theme/colors";
 
 import { useFeed } from "../business/useFeed";
@@ -25,8 +26,8 @@ export function HomeView() {
   const {
     addComment,
     addReply,
-    addCameraPhoto,
-    cameraPhotos,
+    addCameraMedia,
+    cameraMedia,
     commentsLoadingByPost,
     closeComposer,
     closeNewPostCamera,
@@ -37,7 +38,7 @@ export function HomeView() {
     composeActivePhotoIndex,
     composeAudience,
     composeCaption,
-    composerPhotos,
+    composerMedia,
     friends,
     handlePrefetch,
     isCameraOpen,
@@ -56,6 +57,7 @@ export function HomeView() {
     openNewPostCamera,
     openShare,
     publishPost,
+    postUploadProgress,
     refreshFeed,
     posts,
     removeComposerPhoto,
@@ -74,7 +76,7 @@ export function HomeView() {
   const stories = useStories();
   const [isStoryCameraOpen, setIsStoryCameraOpen] = useState(false);
   const [isStorySuccessVisible, setIsStorySuccessVisible] = useState(false);
-  const [selectedStoryPhoto, setSelectedStoryPhoto] = useState<string | null>(null);
+  const [selectedStoryMedia, setSelectedStoryMedia] = useState<StoryDraftMedia | null>(null);
   const handleRefresh = useCallback(() => {
     void Promise.all([refreshFeed(), stories.loadStories()]);
   }, [refreshFeed, stories]);
@@ -89,19 +91,19 @@ export function HomeView() {
     });
   };
   const openStoryCamera = () => {
-    setSelectedStoryPhoto(null);
+    setSelectedStoryMedia(null);
     setIsStoryCameraOpen(true);
   };
   const closeStoryCamera = () => {
-    setSelectedStoryPhoto(null);
+    setSelectedStoryMedia(null);
     setIsStoryCameraOpen(false);
   };
   const publishStory = () => {
-    if (!selectedStoryPhoto) return;
+    if (!selectedStoryMedia) return;
 
-    void stories.addStory(selectedStoryPhoto).then((published) => {
+    void stories.addStory(selectedStoryMedia).then((published) => {
       if (published) {
-        setSelectedStoryPhoto(null);
+        setSelectedStoryMedia(null);
         setIsStoryCameraOpen(false);
         setIsStorySuccessVisible(true);
       }
@@ -170,9 +172,9 @@ export function HomeView() {
       />
 
       <NewPostCamera
-        capturedPhotos={cameraPhotos}
+        capturedMedia={cameraMedia}
         visible={isCameraOpen}
-        onAddPhoto={addCameraPhoto}
+        onAddMedia={addCameraMedia}
         onClose={closeNewPostCamera}
         onDone={openComposerFromCamera}
         onGallerySelected={openComposerFromGallery}
@@ -182,7 +184,8 @@ export function HomeView() {
         activePhotoIndex={composeActivePhotoIndex}
         audience={composeAudience}
         caption={composeCaption}
-        photos={composerPhotos}
+        media={composerMedia}
+        postUploadProgress={postUploadProgress}
         publishing={isPublishingPost}
         restrictToFollowers={isComposerRestrictedToFollowers}
         visible={isComposerOpen}
@@ -199,11 +202,12 @@ export function HomeView() {
 
       <NewStoryCamera
         isPublishing={stories.isUploading}
-        selectedPhoto={selectedStoryPhoto}
+        selectedMedia={selectedStoryMedia}
+        uploadProgress={stories.uploadProgress}
         visible={isStoryCameraOpen}
         onClose={closeStoryCamera}
         onPublish={publishStory}
-        onSelectPhoto={(uri) => setSelectedStoryPhoto(uri || null)}
+        onSelectMedia={setSelectedStoryMedia}
       />
 
       <StorySuccessModal

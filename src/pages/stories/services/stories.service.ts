@@ -5,32 +5,43 @@ import { getToken } from "@/lib/auth";
 
 import type {
   StoriesFeed,
+  StoryDraftMedia,
   StoryGroup,
   StoryItem,
   StoryLikeResponse,
   StoryViewerUser,
 } from "../types/stories.types";
 
+type UploadProgressHandler = (progress: number) => void;
+
 export async function fetchStoriesFeed(): Promise<StoriesFeed> {
   const { data } = await api.get<StoriesFeed>(apiRoutes.stories.feed);
   return data;
 }
 
-export async function createStory(uri: string): Promise<StoryItem> {
+export async function createStory(
+  media: StoryDraftMedia,
+  onUploadProgress?: UploadProgressHandler,
+): Promise<StoryItem> {
   const formData = new FormData();
-  const extension = getFileExtension(uri);
-  const type = getMimeType(extension);
+  const extension = getFileExtension(media.uri, media.mediaType);
+  const type = getMimeType(extension, media.mediaType);
 
   formData.append("file", {
     name: `story-${Date.now()}.${extension}`,
     type,
-    uri,
+    uri: media.uri,
   } as unknown as Blob);
+
+  if (media.mediaType === "video" && media.durationMs) {
+    formData.append("durationMs", String(media.durationMs));
+  }
 
   const baseURL = await getApiBaseUrl();
   const token = await getToken();
   const responseText = await sendStoryRequest({
     formData,
+    onUploadProgress,
     token,
     url: `${baseURL}${apiRoutes.stories.create}`,
   });
@@ -65,6 +76,7 @@ export async function fetchStoryViewers(
 
 function sendStoryRequest(params: {
   formData: FormData;
+  onUploadProgress?: UploadProgressHandler;
   token: string | null;
   url: string;
 }): Promise<string> {
@@ -72,15 +84,22 @@ function sendStoryRequest(params: {
     const xhr = new XMLHttpRequest();
 
     xhr.open("POST", params.url);
-    xhr.timeout = 60000;
+    xhr.timeout = 120000;
     xhr.setRequestHeader("Accept", "application/json");
 
     if (params.token) {
       xhr.setRequestHeader("Authorization", `Bearer ${params.token}`);
     }
 
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable || !params.onUploadProgress) return;
+
+      params.onUploadProgress(Math.min(event.loaded / event.total, 1));
+    };
+
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
+        params.onUploadProgress?.(1);
         resolve(xhr.responseText);
         return;
       }
@@ -106,19 +125,34 @@ function parseErrorMessage(responseText: string): string {
   return "Não foi possível enviar o story.";
 }
 
-function getFileExtension(uri: string): string {
+function getFileExtension(uri: string, mediaType: StoryDraftMedia["mediaType"]): string {
   const cleanUri = uri.split("?")[0] ?? uri;
   const extension = cleanUri.split(".").pop()?.toLowerCase();
 
-  if (extension && ["jpg", "jpeg", "png", "webp"].includes(extension)) {
+  if (mediaType === "video") {
+    if (extension && ["mp4", "mov", "m4v"].includes(extension)) {
+      return extension;
+    }
+
+    return "mp4";
+  }
+
+  if (extension && ["jpg", "jpeg", "png", "webp", "heic"].includes(extension)) {
     return extension === "jpeg" ? "jpg" : extension;
   }
 
   return "jpg";
 }
 
-function getMimeType(extension: string): string {
+function getMimeType(extension: string, mediaType: StoryDraftMedia["mediaType"]): string {
+  if (mediaType === "video") {
+    if (extension === "mov") return "video/quicktime";
+    if (extension === "m4v") return "video/x-m4v";
+    return "video/mp4";
+  }
+
   if (extension === "png") return "image/png";
   if (extension === "webp") return "image/webp";
+  if (extension === "heic") return "image/heic";
   return "image/jpeg";
 }

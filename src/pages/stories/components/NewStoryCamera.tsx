@@ -1,46 +1,84 @@
 import { Ionicons } from "@expo/vector-icons";
-import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
+import {
+  CameraView,
+  useCameraPermissions,
+  useMicrophonePermissions,
+  type CameraType,
+} from "expo-camera";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
 import { colors } from "@/theme/colors";
 
+import type { StoryDraftMedia } from "../types/stories.types";
+
+const MAX_VIDEO_DURATION_MS = 30_000;
+const VIDEO_PRESS_DELAY_MS = 250;
+
 type NewStoryCameraProps = {
   isPublishing?: boolean;
-  selectedPhoto: string | null;
+  selectedMedia: StoryDraftMedia | null;
+  uploadProgress?: number;
   visible: boolean;
   onClose: () => void;
-  onSelectPhoto: (uri: string) => void;
+  onSelectMedia: (media: StoryDraftMedia | null) => void;
   onPublish: () => void;
 };
 
 export function NewStoryCamera({
   isPublishing = false,
-  selectedPhoto,
+  selectedMedia,
+  uploadProgress = 0,
   visible,
   onClose,
-  onSelectPhoto,
+  onSelectMedia,
   onPublish,
 }: NewStoryCameraProps) {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRecordingRef = useRef(false);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  const stopRequestedRef = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
   const [facing, setFacing] = useState<CameraType>("back");
+  const [cameraMode, setCameraMode] = useState<"picture" | "video">("picture");
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const uploadPercent = Math.round(Math.min(Math.max(uploadProgress, 0), 1) * 100);
+
+  const clearPressTimer = useCallback(() => {
+    if (!pressTimerRef.current) return;
+
+    clearTimeout(pressTimerRef.current);
+    pressTimerRef.current = null;
+  }, []);
 
   const handleTakePhoto = async () => {
-    if (!cameraRef.current || !isCameraReady || isTakingPhoto) return;
+    if (
+      !cameraRef.current ||
+      !isCameraReady ||
+      isTakingPhoto ||
+      isRecording ||
+      isRecordingRef.current
+    ) {
+      return;
+    }
 
     setIsTakingPhoto(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
-      onSelectPhoto(photo.uri);
+      setCameraMode("picture");
+      const photo = await cameraRef.current.takePictureAsync({ quality: 1 });
+      onSelectMedia({ mediaType: "image", uri: photo.uri });
     } catch {
       Toast.show({
         type: "error",
@@ -52,6 +90,82 @@ export function NewStoryCamera({
     }
   };
 
+  const startRecording = useCallback(async () => {
+    if (!cameraRef.current || !isCameraReady || isTakingPhoto || isRecording) return;
+
+    const microphoneStatus =
+      microphonePermission?.granted ? microphonePermission : await requestMicrophonePermission();
+
+    if (!microphoneStatus.granted) {
+      Toast.show({
+        type: "error",
+        text1: "Permissão necessária",
+        text2: "Permita acesso ao microfone para gravar vídeo.",
+      });
+      return;
+    }
+
+    setIsRecording(true);
+    setRecordingElapsedMs(0);
+    isRecordingRef.current = true;
+    stopRequestedRef.current = false;
+    setCameraMode("video");
+    recordingStartedAtRef.current = Date.now();
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      const recording = cameraRef.current.recordAsync({
+        maxDuration: MAX_VIDEO_DURATION_MS / 1000,
+        maxFileSize: 80 * 1024 * 1024,
+      });
+
+      if (stopRequestedRef.current) {
+        cameraRef.current.stopRecording();
+      }
+
+      const video = await recording;
+
+      if (!video?.uri) return;
+
+      const recordedDurationMs = recordingStartedAtRef.current
+        ? Math.min(Date.now() - recordingStartedAtRef.current, MAX_VIDEO_DURATION_MS)
+        : MAX_VIDEO_DURATION_MS;
+
+      onSelectMedia({
+        durationMs: Math.max(1, recordedDurationMs),
+        mediaType: "video",
+        uri: video.uri,
+      });
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Erro na gravação",
+        text2: "Não foi possível gravar o vídeo. Tente novamente.",
+      });
+    } finally {
+      isRecordingRef.current = false;
+      recordingStartedAtRef.current = null;
+      stopRequestedRef.current = false;
+      setRecordingElapsedMs(0);
+      setIsRecording(false);
+      setCameraMode("picture");
+    }
+  }, [
+    isCameraReady,
+    isRecording,
+    isTakingPhoto,
+    microphonePermission,
+    onSelectMedia,
+    requestMicrophonePermission,
+  ]);
+
+  const stopRecording = useCallback(() => {
+    if (!isRecordingRef.current) return;
+
+    stopRequestedRef.current = true;
+    cameraRef.current?.stopRecording();
+  }, []);
+
   const handleOpenGallery = async () => {
     const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -59,26 +173,86 @@ export function NewStoryCamera({
       Toast.show({
         type: "error",
         text1: "Permissão necessária",
-        text2: "Permita acesso à galeria para selecionar uma foto.",
+        text2: "Permita acesso à galeria para selecionar uma mídia.",
       });
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsMultipleSelection: false,
-      mediaTypes: ["images"],
-      quality: 0.85,
+      mediaTypes: ["images", "videos"],
+      quality: 1,
       selectionLimit: 1,
+      videoMaxDuration: MAX_VIDEO_DURATION_MS / 1000,
     });
 
     if (result.canceled || !result.assets[0]) return;
 
-    onSelectPhoto(result.assets[0].uri);
+    const asset = result.assets[0];
+    const isVideo = asset.type === "video";
+
+    if (isVideo && asset.duration && asset.duration > MAX_VIDEO_DURATION_MS) {
+      Toast.show({
+        type: "error",
+        text1: "Vídeo muito longo",
+        text2: "Escolha um vídeo de até 30 segundos.",
+      });
+      return;
+    }
+
+    onSelectMedia({
+      durationMs: isVideo ? asset.duration ?? MAX_VIDEO_DURATION_MS : null,
+      mediaType: isVideo ? "video" : "image",
+      uri: asset.uri,
+    });
+  };
+
+  const handleCapturePressIn = () => {
+    if (selectedMedia || isTakingPhoto || !isCameraReady) return;
+
+    clearPressTimer();
+    pressTimerRef.current = setTimeout(() => {
+      pressTimerRef.current = null;
+      void startRecording();
+    }, VIDEO_PRESS_DELAY_MS);
+  };
+
+  const handleCapturePressOut = () => {
+    if (pressTimerRef.current) {
+      clearPressTimer();
+      void handleTakePhoto();
+      return;
+    }
+
+    stopRecording();
   };
 
   const toggleFacing = () => {
     setFacing((current) => (current === "back" ? "front" : "back"));
   };
+
+  useEffect(() => {
+    if (visible) return;
+
+    clearPressTimer();
+    if (isRecordingRef.current) {
+      stopRequestedRef.current = true;
+      cameraRef.current?.stopRecording();
+    }
+  }, [clearPressTimer, visible]);
+
+  useEffect(() => {
+    if (!isRecording) return;
+
+    const interval = setInterval(() => {
+      const startedAt = recordingStartedAtRef.current;
+      if (!startedAt) return;
+
+      setRecordingElapsedMs(Math.min(Date.now() - startedAt, MAX_VIDEO_DURATION_MS));
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [isRecording]);
 
   if (!visible) return null;
 
@@ -108,61 +282,145 @@ export function NewStoryCamera({
   return (
     <Modal animationType="slide" visible={visible} statusBarTranslucent>
       <View style={styles.screen}>
-        {selectedPhoto ? (
-          <Image source={{ uri: selectedPhoto }} style={styles.camera} contentFit="cover" />
+        {selectedMedia ? (
+          <StoryMediaPreview media={selectedMedia} />
         ) : (
           <CameraView
             ref={cameraRef}
             active={visible}
             facing={facing}
-            mode="picture"
+            mode={cameraMode}
             style={styles.camera}
+            videoQuality="1080p"
             onCameraReady={() => setIsCameraReady(true)}
           />
         )}
 
         <View style={[styles.topControls, { paddingTop: insets.top + 12 }]}>
-          <Pressable style={styles.iconButton} onPress={onClose}>
+          <Pressable
+            disabled={isPublishing}
+            style={[styles.iconButton, isPublishing && styles.controlDisabled]}
+            onPress={onClose}
+          >
             <Ionicons name="close" size={24} color="#FFFFFF" />
           </Pressable>
 
           <Pressable
             style={[
               styles.checkButton,
-              (!selectedPhoto || isPublishing) && styles.checkButtonDisabled,
+              (!selectedMedia || isPublishing) && styles.checkButtonDisabled,
             ]}
-            disabled={!selectedPhoto || isPublishing}
+            disabled={!selectedMedia || isPublishing}
             onPress={onPublish}
           >
-            <Ionicons name="checkmark" size={24} color={colors.brandDark} />
+            {isPublishing ? (
+              <ActivityIndicator color={colors.brandDark} size="small" />
+            ) : (
+              <Ionicons name="checkmark" size={24} color={colors.brandDark} />
+            )}
           </Pressable>
         </View>
 
+        {isRecording && (
+          <View style={[styles.recordingPill, { top: insets.top + 70 }]}>
+            <View style={styles.recordingDot} />
+            <Text style={styles.recordingText}>
+              {formatRecordingTime(recordingElapsedMs)} / 0:30
+            </Text>
+          </View>
+        )}
+
         <View style={[styles.bottomControls, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
-          <Pressable style={styles.galleryButton} onPress={handleOpenGallery}>
+          <Pressable
+            disabled={isPublishing}
+            style={[styles.galleryButton, isPublishing && styles.controlDisabled]}
+            onPress={handleOpenGallery}
+          >
             <Ionicons name="images-outline" size={26} color="#FFFFFF" />
           </Pressable>
 
-          {selectedPhoto ? (
-            <Pressable style={styles.retakeButton} onPress={() => onSelectPhoto("")}>
-              <Text style={styles.retakeText}>Trocar foto</Text>
+          {selectedMedia ? (
+            <Pressable
+              disabled={isPublishing}
+              style={[styles.retakeButton, isPublishing && styles.controlDisabled]}
+              onPress={() => onSelectMedia(null)}
+            >
+              <Text style={styles.retakeText}>Trocar mídia</Text>
             </Pressable>
           ) : (
             <Pressable
-              style={[styles.captureButton, isTakingPhoto && styles.captureButtonDisabled]}
+              style={[
+                styles.captureButton,
+                isRecording && styles.captureButtonRecording,
+                (isTakingPhoto || !isCameraReady) && styles.captureButtonDisabled,
+              ]}
               disabled={isTakingPhoto || !isCameraReady}
-              onPress={handleTakePhoto}
+              onPressIn={handleCapturePressIn}
+              onPressOut={handleCapturePressOut}
             >
-              <View style={styles.captureInner} />
+              <View style={[styles.captureInner, isRecording && styles.captureInnerRecording]} />
             </Pressable>
           )}
 
-          <Pressable style={styles.flipButton} onPress={toggleFacing}>
+          <Pressable
+            disabled={isPublishing}
+            style={[styles.flipButton, isPublishing && styles.controlDisabled]}
+            onPress={toggleFacing}
+          >
             <Ionicons name="camera-reverse-outline" size={26} color="#FFFFFF" />
           </Pressable>
         </View>
+
+        {isPublishing && (
+          <View style={styles.uploadOverlay}>
+            <View style={styles.uploadCard}>
+              <ActivityIndicator color={colors.brandGreen} size="large" />
+              <Text style={styles.uploadTitle}>
+                {uploadPercent >= 100 ? "Processando story..." : "Publicando story..."}
+              </Text>
+              <Text style={styles.uploadSubtitle}>
+                {uploadPercent >= 100
+                  ? "Finalizando o envio no servidor."
+                  : "Mantenha a tela aberta até concluir."}
+              </Text>
+              <View style={styles.uploadProgressTrack}>
+                <View style={[styles.uploadProgressFill, { width: `${uploadPercent}%` }]} />
+              </View>
+              <Text style={styles.uploadPercent}>{uploadPercent}%</Text>
+            </View>
+          </View>
+        )}
       </View>
     </Modal>
+  );
+}
+
+function formatRecordingTime(durationMs: number): string {
+  const seconds = Math.floor(durationMs / 1000);
+  return `0:${String(seconds).padStart(2, "0")}`;
+}
+
+function StoryMediaPreview({ media }: { media: StoryDraftMedia }) {
+  if (media.mediaType === "video") {
+    return <StoryVideoPreview uri={media.uri} />;
+  }
+
+  return <Image source={{ uri: media.uri }} style={styles.camera} contentFit="cover" />;
+}
+
+function StoryVideoPreview({ uri }: { uri: string }) {
+  const player = useVideoPlayer({ uri }, (instance) => {
+    instance.loop = true;
+    instance.play();
+  });
+
+  return (
+    <VideoView
+      contentFit="cover"
+      nativeControls={false}
+      player={player}
+      style={styles.camera}
+    />
   );
 }
 
@@ -192,11 +450,21 @@ const styles = StyleSheet.create({
   captureButtonDisabled: {
     opacity: 0.6,
   },
+  captureButtonRecording: {
+    borderColor: "#EF4444",
+    transform: [{ scale: 1.08 }],
+  },
   captureInner: {
     backgroundColor: "#FFFFFF",
     borderRadius: 31,
     height: 62,
     width: 62,
+  },
+  captureInnerRecording: {
+    backgroundColor: "#EF4444",
+    borderRadius: 12,
+    height: 34,
+    width: 34,
   },
   checkButton: {
     alignItems: "center",
@@ -207,6 +475,9 @@ const styles = StyleSheet.create({
     width: 42,
   },
   checkButtonDisabled: {
+    opacity: 0.45,
+  },
+  controlDisabled: {
     opacity: 0.45,
   },
   closePermission: {
@@ -268,6 +539,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: "100%",
   },
+  recordingDot: {
+    backgroundColor: "#EF4444",
+    borderRadius: 999,
+    height: 8,
+    width: 8,
+  },
+  recordingPill: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderColor: "rgba(255,255,255,0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    position: "absolute",
+    zIndex: 6,
+  },
+  recordingText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
   retakeButton: {
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.55)",
@@ -296,5 +592,58 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
+  },
+  uploadCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(17,24,39,0.92)",
+    borderColor: "rgba(255,255,255,0.16)",
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+    width: 280,
+  },
+  uploadOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    bottom: 0,
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 20,
+  },
+  uploadPercent: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 8,
+  },
+  uploadProgressFill: {
+    backgroundColor: colors.brandGreen,
+    borderRadius: 999,
+    height: "100%",
+  },
+  uploadProgressTrack: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 999,
+    height: 7,
+    marginTop: 18,
+    overflow: "hidden",
+    width: "100%",
+  },
+  uploadSubtitle: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 6,
+    textAlign: "center",
+  },
+  uploadTitle: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "800",
+    marginTop: 16,
   },
 });

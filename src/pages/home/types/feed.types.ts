@@ -4,6 +4,20 @@ export type FeedPostType =
   | "photo_shared"
   | "route_completed";
 
+export type FeedMediaType = "image" | "video";
+
+export type FeedPostMedia = {
+  url: string;
+  mediaType: FeedMediaType;
+  durationMs: number | null;
+};
+
+export type ComposeFeedMedia = {
+  uri: string;
+  mediaType: FeedMediaType;
+  durationMs?: number | null;
+};
+
 export type FeedComment = {
   id: string;
   userId: string;
@@ -36,6 +50,7 @@ export type FeedPost = {
   routeTitle?: string;
   routeDistanceKm?: number;
   photos?: string[];
+  media?: FeedPostMedia[];
   caption?: string;
   audience?: "all" | "friends";
   attachedRouteId?: string;

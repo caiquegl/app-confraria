@@ -28,7 +28,12 @@ import {
   toggleFeedPostLike,
   updateFeedPostComment,
 } from "../services/feed.service";
-import type { ComposeAudience, FeedPost, FeedShareFriend } from "../types/feed.types";
+import type {
+  ComposeAudience,
+  ComposeFeedMedia,
+  FeedPost,
+  FeedShareFriend,
+} from "../types/feed.types";
 
 export function useFeed() {
   const listRef = useRef<FlatList<FeedPost>>(null);
@@ -58,7 +63,7 @@ export function useFeed() {
   const [sharePost, setSharePost] = useState<FeedPost | null>(null);
   const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
-  const [composerPhotos, setComposerPhotos] = useState<string[]>([]);
+  const [composerMedia, setComposerMedia] = useState<ComposeFeedMedia[]>([]);
   const [composeCaption, setComposeCaption] = useState("");
   const [composeAudience, setComposeAudience] = useState<ComposeAudience>("all");
   const [isComposerRestrictedToFollowers, setIsComposerRestrictedToFollowers] =
@@ -66,8 +71,9 @@ export function useFeed() {
   const [composeActivePhotoIndex, setComposeActivePhotoIndex] = useState(0);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [cameraPhotos, setCameraPhotos] = useState<string[]>([]);
+  const [cameraMedia, setCameraMedia] = useState<ComposeFeedMedia[]>([]);
   const [isPublishingPost, setIsPublishingPost] = useState(false);
+  const [postUploadProgress, setPostUploadProgress] = useState(0);
   const [isPostSuccessVisible, setIsPostSuccessVisible] = useState(false);
 
   useEffect(() => {
@@ -550,8 +556,8 @@ export function useFeed() {
     };
   };
 
-  const openComposerWithPhotos = async (uris: string[]) => {
-    if (uris.length === 0) return;
+  const openComposerWithMedia = async (media: ComposeFeedMedia[]) => {
+    if (media.length === 0) return;
 
     let restrictToFollowers = false;
     try {
@@ -561,7 +567,7 @@ export function useFeed() {
       restrictToFollowers = false;
     }
 
-    setComposerPhotos(uris);
+    setComposerMedia(media);
     setComposeActivePhotoIndex(0);
     setComposeCaption("");
     setIsComposerRestrictedToFollowers(restrictToFollowers);
@@ -570,47 +576,48 @@ export function useFeed() {
   };
 
   const openNewPostCamera = () => {
-    setCameraPhotos([]);
+    setCameraMedia([]);
     setIsCameraOpen(true);
   };
 
   const closeNewPostCamera = () => {
-    setCameraPhotos([]);
+    setCameraMedia([]);
     setIsCameraOpen(false);
   };
 
-  const addCameraPhoto = (uri: string) => {
-    setCameraPhotos((prev) => [...prev, uri]);
+  const addCameraMedia = (media: ComposeFeedMedia) => {
+    setCameraMedia((prev) => [...prev, media]);
   };
 
   const openComposerFromCamera = () => {
-    if (cameraPhotos.length === 0) {
+    if (cameraMedia.length === 0) {
       Toast.show({
         type: "error",
-        text1: "Nenhuma foto",
-        text2: "Tire ao menos uma foto para avançar.",
+        text1: "Nenhuma mídia",
+        text2: "Capture ao menos uma mídia para avançar.",
       });
       return;
     }
 
-    void openComposerWithPhotos(cameraPhotos);
-    setCameraPhotos([]);
+    void openComposerWithMedia(cameraMedia);
+    setCameraMedia([]);
     setIsCameraOpen(false);
   };
 
-  const openComposerFromGallery = (uris: string[]) => {
-    void openComposerWithPhotos(uris);
-    setCameraPhotos([]);
+  const openComposerFromGallery = (media: ComposeFeedMedia[]) => {
+    void openComposerWithMedia(media);
+    setCameraMedia([]);
     setIsCameraOpen(false);
   };
 
   const closeComposer = () => {
     setIsComposerOpen(false);
-    setComposerPhotos([]);
+    setComposerMedia([]);
     setComposeCaption("");
     setIsComposerRestrictedToFollowers(false);
     setComposeAudience("all");
     setComposeActivePhotoIndex(0);
+    setPostUploadProgress(0);
   };
 
   const closePostSuccess = () => {
@@ -619,7 +626,7 @@ export function useFeed() {
   };
 
   const removeComposerPhoto = (index: number) => {
-    setComposerPhotos((prev) => {
+    setComposerMedia((prev) => {
       const next = prev.filter((_, photoIndex) => photoIndex !== index);
 
       if (next.length === 0) {
@@ -642,7 +649,7 @@ export function useFeed() {
   };
 
   const reorderComposerPhotos = (fromIndex: number, toIndex: number) => {
-    setComposerPhotos((prev) => {
+    setComposerMedia((prev) => {
       if (
         fromIndex === toIndex ||
         fromIndex < 0 ||
@@ -669,7 +676,7 @@ export function useFeed() {
   };
 
   const publishPost = async () => {
-    if (composerPhotos.length === 0) return;
+    if (composerMedia.length === 0) return;
 
     const caption = composeCaption.trim();
     if (!caption) {
@@ -682,11 +689,13 @@ export function useFeed() {
     }
 
     setIsPublishingPost(true);
+    setPostUploadProgress(0);
     try {
       const createdPost = await createFeedPost({
         audience: composeAudience,
         caption,
-        photos: composerPhotos,
+        media: composerMedia,
+        onUploadProgress: setPostUploadProgress,
       });
 
       setPosts((current) => {
@@ -708,14 +717,15 @@ export function useFeed() {
       });
     } finally {
       setIsPublishingPost(false);
+      setPostUploadProgress(0);
     }
   };
 
   return {
     addComment,
     addReply,
-    addCameraPhoto,
-    cameraPhotos,
+    addCameraMedia,
+    cameraMedia,
     closeNewPostCamera,
     closePostSuccess,
     closeShare,
@@ -726,7 +736,7 @@ export function useFeed() {
     composeActivePhotoIndex,
     composeAudience,
     composeCaption,
-    composerPhotos,
+    composerMedia,
     friends: shareFriends,
     isCameraOpen,
     isComposerOpen,
@@ -745,6 +755,7 @@ export function useFeed() {
     openShare,
     handlePrefetch,
     publishPost,
+    postUploadProgress,
     refreshFeed,
     posts,
     removeComposerPhoto,
