@@ -121,6 +121,7 @@ export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
             <EventDetailHeroCard
               category={event.category}
               coverImageUrl={event.coverImageUrl}
+              eventId={event.id}
               isFavorited={event.isFavorited}
               title={event.title}
               onToggleFavorite={() => void handleToggleFavorite()}

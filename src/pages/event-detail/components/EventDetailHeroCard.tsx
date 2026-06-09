@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
@@ -10,6 +10,7 @@ const FALLBACK_IMAGE =
 type EventDetailHeroCardProps = {
   category: string;
   coverImageUrl: string | null;
+  eventId: string;
   isFavorited: boolean;
   onToggleFavorite: () => void;
   title: string;
@@ -18,11 +19,21 @@ type EventDetailHeroCardProps = {
 export function EventDetailHeroCard({
   category,
   coverImageUrl,
+  eventId,
   isFavorited,
   onToggleFavorite,
   title,
 }: EventDetailHeroCardProps) {
   const imageUrl = coverImageUrl || FALLBACK_IMAGE;
+  const eventUrl = `appconfraria://event/${eventId}`;
+
+  const shareEvent = async () => {
+    await Share.share({
+      message: `Veja este evento no Confraria: ${title}\n${eventUrl}`,
+      title,
+      url: eventUrl,
+    });
+  };
 
   return (
     <View style={styles.card}>
@@ -47,15 +58,8 @@ export function EventDetailHeroCard({
         <Pressable
           accessibilityRole="button"
           style={styles.iconAction}
-          onPress={onToggleFavorite}
+          onPress={() => void shareEvent()}
         >
-          <Ionicons
-            color={colors.brandDark}
-            name={isFavorited ? "heart" : "heart-outline"}
-            size={20}
-          />
-        </Pressable>
-        <Pressable accessibilityRole="button" style={styles.iconAction}>
           <Ionicons color={colors.brandDark} name="share-social-outline" size={20} />
         </Pressable>
       </View>
