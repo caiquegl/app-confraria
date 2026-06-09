@@ -8,6 +8,7 @@
     "scheme": "appconfraria",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "associatedDomains": ["applinks:confraria-web.vercel.app"],
       "icon": "./assets/expo.icon"
     },
     "android": {
@@ -17,6 +18,20 @@
         "backgroundImage": "./assets/images/Icones_IMG.png",
         "monochromeImage": "./assets/images/Icones_IMG.png"
       },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "host": "confraria-web.vercel.app",
+              "pathPrefix": "/events",
+              "scheme": "https"
+            }
+          ]
+        }
+      ],
       "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true,
       "package": "com.caiquegl22.appconfraria"

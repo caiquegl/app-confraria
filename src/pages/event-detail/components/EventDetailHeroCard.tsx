@@ -6,6 +6,8 @@ import { colors } from "@/theme/colors";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1558981806-ec527fa84c3d?q=80&w=900&auto=format&fit=crop";
+const EVENT_SHARE_BASE_URL =
+  process.env.EXPO_PUBLIC_EVENT_SHARE_BASE_URL ?? "https://confraria-web.vercel.app";
 
 type EventDetailHeroCardProps = {
   category: string;
@@ -25,7 +27,7 @@ export function EventDetailHeroCard({
   title,
 }: EventDetailHeroCardProps) {
   const imageUrl = coverImageUrl || FALLBACK_IMAGE;
-  const eventUrl = `appconfraria://event/${eventId}`;
+  const eventUrl = `${EVENT_SHARE_BASE_URL.replace(/\/$/, "")}/events/${eventId}`;
 
   const shareEvent = async () => {
     await Share.share({
