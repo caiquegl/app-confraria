@@ -21,7 +21,9 @@ export default function AppLayout() {
   const [profileAvatar, setProfileAvatar] = useState<string | null>(storedProfile.avatar);
   const [profileName, setProfileName] = useState<string | null>(storedProfile.name);
   const shouldHideBottomNav =
-    pathname.startsWith("/profile/bikes") || pathname.startsWith("/profile/settings");
+    pathname.startsWith("/profile/bikes") ||
+    pathname.startsWith("/profile/settings") ||
+    (pathname.startsWith("/users/") && pathname.includes("/events"));
 
   useEffect(() => {
     return subscribeStoredCurrentProfile((profile) => {

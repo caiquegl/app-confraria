@@ -411,6 +411,12 @@ export function PublicProfileView({
               bikeCount={bikeCount}
               eventsAttended={0}
               favoriteCount={0}
+              onEventsPress={() =>
+                router.push({
+                  pathname: "/users/[userId]/events",
+                  params: { avatarUrl: profile.avatar ?? "", userId: profile.id },
+                })
+              }
               onGaragePress={() => router.push("/profile/bikes")}
             />
           ) : null}
@@ -498,11 +504,13 @@ function ProfileStatsBar({
   bikeCount,
   eventsAttended,
   favoriteCount,
+  onEventsPress,
   onGaragePress,
 }: {
   bikeCount: number;
   eventsAttended: number;
   favoriteCount: number;
+  onEventsPress: () => void;
   onGaragePress: () => void;
 }) {
   return (
@@ -510,7 +518,12 @@ function ProfileStatsBar({
       <View style={styles.shortcutCard}>
         <ProfileShortcut icon="heart-outline" label="Favoritos" value={favoriteCount} />
         <View style={styles.shortcutDivider} />
-        <ProfileShortcut icon="calendar-outline" label="Eventos" value={eventsAttended} />
+        <ProfileShortcut
+          icon="calendar-outline"
+          label="Eventos"
+          value={eventsAttended}
+          onPress={onEventsPress}
+        />
         <View style={styles.shortcutDivider} />
         <ProfileShortcut
           icon="bicycle-outline"
