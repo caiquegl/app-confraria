@@ -1,48 +1,34 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
 import { colors } from "@/theme/colors";
 
+import { EventCoverImagePicker } from "./EventCoverImagePicker";
 import { EventFormField } from "./EventFormField";
 import { EventWizardLayout } from "./EventWizardLayout";
-import { EVENT_CATEGORIES, EVENT_CREATE_TOTAL_STEPS } from "../services/event-create.service";
-import type { EventDraft, EventDraftUpdate } from "../types/event-create.types";
+import { EVENT_CREATE_TOTAL_STEPS } from "../services/event-create.service";
+import type { EventCategory, EventDraft, EventDraftUpdate } from "../types/event-create.types";
 
 type EventStep1Props = {
+  categories: EventCategory[];
+  categoriesError: boolean;
   draft: EventDraft;
+  isLoadingCategories: boolean;
   onClose: () => void;
   onNext: () => void;
   updateDraft: EventDraftUpdate;
 };
 
-export function EventStep1({ draft, onClose, onNext, updateDraft }: EventStep1Props) {
+export function EventStep1({
+  categories,
+  categoriesError,
+  draft,
+  isLoadingCategories,
+  onClose,
+  onNext,
+  updateDraft,
+}: EventStep1Props) {
   const canAdvance = draft.title.trim() !== "" && draft.category.trim() !== "";
-
-  const pickCoverImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Toast.show({
-        type: "error",
-        text1: "Permissão necessária",
-        text2: "Permita acesso à galeria para escolher a capa.",
-      });
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsMultipleSelection: false,
-      mediaTypes: ["images"],
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0]?.uri) {
-      updateDraft("image", result.assets[0].uri);
-    }
-  };
 
   return (
     <EventWizardLayout
@@ -53,37 +39,11 @@ export function EventStep1({ draft, onClose, onNext, updateDraft }: EventStep1Pr
       onClose={onClose}
     >
       <View style={styles.form}>
-        <View>
-          <Text style={styles.label}>Imagem de capa</Text>
-          {draft.image ? (
-            <View style={styles.coverCard}>
-              <Image
-                cachePolicy="memory-disk"
-                contentFit="cover"
-                recyclingKey={draft.image}
-                source={{ uri: draft.image }}
-                style={styles.coverImage}
-              />
-              <View style={styles.coverActions}>
-                <Pressable style={styles.coverActionButton} onPress={pickCoverImage}>
-                  <Text style={styles.coverActionText}>Trocar imagem</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  style={styles.deleteButton}
-                  onPress={() => updateDraft("image", "")}
-                >
-                  <Ionicons color="#EF4444" name="trash-outline" size={18} />
-                </Pressable>
-              </View>
-            </View>
-          ) : (
-            <Pressable style={styles.imagePickerButton} onPress={pickCoverImage}>
-              <Ionicons color="#6B7280" name="camera-outline" size={20} />
-              <Text style={styles.imagePickerText}>Adicionar imagem de capa</Text>
-            </Pressable>
-          )}
-        </View>
+        <EventCoverImagePicker
+          imageUri={draft.image}
+          onChange={(uri) => updateDraft("image", uri)}
+          onRemove={() => updateDraft("image", "")}
+        />
 
         <EventFormField
           label="Nome do evento *"
@@ -94,22 +54,30 @@ export function EventStep1({ draft, onClose, onNext, updateDraft }: EventStep1Pr
 
         <View>
           <Text style={styles.label}>Categoria *</Text>
-          <View style={styles.categories}>
-            {EVENT_CATEGORIES.map((category) => {
-              const selected = draft.category === category;
-              return (
-                <Pressable
-                  key={category}
-                  style={[styles.categoryChip, selected && styles.categoryChipActive]}
-                  onPress={() => updateDraft("category", category)}
-                >
-                  <Text style={[styles.categoryText, selected && styles.categoryTextActive]}>
-                    {category}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          {isLoadingCategories ? (
+            <Text style={styles.categoryHint}>Carregando categorias...</Text>
+          ) : categoriesError ? (
+            <Text style={styles.categoryHint}>
+              Não foi possível carregar as categorias. Tente novamente em instantes.
+            </Text>
+          ) : (
+            <View style={styles.categories}>
+              {categories.map((category) => {
+                const selected = draft.category === category.name;
+                return (
+                  <Pressable
+                    key={category.id}
+                    style={[styles.categoryChip, selected && styles.categoryChipActive]}
+                    onPress={() => updateDraft("category", category.name)}
+                  >
+                    <Text style={[styles.categoryText, selected && styles.categoryTextActive]}>
+                      {category.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         <EventFormField
@@ -148,6 +116,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
     borderColor: colors.brandGreen,
   },
+  categoryHint: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
   categoryText: {
     color: "#6B7280",
     fontSize: 12,
@@ -155,46 +129,6 @@ const styles = StyleSheet.create({
   },
   categoryTextActive: {
     color: colors.brandDark,
-  },
-  coverActionButton: {
-    alignItems: "center",
-    borderColor: "#E5E7EB",
-    borderRadius: 14,
-    borderWidth: 1,
-    flex: 1,
-    height: 42,
-    justifyContent: "center",
-  },
-  coverActions: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  coverActionText: {
-    color: colors.brandDark,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  coverCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 12,
-    padding: 12,
-  },
-  coverImage: {
-    borderRadius: 14,
-    height: 160,
-    width: "100%",
-  },
-  deleteButton: {
-    alignItems: "center",
-    borderColor: "#FECACA",
-    borderRadius: 14,
-    borderWidth: 1,
-    height: 42,
-    justifyContent: "center",
-    width: 48,
   },
   footer: {
     marginTop: 28,
@@ -204,23 +138,6 @@ const styles = StyleSheet.create({
   },
   fullButton: {
     width: "100%",
-  },
-  imagePickerButton: {
-    alignItems: "center",
-    borderColor: "#D1D5DB",
-    borderRadius: 18,
-    borderStyle: "dashed",
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  imagePickerText: {
-    color: "#6B7280",
-    fontSize: 14,
-    fontWeight: "700",
   },
   label: {
     color: colors.brandDark,

@@ -1,12 +1,13 @@
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 
 import { EventStep1 } from "../components/EventStep1";
 import { EventStep2 } from "../components/EventStep2";
 import { EventStep3 } from "../components/EventStep3";
 import { EventStep4 } from "../components/EventStep4";
-import { createInitialEventDraft, EVENT_CREATE_TOTAL_STEPS } from "../services/event-create.service";
-import type { EventDraft, EventDraftUpdate } from "../types/event-create.types";
+import { useEventCreateDraft } from "../hooks/useEventCreateDraft";
+import { fetchEventCategories } from "../services/event-create.service";
+import type { EventCategory } from "../types/event-create.types";
 
 type EventCreateViewProps = {
   onClose: () => void;
@@ -14,21 +15,38 @@ type EventCreateViewProps = {
   userId: string;
 };
 
-export function EventCreateView({ onClose, onPublished }: EventCreateViewProps) {
-  const [draft, setDraft] = useState<EventDraft>(() => createInitialEventDraft());
-  const [step, setStep] = useState(1);
+export function EventCreateView({ onClose, onPublished, userId }: EventCreateViewProps) {
+  const [categories, setCategories] = useState<EventCategory[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [categoriesError, setCategoriesError] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const { buildPayload, draft, goBack, goNext, step, updateDraft } = useEventCreateDraft(userId);
 
-  const updateDraft = useCallback<EventDraftUpdate>((key, value) => {
-    setDraft((currentDraft) => ({ ...currentDraft, [key]: value }));
+  useEffect(() => {
+    let isMounted = true;
+
+    void fetchEventCategories()
+      .then((eventCategories) => {
+        if (!isMounted) return;
+        setCategories(eventCategories);
+        setCategoriesError(false);
+      })
+      .catch(() => {
+        if (isMounted) setCategoriesError(true);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingCategories(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-  const goNext = () => setStep((currentStep) => Math.min(currentStep + 1, EVENT_CREATE_TOTAL_STEPS));
-  const goBack = () => setStep((currentStep) => Math.max(currentStep - 1, 1));
 
   const publishEvent = () => {
     if (isPublishing) return;
 
+    buildPayload();
     setIsPublishing(true);
     setTimeout(() => {
       setIsPublishing(false);
@@ -43,7 +61,15 @@ export function EventCreateView({ onClose, onPublished }: EventCreateViewProps) 
 
   if (step === 1) {
     return (
-      <EventStep1 draft={draft} updateDraft={updateDraft} onClose={onClose} onNext={goNext} />
+      <EventStep1
+        categories={categories}
+        categoriesError={categoriesError}
+        draft={draft}
+        isLoadingCategories={isLoadingCategories}
+        updateDraft={updateDraft}
+        onClose={onClose}
+        onNext={goNext}
+      />
     );
   }
 

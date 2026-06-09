@@ -8,8 +8,13 @@ import { EventFormField } from "./EventFormField";
 import { EventWizardLayout } from "./EventWizardLayout";
 import {
   EVENT_CREATE_TOTAL_STEPS,
+  formatBrazilianDateInput,
   formatEventDuration,
   formatEventWeekday,
+  formatTimeInput,
+  isPastBrazilianDate,
+  isValidBrazilianDate,
+  isValidTime,
 } from "../services/event-create.service";
 import type { EventDraft, EventDraftUpdate } from "../types/event-create.types";
 
@@ -22,9 +27,36 @@ type EventStep2Props = {
 };
 
 export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: EventStep2Props) {
-  const canAdvance = draft.date.trim() !== "" && draft.location.trim() !== "";
+  const dateIsComplete = draft.date.length === 10;
+  const dateIsPast = dateIsComplete && isPastBrazilianDate(draft.date);
+  const startTimeIsComplete = draft.startTime.length === 5;
+  const endTimeIsComplete = draft.endTime.length === 5;
+  const hasInvalidDate =
+    draft.date.length > 0 && (!dateIsComplete || !isValidBrazilianDate(draft.date) || dateIsPast);
+  const hasInvalidStartTime =
+    draft.startTime.length > 0 && (!startTimeIsComplete || !isValidTime(draft.startTime));
+  const hasInvalidEndTime =
+    draft.endTime.length > 0 && (!endTimeIsComplete || !isValidTime(draft.endTime));
+  const canAdvance =
+    isValidBrazilianDate(draft.date) &&
+    !dateIsPast &&
+    draft.location.trim() !== "" &&
+    !hasInvalidStartTime &&
+    !hasInvalidEndTime;
   const weekday = formatEventWeekday(draft.date);
   const duration = formatEventDuration(draft.startTime, draft.endTime);
+
+  const handleDateChange = (value: string) => {
+    updateDraft("date", formatBrazilianDateInput(value));
+  };
+
+  const handleStartTimeChange = (value: string) => {
+    updateDraft("startTime", formatTimeInput(value));
+  };
+
+  const handleEndTimeChange = (value: string) => {
+    updateDraft("endTime", formatTimeInput(value));
+  };
 
   const updateStop = (index: number, value: string) => {
     updateDraft(
@@ -44,12 +76,19 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
       <View style={styles.form}>
         <View>
           <EventFormField
+            keyboardType="number-pad"
             label="Data *"
-            placeholder="AAAA-MM-DD"
+            maxLength={10}
+            placeholder="DD/MM/AAAA"
             value={draft.date}
-            onChangeText={(value) => updateDraft("date", value)}
+            onChangeText={handleDateChange}
           />
           {weekday ? <Text style={styles.helperText}>{weekday}</Text> : null}
+          {hasInvalidDate ? (
+            <Text style={styles.errorText}>
+              {dateIsPast ? "Não é permitido criar evento em data passada." : "Informe uma data válida."}
+            </Text>
+          ) : null}
         </View>
 
         <View>
@@ -57,19 +96,27 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
           <View style={styles.timeRow}>
             <View style={styles.timeField}>
               <EventFormField
+                keyboardType="number-pad"
                 label="Início"
+                maxLength={5}
                 placeholder="07:00"
                 value={draft.startTime}
-                onChangeText={(value) => updateDraft("startTime", value)}
+                onChangeText={handleStartTimeChange}
               />
+              {hasInvalidStartTime ? (
+                <Text style={styles.errorText}>Hora inválida.</Text>
+              ) : null}
             </View>
             <View style={styles.timeField}>
               <EventFormField
+                keyboardType="number-pad"
                 label="Término"
+                maxLength={5}
                 placeholder="18:00"
                 value={draft.endTime}
-                onChangeText={(value) => updateDraft("endTime", value)}
+                onChangeText={handleEndTimeChange}
               />
+              {hasInvalidEndTime ? <Text style={styles.errorText}>Hora inválida.</Text> : null}
             </View>
           </View>
           {duration ? <Text style={styles.helperText}>{duration}</Text> : null}
@@ -160,6 +207,12 @@ const styles = StyleSheet.create({
   footer: {
     gap: 12,
     marginTop: 28,
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 6,
   },
   form: {
     gap: 20,
