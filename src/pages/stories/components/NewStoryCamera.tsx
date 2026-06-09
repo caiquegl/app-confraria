@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   CameraView,
   useCameraPermissions,
-  useMicrophonePermissions,
   type CameraType,
 } from "expo-camera";
 import { Image } from "expo-image";
@@ -10,7 +9,7 @@ import * as ImagePicker from "expo-image-picker";
 import { VideoView, useVideoPlayer } from "expo-video";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -20,7 +19,6 @@ import { colors } from "@/theme/colors";
 import { StoryPhotoEditor, type StoryPhotoEditorHandle } from "./StoryPhotoEditor";
 import type { StoryDraftMedia } from "../types/stories.types";
 
-const MAX_VIDEO_DURATION_MS = 30_000;
 type NewStoryCameraProps = {
   isPublishing?: boolean;
   selectedMedia: StoryDraftMedia | null;
@@ -43,57 +41,26 @@ export function NewStoryCamera({
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
   const photoEditorRef = useRef<StoryPhotoEditorHandle | null>(null);
-  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const stopFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const discardedRecordingSessionRef = useRef(0);
-  const isRecordingRef = useRef(false);
-  const nativeRecordingStartedRef = useRef(false);
-  const recordingStartedAtRef = useRef<number | null>(null);
-  const recordingSessionRef = useRef(0);
-  const shouldDiscardRecordingRef = useRef(false);
-  const suppressNextCaptureRef = useRef(false);
-  const stopRequestedRef = useRef(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const [microphonePermission, requestMicrophonePermission] = useMicrophonePermissions();
   const [facing, setFacing] = useState<CameraType>("back");
-  const [cameraMode, setCameraMode] = useState<"picture" | "video">("picture");
   const [isCameraReady, setIsCameraReady] = useState(false);
-  const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
   const [isExportingPhoto, setIsExportingPhoto] = useState(false);
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const isBusy = isPublishing || isExportingPhoto;
-  const isVideoMode = cameraMode === "video";
   const uploadPercent = Math.round(Math.min(Math.max(uploadProgress, 0), 1) * 100);
-
-  const clearPressTimer = useCallback(() => {
-    if (!pressTimerRef.current) return;
-
-    clearTimeout(pressTimerRef.current);
-    pressTimerRef.current = null;
-  }, []);
-
-  const clearStopFallbackTimer = useCallback(() => {
-    if (!stopFallbackTimerRef.current) return;
-
-    clearTimeout(stopFallbackTimerRef.current);
-    stopFallbackTimerRef.current = null;
-  }, []);
 
   const handleTakePhoto = async () => {
     if (
       !cameraRef.current ||
       !isCameraReady ||
       isTakingPhoto ||
-      isRecording ||
-      isRecordingRef.current
+      isBusy
     ) {
       return;
     }
 
     setIsTakingPhoto(true);
     try {
-      setCameraMode("picture");
       const photo = await cameraRef.current.takePictureAsync({ quality: 1 });
       onSelectMedia({ mediaType: "image", uri: photo.uri });
     } catch {
@@ -106,182 +73,6 @@ export function NewStoryCamera({
       setIsTakingPhoto(false);
     }
   };
-
-  const startRecording = useCallback(async () => {
-    console.log("[story-camera] startRecording chamado", {
-      hasCamera: Boolean(cameraRef.current),
-      isCameraReady,
-      isRecording,
-      isRecordingRef: isRecordingRef.current,
-      isTakingPhoto,
-    });
-    if (!cameraRef.current || !isCameraReady || isTakingPhoto || isRecording) return;
-
-    setIsRecording(true);
-    setRecordingElapsedMs(0);
-    isRecordingRef.current = true;
-    shouldDiscardRecordingRef.current = false;
-    const recordingSession = recordingSessionRef.current + 1;
-    recordingSessionRef.current = recordingSession;
-    discardedRecordingSessionRef.current = 0;
-    stopRequestedRef.current = false;
-    setCameraMode("video");
-    recordingStartedAtRef.current = Date.now();
-    console.log("[story-camera] gravação iniciando", { recordingSession });
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 120));
-      if (
-        shouldDiscardRecordingRef.current ||
-        recordingSessionRef.current !== recordingSession ||
-        !isRecordingRef.current ||
-        !cameraRef.current
-      ) {
-        console.log("[story-camera] recordAsync cancelado antes de iniciar", {
-          hasCamera: Boolean(cameraRef.current),
-          isRecordingRef: isRecordingRef.current,
-          recordingSession,
-          recordingSessionCurrent: recordingSessionRef.current,
-          shouldDiscard: shouldDiscardRecordingRef.current,
-        });
-        return;
-      }
-
-      console.log("[story-camera] chamando recordAsync", { recordingSession });
-      nativeRecordingStartedRef.current = true;
-      const recording = cameraRef.current.recordAsync({
-        maxDuration: MAX_VIDEO_DURATION_MS / 1000,
-        maxFileSize: 80 * 1024 * 1024,
-      });
-
-      if (stopRequestedRef.current) {
-        console.log("[story-camera] stop já solicitado antes do recordAsync resolver", {
-          recordingSession,
-        });
-        try {
-          cameraRef.current.stopRecording();
-        } catch (error) {
-          console.log("[story-camera] erro ao parar após stop antecipado", {
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-
-      const video = await recording;
-      console.log("[story-camera] recordAsync resolveu", {
-        discardedRecordingSession: discardedRecordingSessionRef.current,
-        hasUri: Boolean(video?.uri),
-        recordingSession,
-        recordingSessionCurrent: recordingSessionRef.current,
-        shouldDiscard: shouldDiscardRecordingRef.current,
-        stopRequested: stopRequestedRef.current,
-      });
-
-      if (
-        shouldDiscardRecordingRef.current ||
-        discardedRecordingSessionRef.current === recordingSession ||
-        recordingSessionRef.current !== recordingSession ||
-        !video?.uri
-      ) {
-        return;
-      }
-
-      const recordedDurationMs = recordingStartedAtRef.current
-        ? Math.min(Date.now() - recordingStartedAtRef.current, MAX_VIDEO_DURATION_MS)
-        : MAX_VIDEO_DURATION_MS;
-
-      onSelectMedia({
-        durationMs: Math.max(1, recordedDurationMs),
-        mediaType: "video",
-        uri: video.uri,
-      });
-    } catch (error) {
-      console.log("[story-camera] erro na gravação", {
-        error: error instanceof Error ? error.message : String(error),
-        recordingSession,
-      });
-      Toast.show({
-        type: "error",
-        text1: "Erro na gravação",
-        text2: "Não foi possível gravar o vídeo. Tente novamente.",
-      });
-    } finally {
-      console.log("[story-camera] finally gravação", {
-        recordingSession,
-        recordingSessionCurrent: recordingSessionRef.current,
-      });
-      if (recordingSessionRef.current === recordingSession) {
-        clearStopFallbackTimer();
-        isRecordingRef.current = false;
-        nativeRecordingStartedRef.current = false;
-        recordingStartedAtRef.current = null;
-        shouldDiscardRecordingRef.current = false;
-        stopRequestedRef.current = false;
-        setRecordingElapsedMs(0);
-        setIsRecording(false);
-        setCameraMode("picture");
-      }
-    }
-  }, [
-    clearStopFallbackTimer,
-    isCameraReady,
-    isRecording,
-    isTakingPhoto,
-    onSelectMedia,
-  ]);
-
-  const stopRecording = useCallback((discard = false) => {
-    clearStopFallbackTimer();
-    const wasRecording = isRecordingRef.current;
-    console.log("[story-camera] stopRecording chamado", {
-      discard,
-      hasCamera: Boolean(cameraRef.current),
-      isRecordingRef: wasRecording,
-      nativeRecordingStarted: nativeRecordingStartedRef.current,
-      recordingSession: recordingSessionRef.current,
-      stopRequested: stopRequestedRef.current,
-    });
-    if (discard) {
-      shouldDiscardRecordingRef.current = true;
-      discardedRecordingSessionRef.current = recordingSessionRef.current;
-      isRecordingRef.current = false;
-      recordingStartedAtRef.current = null;
-      setRecordingElapsedMs(0);
-      setIsRecording(false);
-      setCameraMode("picture");
-    }
-
-    if (!wasRecording) {
-      console.log("[story-camera] stopRecording ignorado, não havia gravação ativa");
-      return;
-    }
-
-    if (stopRequestedRef.current && !discard) {
-      console.log("[story-camera] stopRecording ignorado, stop já solicitado");
-      return;
-    }
-
-    stopRequestedRef.current = true;
-    if (!nativeRecordingStartedRef.current) {
-      console.log("[story-camera] stop aguardando recordAsync iniciar", {
-        discard,
-        recordingSession: recordingSessionRef.current,
-      });
-      return;
-    }
-
-    try {
-      cameraRef.current?.stopRecording();
-    } catch (error) {
-      console.log("[story-camera] erro ao chamar stopRecording nativo", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-    console.log("[story-camera] stopRecording enviado para CameraView", {
-      discard,
-      stopRequested: stopRequestedRef.current,
-    });
-  }, [clearStopFallbackTimer]);
 
   const handleOpenGallery = async () => {
     const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -297,82 +88,24 @@ export function NewStoryCamera({
 
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsMultipleSelection: false,
-      mediaTypes: ["images", "videos"],
+      mediaTypes: ["images"],
       quality: 1,
       selectionLimit: 1,
-      videoMaxDuration: MAX_VIDEO_DURATION_MS / 1000,
     });
 
     if (result.canceled || !result.assets[0]) return;
 
     const asset = result.assets[0];
-    const isVideo = asset.type === "video";
-
-    if (isVideo && asset.duration && asset.duration > MAX_VIDEO_DURATION_MS) {
-      Toast.show({
-        type: "error",
-        text1: "Vídeo muito longo",
-        text2: "Escolha um vídeo de até 30 segundos.",
-      });
-      return;
-    }
-
     onSelectMedia({
-      durationMs: isVideo ? asset.duration ?? MAX_VIDEO_DURATION_MS : null,
-      mediaType: isVideo ? "video" : "image",
+      durationMs: null,
+      mediaType: "image",
       uri: asset.uri,
     });
   };
 
-  const ensureMicrophonePermission = async () => {
-    if (microphonePermission?.granted) return true;
-
-    const microphoneStatus = await requestMicrophonePermission();
-
-    if (!microphoneStatus.granted) {
-      Toast.show({
-        type: "error",
-        text1: "Permissão necessária",
-        text2: "Permita acesso ao microfone para gravar vídeo.",
-      });
-      return false;
-    }
-
-    return true;
-  };
-
   const handleCapturePress = async () => {
-    console.log("[story-camera] capturePress", {
-      cameraMode,
-      hasSelectedMedia: Boolean(selectedMedia),
-      isCameraReady,
-      isRecording,
-      isRecordingRef: isRecordingRef.current,
-      isTakingPhoto,
-    });
-
-    if (isRecordingRef.current) {
-      stopRecording();
-      return;
-    }
-
     if (selectedMedia || isTakingPhoto || !isCameraReady) return;
-
-    if (!isVideoMode) {
-      await handleTakePhoto();
-      return;
-    }
-
-    const hasMicrophonePermission = await ensureMicrophonePermission();
-    if (!hasMicrophonePermission) return;
-
-    await startRecording();
-  };
-
-  const toggleCameraMode = () => {
-    if (selectedMedia || isRecordingRef.current || isBusy) return;
-
-    setCameraMode((current) => (current === "video" ? "picture" : "video"));
+    await handleTakePhoto();
   };
 
   const toggleFacing = () => {
@@ -406,70 +139,9 @@ export function NewStoryCamera({
     }
   };
 
-  useEffect(() => {
-    if (visible) return;
-
-    console.log("[story-camera] componente fechou", {
-      isRecordingRef: isRecordingRef.current,
-      recordingSession: recordingSessionRef.current,
-    });
-    clearPressTimer();
-    clearStopFallbackTimer();
-    if (isRecordingRef.current) {
-      stopRecording(true);
-    }
-  }, [clearPressTimer, clearStopFallbackTimer, stopRecording, visible]);
-
   const handleClose = useCallback(() => {
-    console.log("[story-camera] fechar pressionado", {
-      isRecordingRef: isRecordingRef.current,
-      nativeRecordingStarted: nativeRecordingStartedRef.current,
-      recordingSession: recordingSessionRef.current,
-      stopRequested: stopRequestedRef.current,
-    });
-    if (isRecordingRef.current) {
-      stopRecording(true);
-    }
     onClose();
-  }, [onClose, stopRecording]);
-
-  useEffect(() => {
-    if (!visible) return;
-
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") return;
-
-      console.log("[story-camera] app state interrompeu gravação", {
-        isRecordingRef: isRecordingRef.current,
-        state,
-      });
-      suppressNextCaptureRef.current = true;
-      clearPressTimer();
-      clearStopFallbackTimer();
-      stopRecording(true);
-    });
-
-    return () => subscription.remove();
-  }, [clearPressTimer, clearStopFallbackTimer, stopRecording, visible]);
-
-  useEffect(() => {
-    if (!isRecording) return;
-
-    const interval = setInterval(() => {
-      const startedAt = recordingStartedAtRef.current;
-      if (!startedAt) return;
-
-      const elapsedMs = Math.min(Date.now() - startedAt, MAX_VIDEO_DURATION_MS);
-      setRecordingElapsedMs(elapsedMs);
-
-      if (elapsedMs >= MAX_VIDEO_DURATION_MS && !stopRequestedRef.current) {
-        console.log("[story-camera] timer 30s solicitou stop", { elapsedMs });
-        stopRecording();
-      }
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, [isRecording, stopRecording]);
+  }, [onClose]);
 
   if (!visible) return null;
 
@@ -510,9 +182,8 @@ export function NewStoryCamera({
             ref={cameraRef}
             active={visible}
             facing={facing}
-            mode={cameraMode}
+            mode="picture"
             style={styles.camera}
-            videoQuality="1080p"
             onCameraReady={() => setIsCameraReady(true)}
           />
         )}
@@ -542,19 +213,10 @@ export function NewStoryCamera({
           </Pressable>
         </View>
 
-        {isRecording && (
-          <View style={[styles.recordingPill, { top: insets.top + 70 }]}>
-            <View style={styles.recordingDot} />
-            <Text style={styles.recordingText}>
-              {formatRecordingTime(recordingElapsedMs)} / 0:30
-            </Text>
-          </View>
-        )}
-
         <View style={[styles.bottomControls, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
           <Pressable
-            disabled={isBusy || isRecording}
-            style={[styles.galleryButton, (isBusy || isRecording) && styles.controlDisabled]}
+            disabled={isBusy}
+            style={[styles.galleryButton, isBusy && styles.controlDisabled]}
             onPress={handleOpenGallery}
           >
             <Ionicons name="images-outline" size={26} color="#FFFFFF" />
@@ -572,63 +234,23 @@ export function NewStoryCamera({
             <Pressable
               style={[
                 styles.captureButton,
-                isRecording && styles.captureButtonRecording,
-                (isTakingPhoto || (!isCameraReady && !isRecording)) && styles.captureButtonDisabled,
+                (isTakingPhoto || !isCameraReady || isBusy) && styles.captureButtonDisabled,
               ]}
-              disabled={isTakingPhoto || (!isCameraReady && !isRecording)}
-              onPressIn={() => {
-                console.log("[story-camera] captureButton onPressIn direto", {
-                  isRecording,
-                  isRecordingRef: isRecordingRef.current,
-                  stopRequested: stopRequestedRef.current,
-                });
-                if (isRecordingRef.current) {
-                  stopRecording();
-                }
-              }}
-              onPress={() => {
-                console.log("[story-camera] captureButton onPress direto", {
-                  isRecording,
-                  isRecordingRef: isRecordingRef.current,
-                  stopRequested: stopRequestedRef.current,
-                });
-                if (isRecordingRef.current) return;
-                void handleCapturePress();
-              }}
+              disabled={isTakingPhoto || !isCameraReady || isBusy}
+              onPress={() => void handleCapturePress()}
             >
-              <View style={[styles.captureInner, isRecording && styles.captureInnerRecording]} />
+              <View style={styles.captureInner} />
             </Pressable>
           )}
 
           <Pressable
-            disabled={isBusy || isRecording}
-            style={[styles.flipButton, (isBusy || isRecording) && styles.controlDisabled]}
-            onPress={isRecording ? undefined : toggleFacing}
+            disabled={isBusy}
+            style={[styles.flipButton, isBusy && styles.controlDisabled]}
+            onPress={toggleFacing}
           >
-            <Ionicons
-              name={isVideoMode ? "videocam" : "camera-reverse-outline"}
-              size={26}
-              color="#FFFFFF"
-            />
+            <Ionicons name="camera-reverse-outline" size={26} color="#FFFFFF" />
           </Pressable>
         </View>
-
-        {!selectedMedia && !isRecording && (
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.modeButton, isVideoMode && styles.modeButtonActive]}
-            onPress={toggleCameraMode}
-          >
-            <Ionicons
-              name={isVideoMode ? "camera-outline" : "videocam-outline"}
-              size={18}
-              color={isVideoMode ? colors.brandDark : "#FFFFFF"}
-            />
-            <Text style={[styles.modeButtonText, isVideoMode && styles.modeButtonTextActive]}>
-              {isVideoMode ? "Foto" : "Vídeo"}
-            </Text>
-          </Pressable>
-        )}
 
         {isBusy && (
           <View style={styles.uploadOverlay}>
@@ -658,11 +280,6 @@ export function NewStoryCamera({
       </View>
     </Modal>
   );
-}
-
-function formatRecordingTime(durationMs: number): string {
-  const seconds = Math.floor(durationMs / 1000);
-  return `0:${String(seconds).padStart(2, "0")}`;
 }
 
 const StoryMediaPreview = forwardRef<
