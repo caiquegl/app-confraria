@@ -60,6 +60,7 @@ export type EventCreateResponse = {
   date: string;
   description: string | null;
   id: string;
+  included: string[];
   images: {
     kind: string;
     order: number;
@@ -72,6 +73,7 @@ export type EventCreateResponse = {
     placeId: string;
     role: string;
   }[];
+  requirements: string[];
   routeDistanceMeters: number | null;
   routeDurationSeconds: number | null;
   title: string;

@@ -41,6 +41,12 @@ export default function PublicProfileEventsScreen() {
           params: { userId: resolvedUserId },
         })
       }
+      onOpenEvent={(eventId) =>
+        router.push({
+          pathname: "/event/[eventId]",
+          params: { eventId },
+        })
+      }
     />
   );
 }

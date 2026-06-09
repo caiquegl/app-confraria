@@ -27,6 +27,7 @@ type PublicProfileEventsViewProps = {
   onBack: () => void;
   onAvatarPress: () => void;
   onCreateEvent: () => void;
+  onOpenEvent: (eventId: string) => void;
   userId: string;
 };
 
@@ -35,6 +36,7 @@ export function PublicProfileEventsView({
   onAvatarPress,
   onBack,
   onCreateEvent,
+  onOpenEvent,
   userId,
 }: PublicProfileEventsViewProps) {
   const insets = useSafeAreaInsets();
@@ -182,6 +184,7 @@ export function PublicProfileEventsView({
                     </View>
                     <PublicProfileEventCard
                       event={event}
+                      onPress={(selectedEvent) => onOpenEvent(selectedEvent.id)}
                       onToggleFavorite={
                         activeTab === "Criados" ? handleToggleFavorite : undefined
                       }

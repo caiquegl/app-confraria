@@ -18,6 +18,7 @@ export const apiRoutes = {
   },
   events: {
     create: "/events",
+    detail: (eventId: string) => `/events/${eventId}`,
     favorite: (eventId: string) => `/events/${eventId}/favorite`,
     favorites: "/events/favorites",
     userCreated: (userId: string, query?: string) =>

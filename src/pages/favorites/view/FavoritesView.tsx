@@ -14,9 +14,10 @@ import type { FavoriteEvent, FavoriteTab } from "../types/favorites.types";
 
 type FavoritesViewProps = {
   onBack: () => void;
+  onOpenEvent: (eventId: string) => void;
 };
 
-export function FavoritesView({ onBack }: FavoritesViewProps) {
+export function FavoritesView({ onBack, onOpenEvent }: FavoritesViewProps) {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<FavoriteTab>("events");
   const [events, setEvents] = useState<FavoriteEvent[]>([]);
@@ -127,6 +128,7 @@ export function FavoritesView({ onBack }: FavoritesViewProps) {
             {!isLoading && !hasError && events.length > 0 ? (
               <FavoriteEventsList
                 events={events}
+                onOpenEvent={onOpenEvent}
                 onToggleFavorite={handleToggleFavorite}
               />
             ) : null}

@@ -13,6 +13,12 @@ export default function FavoritesScreen() {
 
         router.replace("/profile");
       }}
+      onOpenEvent={(eventId) =>
+        router.push({
+          pathname: "/event/[eventId]",
+          params: { eventId },
+        })
+      }
     />
   );
 }

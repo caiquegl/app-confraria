@@ -6,11 +6,13 @@ import type { FavoriteEvent } from "../types/favorites.types";
 
 type FavoriteEventsListProps = {
   events: FavoriteEvent[];
+  onOpenEvent: (eventId: string) => void;
   onToggleFavorite: (event: FavoriteEvent) => void;
 };
 
 export function FavoriteEventsList({
   events,
+  onOpenEvent,
   onToggleFavorite,
 }: FavoriteEventsListProps) {
   return (
@@ -19,6 +21,7 @@ export function FavoriteEventsList({
         <PublicProfileEventCard
           key={event.id}
           event={event}
+          onPress={(selectedEvent) => onOpenEvent(selectedEvent.id)}
           onToggleFavorite={onToggleFavorite}
         />
       ))}

@@ -13,15 +13,21 @@ const FALLBACK_AVATAR =
 
 type PublicProfileEventCardProps = {
   event: PublicProfileEvent;
+  onPress?: (event: PublicProfileEvent) => void;
   onToggleFavorite?: (event: PublicProfileEvent) => void;
 };
 
 export function PublicProfileEventCard({
   event,
+  onPress,
   onToggleFavorite,
 }: PublicProfileEventCardProps) {
   return (
-    <Pressable accessibilityRole="button" style={styles.eventCard}>
+    <Pressable
+      accessibilityRole="button"
+      style={styles.eventCard}
+      onPress={() => onPress?.(event)}
+    >
       <View style={styles.imageWrap}>
         <Image
           cachePolicy="memory-disk"
