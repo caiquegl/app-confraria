@@ -1,13 +1,64 @@
 import { api } from "@/lib/api";
+import { getApiBaseUrl } from "@/lib/api-environment";
 import { apiRoutes } from "@/lib/api-routes";
+import { getToken } from "@/lib/auth";
 
-import type { EventCategory, EventDraft } from "../types/event-create.types";
+import type {
+  EventCategory,
+  EventCreatePayload,
+  EventCreateResponse,
+  EventDraft,
+  EventPlaceReference,
+} from "../types/event-create.types";
 
 export const EVENT_CREATE_TOTAL_STEPS = 4;
 
 export async function fetchEventCategories(): Promise<EventCategory[]> {
   const { data } = await api.get<EventCategory[]>(apiRoutes.admin.eventCategories);
   return data;
+}
+
+export async function fetchPlaceAutocomplete(input: string): Promise<EventPlaceReference[]> {
+  const { data } = await api.get<EventPlaceReference[]>(apiRoutes.places.autocomplete(input));
+  return data;
+}
+
+export async function createEvent(payload: EventCreatePayload): Promise<EventCreateResponse> {
+  const formData = createEventFormData(payload);
+  const baseURL = await getApiBaseUrl();
+  const token = await getToken();
+  const responseText = await sendEventRequest({
+    formData,
+    token,
+    url: `${baseURL}${apiRoutes.events.create}`,
+  });
+
+  return JSON.parse(responseText) as EventCreateResponse;
+}
+
+function createEventFormData(payload: EventCreatePayload) {
+  const formData = new FormData();
+  formData.append("payload", JSON.stringify(payload));
+
+  if (payload.coverImageUri) {
+    const extension = getFileExtension(payload.coverImageUri);
+    formData.append("cover", {
+      name: `event-cover-${Date.now()}.${extension}`,
+      type: getMimeType(extension),
+      uri: payload.coverImageUri,
+    } as unknown as Blob);
+  }
+
+  payload.galleryUris.slice(0, 10).forEach((uri, index) => {
+    const extension = getFileExtension(uri);
+    formData.append("gallery", {
+      name: `event-gallery-${Date.now()}-${index}.${extension}`,
+      type: getMimeType(extension),
+      uri,
+    } as unknown as Blob);
+  });
+
+  return formData;
 }
 
 export function formatBrazilianDateInput(value: string) {
@@ -35,13 +86,13 @@ export function createInitialEventDraft(): EventDraft {
     category: "",
     date: "",
     description: "",
-    destination: "",
+    destination: null,
     endTime: "",
     gallery: [],
     hasParticipantLimit: false,
     image: "",
     included: [],
-    location: "",
+    location: null,
     maxParticipants: undefined,
     requirements: [],
     startTime: "",
@@ -116,4 +167,64 @@ function parseBrazilianDate(value: string) {
   }
 
   return date;
+}
+
+function sendEventRequest(params: {
+  formData: FormData;
+  token: string | null;
+  url: string;
+}): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("POST", params.url);
+    xhr.timeout = 90000;
+    xhr.setRequestHeader("Accept", "application/json");
+
+    if (params.token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${params.token}`);
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.responseText);
+        return;
+      }
+
+      reject(new Error(parseErrorMessage(xhr.responseText)));
+    };
+
+    xhr.onerror = () => reject(new Error("Falha de conexão ao criar evento."));
+    xhr.ontimeout = () => reject(new Error("Tempo esgotado ao criar evento."));
+    xhr.send(params.formData);
+  });
+}
+
+function parseErrorMessage(responseText: string): string {
+  try {
+    const parsed = JSON.parse(responseText) as { message?: string | string[] };
+    if (Array.isArray(parsed.message)) return parsed.message.join("\n");
+    if (parsed.message) return parsed.message;
+  } catch {
+    // Keep generic message when backend response is not JSON.
+  }
+
+  return "Não foi possível criar o evento.";
+}
+
+function getFileExtension(uri: string): string {
+  const cleanUri = uri.split("?")[0] ?? uri;
+  const extension = cleanUri.split(".").pop()?.toLowerCase();
+
+  if (extension && ["jpg", "jpeg", "png", "webp"].includes(extension)) {
+    return extension === "jpeg" ? "jpg" : extension;
+  }
+
+  return "jpg";
+}
+
+function getMimeType(extension: string): string {
+  if (extension === "png") return "image/png";
+  if (extension === "webp") return "image/webp";
+  return "image/jpeg";
 }

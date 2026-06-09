@@ -13,9 +13,13 @@ const FALLBACK_AVATAR =
 
 type PublicProfileEventCardProps = {
   event: PublicProfileEvent;
+  onToggleFavorite?: (event: PublicProfileEvent) => void;
 };
 
-export function PublicProfileEventCard({ event }: PublicProfileEventCardProps) {
+export function PublicProfileEventCard({
+  event,
+  onToggleFavorite,
+}: PublicProfileEventCardProps) {
   return (
     <Pressable accessibilityRole="button" style={styles.eventCard}>
       <View style={styles.imageWrap}>
@@ -30,9 +34,16 @@ export function PublicProfileEventCard({ event }: PublicProfileEventCardProps) {
         <Pressable
           accessibilityRole="button"
           style={styles.favoriteButton}
-          onPress={(event) => event.stopPropagation()}
+          onPress={(pressEvent) => {
+            pressEvent.stopPropagation();
+            onToggleFavorite?.(event);
+          }}
         >
-          <Ionicons color={colors.brandDark} name="heart-outline" size={17} />
+          <Ionicons
+            color={colors.brandDark}
+            name={event.isFavorited ? "heart" : "heart-outline"}
+            size={17}
+          />
         </Pressable>
       </View>
 
@@ -54,12 +65,6 @@ export function PublicProfileEventCard({ event }: PublicProfileEventCardProps) {
             </Text>
           </View>
         </View>
-
-        {event.description ? (
-          <Text numberOfLines={2} style={styles.eventDescription}>
-            {event.description}
-          </Text>
-        ) : null}
 
         <View style={styles.eventFooter}>
           <View style={styles.ratingRow}>
@@ -99,13 +104,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 12,
     fontWeight: "600",
-  },
-  eventDescription: {
-    color: colors.brandPrimary,
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: 17,
-    marginTop: 10,
   },
   eventFooter: {
     alignItems: "center",

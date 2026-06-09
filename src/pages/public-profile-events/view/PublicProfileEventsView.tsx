@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
@@ -11,8 +12,10 @@ import { PublicProfileEventsHeader } from "../components/PublicProfileEventsHead
 import { PublicProfileEventsTabs } from "../components/PublicProfileEventsTabs";
 import { PublicProfileEventTag } from "../components/PublicProfileEventTag";
 import {
+  fetchCreatedPublicProfileEvents,
   getMockPublicProfileEvents,
   PUBLIC_PROFILE_EVENT_TABS,
+  togglePublicProfileEventFavorite,
 } from "../services/public-profile-events.service";
 import type {
   PublicProfileEvent,
@@ -24,6 +27,7 @@ type PublicProfileEventsViewProps = {
   onBack: () => void;
   onAvatarPress: () => void;
   onCreateEvent: () => void;
+  userId: string;
 };
 
 export function PublicProfileEventsView({
@@ -31,16 +35,89 @@ export function PublicProfileEventsView({
   onAvatarPress,
   onBack,
   onCreateEvent,
+  userId,
 }: PublicProfileEventsViewProps) {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<PublicProfileEventTab>("Criados");
+  const [createdEvents, setCreatedEvents] = useState<PublicProfileEvent[]>([]);
+  const [createdEventsError, setCreatedEventsError] = useState(false);
+  const [isLoadingCreatedEvents, setIsLoadingCreatedEvents] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const events = useMemo(() => getMockPublicProfileEvents(activeTab), [activeTab]);
+  const loadCreatedEvents = useCallback(async () => {
+    if (!userId) {
+      setCreatedEvents([]);
+      setIsLoadingCreatedEvents(false);
+      return;
+    }
+
+    setCreatedEventsError(false);
+    setIsLoadingCreatedEvents(true);
+
+    try {
+      const response = await fetchCreatedPublicProfileEvents(userId);
+      setCreatedEvents(response);
+    } catch {
+      setCreatedEventsError(true);
+      setCreatedEvents([]);
+    } finally {
+      setIsLoadingCreatedEvents(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      void loadCreatedEvents();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [loadCreatedEvents]);
+
+  const handleToggleFavorite = useCallback(async (event: PublicProfileEvent) => {
+    setCreatedEvents((currentEvents) =>
+      currentEvents.map((currentEvent) =>
+        currentEvent.id === event.id
+          ? { ...currentEvent, isFavorited: !currentEvent.isFavorited }
+          : currentEvent,
+      ),
+    );
+
+    try {
+      const response = await togglePublicProfileEventFavorite(event.id);
+      setCreatedEvents((currentEvents) =>
+        currentEvents.map((currentEvent) =>
+          currentEvent.id === response.eventId
+            ? { ...currentEvent, isFavorited: response.favorited }
+            : currentEvent,
+        ),
+      );
+    } catch {
+      setCreatedEvents((currentEvents) =>
+        currentEvents.map((currentEvent) =>
+          currentEvent.id === event.id
+            ? { ...currentEvent, isFavorited: event.isFavorited }
+            : currentEvent,
+        ),
+      );
+      Toast.show({
+        type: "error",
+        text1: "Não foi possível atualizar o favorito",
+        text2: "Tente novamente em instantes.",
+      });
+    }
+  }, []);
+
+  const events = useMemo(
+    () => (activeTab === "Criados" ? createdEvents : getMockPublicProfileEvents(activeTab)),
+    [activeTab, createdEvents],
+  );
   const filteredEvents = useMemo(
     () => filterEventsBySearch(events, searchQuery),
     [events, searchQuery],
   );
+  const shouldShowLoading = activeTab === "Criados" && isLoadingCreatedEvents;
+  const shouldShowError = activeTab === "Criados" && createdEventsError;
+  const shouldShowEmpty = !shouldShowLoading && !shouldShowError && filteredEvents.length === 0;
 
   return (
     <View style={styles.screen}>
@@ -74,7 +151,21 @@ export function PublicProfileEventsView({
 
           <Text style={styles.sectionTitle}>{getSectionTitle(activeTab)}</Text>
 
-          {activeTab === "Criados" || filteredEvents.length > 0 ? (
+          {shouldShowLoading ? (
+            <View style={styles.feedbackCard}>
+              <ActivityIndicator color={colors.brandPrimary} />
+              <Text style={styles.feedbackText}>Carregando eventos criados...</Text>
+            </View>
+          ) : null}
+
+          {shouldShowError ? (
+            <View style={styles.feedbackCard}>
+              <Text style={styles.feedbackTitle}>Não foi possível carregar seus eventos</Text>
+              <Text style={styles.feedbackText}>Tente abrir a página novamente em instantes.</Text>
+            </View>
+          ) : null}
+
+          {!shouldShowLoading && !shouldShowError && filteredEvents.length > 0 ? (
             <View style={styles.eventsList}>
               {filteredEvents.map((event, index) => {
                 const primaryBadge = getPrimaryEventBadge(event, activeTab, index);
@@ -89,14 +180,21 @@ export function PublicProfileEventsView({
                       />
                       <PublicProfileEventTag icon="trail-sign-outline" label={event.category} />
                     </View>
-                    <PublicProfileEventCard event={event} />
+                    <PublicProfileEventCard
+                      event={event}
+                      onToggleFavorite={
+                        activeTab === "Criados" ? handleToggleFavorite : undefined
+                      }
+                    />
                   </View>
                 );
               })}
             </View>
-          ) : (
+          ) : null}
+
+          {shouldShowEmpty ? (
             <PublicProfileEventsEmptyState />
-          )}
+          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -165,6 +263,26 @@ const styles = StyleSheet.create({
   },
   eventBlock: {
     gap: 10,
+  },
+  feedbackCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 22,
+    borderWidth: 1,
+    gap: 8,
+    padding: 24,
+  },
+  feedbackText: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    textAlign: "center",
+  },
+  feedbackTitle: {
+    color: colors.brandDark,
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "center",
   },
   screen: {
     backgroundColor: colors.brandGray,

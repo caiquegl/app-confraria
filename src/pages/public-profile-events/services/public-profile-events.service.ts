@@ -1,5 +1,12 @@
+import { Image } from "expo-image";
+
+import { api } from "@/lib/api";
+import { apiRoutes } from "@/lib/api-routes";
+
 import type {
   PublicProfileEvent,
+  PublicProfileEventFavoriteResponse,
+  PublicProfileEventListItem,
   PublicProfileEventTab,
 } from "../types/public-profile-events.types";
 
@@ -11,41 +18,6 @@ export const PUBLIC_PROFILE_EVENT_TABS: PublicProfileEventTab[] = [
 
 const TODAY_ISO = new Date().toISOString();
 
-const MOCK_CREATED_EVENTS: PublicProfileEvent[] = [
-  {
-    id: "created-1",
-    title: "Trilha asfalto",
-    category: "Moto Club Iron Horses",
-    description: "Passeio de asfalto com paradas estratégicas e encontro de moto clubes.",
-    image:
-      "https://images.unsplash.com/photo-1625026435348-77b314953932?q=80&w=900&auto=format&fit=crop",
-    rating: 4.9,
-    reviews: 999,
-    date: "Novembro / 25",
-    organizer: "Moto Club Iron Horses",
-    organizerAvatar:
-      "https://images.unsplash.com/photo-1614959541559-07085775f0f3?q=80&w=100&auto=format&fit=crop",
-    location: "Curitiba",
-    startsAt: TODAY_ISO,
-  },
-  {
-    id: "created-2",
-    title: "Rota do Sol",
-    category: "Estrada",
-    description: "Rota panorâmica para quem curte estrada, curvas e visual aberto.",
-    image:
-      "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=900&auto=format&fit=crop",
-    rating: 4.8,
-    reviews: 312,
-    date: "Novembro / 25",
-    organizer: "Iron Horses",
-    organizerAvatar:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop",
-    location: "Nordeste",
-    startsAt: "2025-11-25T12:00:00.000Z",
-  },
-];
-
 const MOCK_JOINED_EVENTS: PublicProfileEvent[] = [
   {
     id: "joined-1",
@@ -54,6 +26,7 @@ const MOCK_JOINED_EVENTS: PublicProfileEvent[] = [
     description: "Evento descontraído para casais motociclistas e amigos da estrada.",
     image:
       "https://images.unsplash.com/photo-1623868662369-0731f4a97405?q=80&w=900&auto=format&fit=crop",
+    isFavorited: false,
     rating: 4.9,
     reviews: 999,
     date: "Nesta Semana",
@@ -73,6 +46,7 @@ const MOCK_VISITED_EVENTS: PublicProfileEvent[] = [
     description: "Grande encontro com shows, expositores e rotas guiadas durante o fim de semana.",
     image:
       "https://images.unsplash.com/photo-1558981359-219d6364c9c8?q=80&w=900&auto=format&fit=crop",
+    isFavorited: false,
     rating: 5,
     reviews: 1200,
     date: "Outubro / 25",
@@ -93,6 +67,82 @@ export function getMockPublicProfileEvents(tab: PublicProfileEventTab): PublicPr
       return MOCK_VISITED_EVENTS;
     case "Criados":
     default:
-      return MOCK_CREATED_EVENTS;
+      return [];
   }
+}
+
+export async function fetchCreatedPublicProfileEvents(
+  userId: string,
+  query?: string,
+): Promise<PublicProfileEvent[]> {
+  const { data } = await api.get<PublicProfileEventListItem[]>(
+    apiRoutes.events.userCreated(userId, query),
+  );
+  const events = data.map(mapCreatedEvent);
+
+  prefetchEventImages(events);
+
+  return events;
+}
+
+export async function fetchFavoritePublicProfileEvents(): Promise<PublicProfileEvent[]> {
+  const { data } = await api.get<PublicProfileEventListItem[]>(apiRoutes.events.favorites);
+  const events = data.map(mapEventListItem);
+
+  prefetchEventImages(events);
+
+  return events;
+}
+
+export async function togglePublicProfileEventFavorite(
+  eventId: string,
+): Promise<PublicProfileEventFavoriteResponse> {
+  const { data } = await api.post<PublicProfileEventFavoriteResponse>(
+    apiRoutes.events.favorite(eventId),
+  );
+
+  return data;
+}
+
+function mapCreatedEvent(event: PublicProfileEventListItem): PublicProfileEvent {
+  return mapEventListItem(event);
+}
+
+function mapEventListItem(event: PublicProfileEventListItem): PublicProfileEvent {
+  return {
+    category: event.category,
+    date: formatEventDateLabel(event.date),
+    description: event.description ?? undefined,
+    id: event.id,
+    image: event.image ?? "",
+    isFavorited: event.isFavorited,
+    location: event.location ?? "",
+    organizer: event.organizer.name,
+    organizerAvatar: event.organizer.avatarUrl ?? undefined,
+    rating: 0,
+    reviews: 0,
+    startsAt: event.date,
+    title: event.title,
+  };
+}
+
+function formatEventDateLabel(dateValue: string) {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "2-digit",
+  }).format(date);
+}
+
+function prefetchEventImages(events: PublicProfileEvent[]) {
+  const urls = events
+    .flatMap((event) => [event.image, event.organizerAvatar])
+    .filter((url): url is string => Boolean(url));
+
+  if (urls.length === 0) return;
+
+  void Image.prefetch(urls, "memory-disk");
 }

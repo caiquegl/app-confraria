@@ -1,8 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
-
 type PublicProfileEventTagProps = {
   active?: boolean;
   icon: keyof typeof Ionicons.glyphMap;

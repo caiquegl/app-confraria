@@ -5,6 +5,7 @@ import { Button } from "@/components/Button";
 import { colors } from "@/theme/colors";
 
 import { EventFormField } from "./EventFormField";
+import { EventPlaceAutocompleteField } from "./EventPlaceAutocompleteField";
 import { EventWizardLayout } from "./EventWizardLayout";
 import {
   EVENT_CREATE_TOTAL_STEPS,
@@ -16,7 +17,11 @@ import {
   isValidBrazilianDate,
   isValidTime,
 } from "../services/event-create.service";
-import type { EventDraft, EventDraftUpdate } from "../types/event-create.types";
+import type {
+  EventDraft,
+  EventDraftUpdate,
+  EventPlaceReference,
+} from "../types/event-create.types";
 
 type EventStep2Props = {
   draft: EventDraft;
@@ -40,7 +45,7 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
   const canAdvance =
     isValidBrazilianDate(draft.date) &&
     !dateIsPast &&
-    draft.location.trim() !== "" &&
+    Boolean(draft.location?.placeId) &&
     !hasInvalidStartTime &&
     !hasInvalidEndTime;
   const weekday = formatEventWeekday(draft.date);
@@ -58,7 +63,7 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
     updateDraft("endTime", formatTimeInput(value));
   };
 
-  const updateStop = (index: number, value: string) => {
+  const updateStop = (index: number, value: EventPlaceReference | null) => {
     updateDraft(
       "stops",
       draft.stops.map((stop, stopIndex) => (stopIndex === index ? value : stop)),
@@ -122,30 +127,29 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
           {duration ? <Text style={styles.helperText}>{duration}</Text> : null}
         </View>
 
-        <EventFormField
+        <EventPlaceAutocompleteField
           label="Ponto de encontro *"
           placeholder="Buscar endereço de saída..."
           value={draft.location}
-          onChangeText={(value) => updateDraft("location", value)}
+          onChange={(place) => updateDraft("location", place)}
         />
 
-        <EventFormField
+        <EventPlaceAutocompleteField
           label="Destino (opcional)"
           placeholder="Buscar endereço de chegada..."
           value={draft.destination}
-          onChangeText={(value) => updateDraft("destination", value)}
+          onChange={(place) => updateDraft("destination", place)}
         />
 
         {draft.stops.map((stop, index) => (
           <View key={index}>
-            <Text style={styles.label}>Parada {index + 1}</Text>
             <View style={styles.stopRow}>
               <View style={styles.stopInput}>
-                <EventFormField
-                  label=""
+                <EventPlaceAutocompleteField
+                  label={`Parada ${index + 1}`}
                   placeholder="Buscar endereço da parada..."
                   value={stop}
-                  onChangeText={(value) => updateStop(index, value)}
+                  onChange={(place) => updateStop(index, place)}
                 />
               </View>
               <Pressable
@@ -167,7 +171,7 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
         <Pressable
           accessibilityRole="button"
           style={styles.addStopButton}
-          onPress={() => updateDraft("stops", [...draft.stops, ""])}
+          onPress={() => updateDraft("stops", [...draft.stops, null])}
         >
           <Ionicons color="#6B7280" name="add" size={18} />
           <Text style={styles.addStopText}>Adicionar ponto de parada (opcional)</Text>
@@ -239,14 +243,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: 50,
     justifyContent: "center",
-    marginTop: 0,
+    marginTop: 27,
     width: 50,
   },
   stopInput: {
     flex: 1,
   },
   stopRow: {
-    alignItems: "flex-end",
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 10,
   },

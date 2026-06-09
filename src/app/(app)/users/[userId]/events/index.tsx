@@ -25,6 +25,7 @@ export default function PublicProfileEventsScreen() {
   return (
     <PublicProfileEventsView
       avatarUrl={avatarUrl}
+      userId={resolvedUserId}
       onAvatarPress={openProfile}
       onBack={() => {
         if (router.canGoBack()) {

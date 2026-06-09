@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 
+import { EventCreatedSuccessModal } from "../components/EventCreatedSuccessModal";
 import { EventStep1 } from "../components/EventStep1";
 import { EventStep2 } from "../components/EventStep2";
 import { EventStep3 } from "../components/EventStep3";
 import { EventStep4 } from "../components/EventStep4";
 import { useEventCreateDraft } from "../hooks/useEventCreateDraft";
-import { fetchEventCategories } from "../services/event-create.service";
+import { createEvent, fetchEventCategories } from "../services/event-create.service";
 import type { EventCategory } from "../types/event-create.types";
 
 type EventCreateViewProps = {
@@ -20,6 +21,7 @@ export function EventCreateView({ onClose, onPublished, userId }: EventCreateVie
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [categoriesError, setCategoriesError] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
   const { buildPayload, draft, goBack, goNext, step, updateDraft } = useEventCreateDraft(userId);
 
   useEffect(() => {
@@ -43,20 +45,22 @@ export function EventCreateView({ onClose, onPublished, userId }: EventCreateVie
     };
   }, []);
 
-  const publishEvent = () => {
+  const publishEvent = async () => {
     if (isPublishing) return;
 
-    buildPayload();
     setIsPublishing(true);
-    setTimeout(() => {
-      setIsPublishing(false);
+    try {
+      await createEvent(buildPayload());
+      setSuccessVisible(true);
+    } catch (error) {
       Toast.show({
-        type: "success",
-        text1: "Evento publicado",
-        text2: "Seu evento foi criado localmente por enquanto.",
+        type: "error",
+        text1: "Não foi possível criar o evento",
+        text2: error instanceof Error ? error.message : "Tente novamente em instantes.",
       });
-      onPublished();
-    }, 650);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   if (step === 1) {
@@ -98,13 +102,22 @@ export function EventCreateView({ onClose, onPublished, userId }: EventCreateVie
   }
 
   return (
-    <EventStep4
-      draft={draft}
-      isPublishing={isPublishing}
-      updateDraft={updateDraft}
-      onBack={goBack}
-      onClose={onClose}
-      onPublish={publishEvent}
-    />
+    <>
+      <EventStep4
+        draft={draft}
+        isPublishing={isPublishing}
+        updateDraft={updateDraft}
+        onBack={goBack}
+        onClose={onClose}
+        onPublish={publishEvent}
+      />
+      <EventCreatedSuccessModal
+        visible={successVisible}
+        onContinue={() => {
+          setSuccessVisible(false);
+          onPublished();
+        }}
+      />
+    </>
   );
 }

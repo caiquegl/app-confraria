@@ -16,6 +16,13 @@ export const apiRoutes = {
     sendMessage: "/chat/messages",
     unreadCount: "/chat/unread-count",
   },
+  events: {
+    create: "/events",
+    favorite: (eventId: string) => `/events/${eventId}/favorite`,
+    favorites: "/events/favorites",
+    userCreated: (userId: string, query?: string) =>
+      `/events/users/${userId}/created${query ? `?q=${encodeURIComponent(query)}` : ""}`,
+  },
   feed: {
     posts: "/feed/posts",
     likedPosts: "/feed/posts/liked",
@@ -32,6 +39,9 @@ export const apiRoutes = {
     list: "/notifications",
     readAll: "/notifications/read-all",
     unreadCount: "/notifications/unread-count",
+  },
+  places: {
+    autocomplete: (input: string) => `/places/autocomplete?input=${encodeURIComponent(input)}`,
   },
   stories: {
     create: "/stories",

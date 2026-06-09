@@ -24,6 +24,15 @@ export function EventStep3({ draft, onBack, onClose, onNext, updateDraft }: Even
     updateDraft("maxParticipants", normalized ? Number(normalized) : undefined);
   };
 
+  const toggleParticipantLimit = () => {
+    const nextValue = !draft.hasParticipantLimit;
+    updateDraft("hasParticipantLimit", nextValue);
+
+    if (!nextValue) {
+      updateDraft("maxParticipants", undefined);
+    }
+  };
+
   return (
     <EventWizardLayout
       step={3}
@@ -36,7 +45,7 @@ export function EventStep3({ draft, onBack, onClose, onNext, updateDraft }: Even
         <Pressable
           accessibilityRole="button"
           style={styles.toggleCard}
-          onPress={() => updateDraft("hasParticipantLimit", !draft.hasParticipantLimit)}
+          onPress={toggleParticipantLimit}
         >
           <View style={styles.toggleIcon}>
             <Ionicons

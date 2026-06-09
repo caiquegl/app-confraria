@@ -16,6 +16,8 @@ export type PublicProfile = {
   followStatus: PublicProfileFollowStatus;
   hasPendingFollowRequest: boolean;
   postsCount: number;
+  eventsCreatedCount: number;
+  eventFavoritesCount: number;
   followersCount: number;
   followingCount: number;
 };
