@@ -1,14 +1,19 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
 
 type EventDetailParticipationFooterProps = {
+  isParticipant: boolean;
   onPress: () => void;
+  remainingSpots: number | null;
 };
 
 export function EventDetailParticipationFooter({
+  isParticipant,
   onPress,
+  remainingSpots,
 }: EventDetailParticipationFooterProps) {
   const insets = useSafeAreaInsets();
 
@@ -20,11 +25,29 @@ export function EventDetailParticipationFooter({
             <Text style={styles.price}>Gratuito</Text>
             <Text style={styles.priceSubtitle}>por pessoa</Text>
           </View>
+          {remainingSpots !== null ? (
+            <View style={styles.spotsBadge}>
+              <Text style={styles.spotsText}>{remainingSpots} restantes</Text>
+            </View>
+          ) : null}
         </View>
-        <Pressable accessibilityRole="button" style={styles.button} onPress={onPress}>
-          <Text style={styles.buttonText}>Participar do Evento</Text>
+        <Pressable
+          accessibilityRole="button"
+          style={[styles.button, isParticipant && styles.buttonConfirmed]}
+          onPress={onPress}
+        >
+          {isParticipant ? (
+            <Ionicons color={colors.brandDark} name="checkmark-circle-outline" size={18} />
+          ) : null}
+          <Text style={styles.buttonText}>
+            {isParticipant ? "Presença confirmada" : "Participar do Evento"}
+          </Text>
         </Pressable>
-        <Text style={styles.note}>Cancelamento gratuito em até 48h antes do Evento</Text>
+        <Text style={styles.note}>
+          {isParticipant
+            ? "Sua presença foi confirmada para este evento"
+            : "Cancelamento gratuito em até 48h antes do Evento"}
+        </Text>
       </View>
     </View>
   );
@@ -35,8 +58,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.brandGreen,
     borderRadius: 18,
+    flexDirection: "row",
+    gap: 8,
     height: 50,
     justifyContent: "center",
+  },
+  buttonConfirmed: {
+    backgroundColor: "#EEF3E2",
   },
   buttonText: {
     color: colors.brandDark,
@@ -70,12 +98,27 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   priceRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 10,
   },
   priceSubtitle: {
     color: "#6B7280",
     fontSize: 12,
     fontWeight: "600",
+  },
+  spotsBadge: {
+    borderColor: "#E5E7EB",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  spotsText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "700",
   },
   wrap: {
     bottom: 0,

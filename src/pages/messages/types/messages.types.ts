@@ -11,6 +11,14 @@ export type ChatSharedPost = {
   thumbnail: string | null;
 };
 
+export type ChatSharedEvent = {
+  eventId: string;
+  category: string;
+  organizerName: string;
+  thumbnail: string | null;
+  title: string;
+};
+
 export type ChatMessage = {
   id: string;
   conversationId: string;
@@ -20,6 +28,7 @@ export type ChatMessage = {
   readAt: string | null;
   isMine: boolean;
   sharedPost: ChatSharedPost | null;
+  sharedEvent: ChatSharedEvent | null;
 };
 
 export type ChatConversation = {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "970467248643",
+    "project_id": "confraria-21883",
+    "storage_bucket": "confraria-21883.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:970467248643:android:e99b76666bad1d00d95c36",
+        "android_client_info": {
+          "package_name": "com.caiquegl22.appconfraria"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiVezx1DZ1zp84b8hrVxFohDjkc1ovh-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

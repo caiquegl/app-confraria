@@ -35,6 +35,7 @@ export async function fetchChatMessages(
 export async function sendChatMessage(params: {
   conversationId?: string;
   recipientId?: string;
+  sharedEventId?: string;
   sharedPostId?: string;
   text: string;
 }): Promise<{ message: ChatMessage; senderConversation: ChatConversation }> {

@@ -9,7 +9,6 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "associatedDomains": [
-        "applinks:confraria-web.vercel.app",
         "applinks:confraria-web.vercel.app"
       ],
       "icon": "./assets/expo.icon",
@@ -25,6 +24,7 @@
         "backgroundImage": "./assets/images/Icones_IMG.png",
         "monochromeImage": "./assets/images/Icones_IMG.png"
       },
+      "googleServicesFile": "./google-services.json",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -47,7 +47,8 @@
       "package": "com.caiquegl22.appconfraria",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -88,6 +89,7 @@
           "resizeMode": "contain"
         }
       ],
+      "expo-notifications",
       "expo-video"
     ],
     "experiments": {

@@ -16,28 +16,6 @@ export const PUBLIC_PROFILE_EVENT_TABS: PublicProfileEventTab[] = [
   "Criados",
 ];
 
-const TODAY_ISO = new Date().toISOString();
-
-const MOCK_JOINED_EVENTS: PublicProfileEvent[] = [
-  {
-    id: "joined-1",
-    title: "O Rolê com a Gata",
-    category: "Moto Club Iron Horses",
-    description: "Evento descontraído para casais motociclistas e amigos da estrada.",
-    image:
-      "https://images.unsplash.com/photo-1623868662369-0731f4a97405?q=80&w=900&auto=format&fit=crop",
-    isFavorited: false,
-    rating: 4.9,
-    reviews: 999,
-    date: "Nesta Semana",
-    organizer: "Iron Horses",
-    organizerAvatar:
-      "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=100&auto=format&fit=crop",
-    location: "Rio de Janeiro",
-    startsAt: TODAY_ISO,
-  },
-];
-
 const MOCK_VISITED_EVENTS: PublicProfileEvent[] = [
   {
     id: "visited-1",
@@ -61,10 +39,9 @@ const MOCK_VISITED_EVENTS: PublicProfileEvent[] = [
 
 export function getMockPublicProfileEvents(tab: PublicProfileEventTab): PublicProfileEvent[] {
   switch (tab) {
-    case "Inscrito":
-      return MOCK_JOINED_EVENTS;
     case "Visitados":
       return MOCK_VISITED_EVENTS;
+    case "Inscrito":
     case "Criados":
     default:
       return [];
@@ -83,6 +60,28 @@ export async function fetchCreatedPublicProfileEvents(
   prefetchEventImages(events);
 
   return events;
+}
+
+export async function fetchJoinedPublicProfileEvents(
+  userId: string,
+  query?: string,
+): Promise<PublicProfileEvent[]> {
+  const { data } = await api.get<PublicProfileEventListItem[]>(
+    apiRoutes.events.userJoined(userId, query),
+  );
+  const events = data.map(mapEventListItem);
+
+  prefetchEventImages(events);
+
+  return events;
+}
+
+export async function fetchJoinedPublicProfileEventsCount(userId: string): Promise<number> {
+  const { data } = await api.get<PublicProfileEventListItem[]>(
+    apiRoutes.events.userJoined(userId),
+  );
+
+  return data.length;
 }
 
 export async function fetchFavoritePublicProfileEvents(): Promise<PublicProfileEvent[]> {

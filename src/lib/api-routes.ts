@@ -21,8 +21,11 @@ export const apiRoutes = {
     detail: (eventId: string) => `/events/${eventId}`,
     favorite: (eventId: string) => `/events/${eventId}/favorite`,
     favorites: "/events/favorites",
+    join: (eventId: string) => `/events/${eventId}/join`,
     userCreated: (userId: string, query?: string) =>
       `/events/users/${userId}/created${query ? `?q=${encodeURIComponent(query)}` : ""}`,
+    userJoined: (userId: string, query?: string) =>
+      `/events/users/${userId}/joined${query ? `?q=${encodeURIComponent(query)}` : ""}`,
   },
   feed: {
     posts: "/feed/posts",
@@ -38,6 +41,7 @@ export const apiRoutes = {
   },
   notifications: {
     list: "/notifications",
+    pushToken: "/notifications/push-token",
     readAll: "/notifications/read-all",
     unreadCount: "/notifications/unread-count",
   },

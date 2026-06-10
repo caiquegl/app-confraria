@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     aspectRatio: 4 / 3,
+    width: "100%",
     backgroundColor: "#F3F4F6",
     borderRadius: 20,
     marginBottom: 12,

@@ -8,6 +8,7 @@ type EventDetailInfoSectionProps = {
   destinationLabel?: string | null;
   durationLabel: string;
   originLabel: string;
+  participantsCount: number;
   participantLimit: number | null;
   timeLabel: string;
   weekdayLabel: string;
@@ -18,10 +19,14 @@ export function EventDetailInfoSection({
   destinationLabel,
   durationLabel,
   originLabel,
+  participantsCount,
   participantLimit,
   timeLabel,
   weekdayLabel,
 }: EventDetailInfoSectionProps) {
+  const participantsLabel =
+    participantsCount === 1 ? "1 participante inscrito" : `${participantsCount} participantes inscritos`;
+
   return (
     <View style={styles.card}>
       <Text style={styles.sectionTitle}>Informações do Evento</Text>
@@ -44,14 +49,12 @@ export function EventDetailInfoSection({
           subtitle={destinationLabel ? `Destino: ${destinationLabel}` : undefined}
           title={`Ponto de Encontro: ${originLabel}`}
         />
-        {participantLimit ? (
-          <InfoItem
-            icon="people-outline"
-            iconColor={colors.brandPrimary}
-            subtitle={`Máximo ${participantLimit} pessoas`}
-            title="Participantes confirmados"
-          />
-        ) : null}
+        <InfoItem
+          icon="people-outline"
+          iconColor={colors.brandPrimary}
+          subtitle={participantLimit !== null ? `Máximo ${participantLimit} pessoas` : undefined}
+          title={participantsLabel}
+        />
       </View>
     </View>
   );

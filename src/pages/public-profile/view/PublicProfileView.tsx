@@ -16,6 +16,7 @@ import { getCurrentUserId } from "@/lib/auth";
 import { fetchUserBikes } from "@/pages/bikes/services/bikes.service";
 import { SharePostSheet } from "@/pages/home/components/SharePostSheet";
 import { createChatConversation } from "@/pages/messages/services/messages.service";
+import { fetchJoinedPublicProfileEventsCount } from "@/pages/public-profile-events/services/public-profile-events.service";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
 import {
   fetchUserStories,
@@ -57,6 +58,7 @@ export function PublicProfileView({
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [postsViewerIndex, setPostsViewerIndex] = useState<number | null>(null);
   const [bikeCount, setBikeCount] = useState(0);
+  const [joinedEventsCount, setJoinedEventsCount] = useState(0);
   const { error, isLoading, profile, retry, updateFollowState } =
     usePublicProfile(userId);
   const profilePosts = usePublicProfilePosts(userId);
@@ -102,6 +104,24 @@ export function PublicProfileView({
       cancelled = true;
     };
   }, [isOwnProfile, refreshKey]);
+
+  useEffect(() => {
+    if (!isOwnProfile) return;
+
+    let cancelled = false;
+
+    void fetchJoinedPublicProfileEventsCount(userId)
+      .then((count) => {
+        if (!cancelled) setJoinedEventsCount(count);
+      })
+      .catch(() => {
+        if (!cancelled) setJoinedEventsCount(0);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, refreshKey, userId]);
 
   const handleToggleFollow = async () => {
     if (isFollowLoading || !profile || profile.followStatus === "pending") return;
@@ -409,7 +429,7 @@ export function PublicProfileView({
           {isOwnProfile ? (
             <ProfileStatsBar
               bikeCount={bikeCount}
-              eventsCreatedCount={profile.eventsCreatedCount}
+              eventsCount={profile.eventsCreatedCount + joinedEventsCount}
               favoriteCount={profile.eventFavoritesCount}
               onFavoritesPress={() => router.push("/profile/favorites")}
               onEventsPress={() =>
@@ -503,14 +523,14 @@ function PrivateProfileNotice() {
 
 function ProfileStatsBar({
   bikeCount,
-  eventsCreatedCount,
+  eventsCount,
   favoriteCount,
   onFavoritesPress,
   onEventsPress,
   onGaragePress,
 }: {
   bikeCount: number;
-  eventsCreatedCount: number;
+  eventsCount: number;
   favoriteCount: number;
   onFavoritesPress: () => void;
   onEventsPress: () => void;
@@ -529,7 +549,7 @@ function ProfileStatsBar({
         <ProfileShortcut
           icon="calendar-outline"
           label="Eventos"
-          value={eventsCreatedCount}
+          value={eventsCount}
           onPress={onEventsPress}
         />
         <View style={styles.shortcutDivider} />

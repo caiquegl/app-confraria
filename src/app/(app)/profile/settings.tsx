@@ -6,6 +6,7 @@ import Toast from "react-native-toast-message";
 
 import { getCurrentUserId, removeToken } from "@/lib/auth";
 import { setStoredCurrentProfile } from "@/lib/current-profile-store";
+import { unregisterPushNotificationsAsync } from "@/lib/push-notifications";
 import { getUpdateInfo } from "@/lib/updates";
 import { BikeCategoriesEditorModal } from "@/pages/profile/components/BikeCategoriesEditorModal";
 import { SettingsModal } from "@/pages/profile/components/SettingsModal";
@@ -124,6 +125,7 @@ export default function ProfileSettingsScreen() {
   };
 
   const handleLogout = async () => {
+    await unregisterPushNotificationsAsync();
     await removeToken();
     setStoredCurrentProfile({ avatar: null, name: null });
     setIsSettingsOpen(false);

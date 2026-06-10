@@ -9,6 +9,10 @@ import {
   setStoredCurrentProfile,
   subscribeStoredCurrentProfile,
 } from "@/lib/current-profile-store";
+import {
+  addNotificationResponseListener,
+  registerForPushNotificationsAsync,
+} from "@/lib/push-notifications";
 import { fetchPublicProfile } from "@/pages/public-profile/services/public-profile.service";
 import { colors } from "@/theme/colors";
 
@@ -42,6 +46,8 @@ export default function AppLayout() {
       setAuthState(authenticated ? "authenticated" : "unauthenticated");
 
       if (authenticated) {
+        void registerForPushNotificationsAsync();
+
         void getCurrentUserId()
           .then((userId) => {
             if (!userId) return null;
@@ -67,6 +73,12 @@ export default function AppLayout() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (authState !== "authenticated") return;
+
+    return addNotificationResponseListener();
+  }, [authState]);
 
   if (authState === "loading") return null;
 

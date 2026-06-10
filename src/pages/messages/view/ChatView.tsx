@@ -121,7 +121,7 @@ export function ChatView({
           styles.composerWrap,
           {
             marginBottom: Platform.OS === "android" ? keyboardOffset : 0,
-            paddingBottom: Math.max(insets.bottom, 12),
+            paddingBottom:12,
           },
         ]}
       >
@@ -156,7 +156,9 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   return (
     <View style={[styles.messageRow, message.isMine && styles.messageRowMine]}>
       <View style={[styles.bubble, message.isMine ? styles.bubbleMine : styles.bubbleOther]}>
-        {message.sharedPost ? (
+        {message.sharedEvent ? (
+          <SharedEventCard message={message} />
+        ) : message.sharedPost ? (
           <SharedPostCard message={message} />
         ) : (
           <Text style={[styles.messageText, message.isMine && styles.messageTextMine]}>
@@ -172,6 +174,45 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         </Text>
       </View>
     </View>
+  );
+}
+
+function SharedEventCard({ message }: { message: ChatMessage }) {
+  const sharedEvent = message.sharedEvent;
+  if (!sharedEvent) return null;
+
+  const openEvent = () => {
+    router.push({
+      pathname: "/event/[eventId]",
+      params: { eventId: sharedEvent.eventId },
+    });
+  };
+
+  return (
+    <Pressable style={styles.sharedCard} onPress={openEvent}>
+      {sharedEvent.thumbnail ? (
+        <Image
+          source={{ uri: sharedEvent.thumbnail }}
+          style={styles.sharedImage}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          recyclingKey={sharedEvent.thumbnail}
+        />
+      ) : (
+        <View style={styles.sharedImageFallback}>
+          <Ionicons color="#9CA3AF" name="calendar-outline" size={20} />
+        </View>
+      )}
+      <View style={styles.sharedInfo}>
+        <Text numberOfLines={1} style={styles.sharedLabel}>
+          Evento de {sharedEvent.organizerName}
+        </Text>
+        <Text numberOfLines={2} style={styles.sharedCaption}>
+          {sharedEvent.title || message.text}
+        </Text>
+      </View>
+      <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
+    </Pressable>
   );
 }
 

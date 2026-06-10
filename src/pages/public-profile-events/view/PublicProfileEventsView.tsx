@@ -13,6 +13,7 @@ import { PublicProfileEventsTabs } from "../components/PublicProfileEventsTabs";
 import { PublicProfileEventTag } from "../components/PublicProfileEventTag";
 import {
   fetchCreatedPublicProfileEvents,
+  fetchJoinedPublicProfileEvents,
   getMockPublicProfileEvents,
   PUBLIC_PROFILE_EVENT_TABS,
   togglePublicProfileEventFavorite,
@@ -44,6 +45,9 @@ export function PublicProfileEventsView({
   const [createdEvents, setCreatedEvents] = useState<PublicProfileEvent[]>([]);
   const [createdEventsError, setCreatedEventsError] = useState(false);
   const [isLoadingCreatedEvents, setIsLoadingCreatedEvents] = useState(true);
+  const [isLoadingJoinedEvents, setIsLoadingJoinedEvents] = useState(true);
+  const [joinedEvents, setJoinedEvents] = useState<PublicProfileEvent[]>([]);
+  const [joinedEventsError, setJoinedEventsError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const loadCreatedEvents = useCallback(async () => {
@@ -67,40 +71,57 @@ export function PublicProfileEventsView({
     }
   }, [userId]);
 
+  const loadJoinedEvents = useCallback(async () => {
+    if (!userId) {
+      setJoinedEvents([]);
+      setIsLoadingJoinedEvents(false);
+      return;
+    }
+
+    setJoinedEventsError(false);
+    setIsLoadingJoinedEvents(true);
+
+    try {
+      const response = await fetchJoinedPublicProfileEvents(userId);
+      setJoinedEvents(response);
+    } catch {
+      setJoinedEventsError(true);
+      setJoinedEvents([]);
+    } finally {
+      setIsLoadingJoinedEvents(false);
+    }
+  }, [userId]);
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       void loadCreatedEvents();
+      void loadJoinedEvents();
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [loadCreatedEvents]);
+  }, [loadCreatedEvents, loadJoinedEvents]);
 
   const handleToggleFavorite = useCallback(async (event: PublicProfileEvent) => {
-    setCreatedEvents((currentEvents) =>
-      currentEvents.map((currentEvent) =>
-        currentEvent.id === event.id
-          ? { ...currentEvent, isFavorited: !currentEvent.isFavorited }
-          : currentEvent,
-      ),
-    );
+    const setOptimisticFavorite = (isFavorited: boolean) => {
+      setCreatedEvents((currentEvents) =>
+        currentEvents.map((currentEvent) =>
+          currentEvent.id === event.id ? { ...currentEvent, isFavorited } : currentEvent,
+        ),
+      );
+      setJoinedEvents((currentEvents) =>
+        currentEvents.map((currentEvent) =>
+          currentEvent.id === event.id ? { ...currentEvent, isFavorited } : currentEvent,
+        ),
+      );
+    };
+
+    setOptimisticFavorite(!event.isFavorited);
 
     try {
       const response = await togglePublicProfileEventFavorite(event.id);
-      setCreatedEvents((currentEvents) =>
-        currentEvents.map((currentEvent) =>
-          currentEvent.id === response.eventId
-            ? { ...currentEvent, isFavorited: response.favorited }
-            : currentEvent,
-        ),
-      );
+      setOptimisticFavorite(response.favorited);
     } catch {
-      setCreatedEvents((currentEvents) =>
-        currentEvents.map((currentEvent) =>
-          currentEvent.id === event.id
-            ? { ...currentEvent, isFavorited: event.isFavorited }
-            : currentEvent,
-        ),
-      );
+      setOptimisticFavorite(event.isFavorited);
       Toast.show({
         type: "error",
         text1: "Não foi possível atualizar o favorito",
@@ -110,15 +131,23 @@ export function PublicProfileEventsView({
   }, []);
 
   const events = useMemo(
-    () => (activeTab === "Criados" ? createdEvents : getMockPublicProfileEvents(activeTab)),
-    [activeTab, createdEvents],
+    () => {
+      if (activeTab === "Criados") return createdEvents;
+      if (activeTab === "Inscrito") return joinedEvents;
+      return getMockPublicProfileEvents(activeTab);
+    },
+    [activeTab, createdEvents, joinedEvents],
   );
   const filteredEvents = useMemo(
     () => filterEventsBySearch(events, searchQuery),
     [events, searchQuery],
   );
-  const shouldShowLoading = activeTab === "Criados" && isLoadingCreatedEvents;
-  const shouldShowError = activeTab === "Criados" && createdEventsError;
+  const shouldShowLoading =
+    (activeTab === "Criados" && isLoadingCreatedEvents) ||
+    (activeTab === "Inscrito" && isLoadingJoinedEvents);
+  const shouldShowError =
+    (activeTab === "Criados" && createdEventsError) ||
+    (activeTab === "Inscrito" && joinedEventsError);
   const shouldShowEmpty = !shouldShowLoading && !shouldShowError && filteredEvents.length === 0;
 
   return (
@@ -156,7 +185,7 @@ export function PublicProfileEventsView({
           {shouldShowLoading ? (
             <View style={styles.feedbackCard}>
               <ActivityIndicator color={colors.brandPrimary} />
-              <Text style={styles.feedbackText}>Carregando eventos criados...</Text>
+              <Text style={styles.feedbackText}>Carregando eventos...</Text>
             </View>
           ) : null}
 
@@ -186,7 +215,7 @@ export function PublicProfileEventsView({
                       event={event}
                       onPress={(selectedEvent) => onOpenEvent(selectedEvent.id)}
                       onToggleFavorite={
-                        activeTab === "Criados" ? handleToggleFavorite : undefined
+                        activeTab === "Visitados" ? undefined : handleToggleFavorite
                       }
                     />
                   </View>

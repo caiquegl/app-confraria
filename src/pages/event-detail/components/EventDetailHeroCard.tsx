@@ -14,6 +14,7 @@ type EventDetailHeroCardProps = {
   coverImageUrl: string | null;
   eventId: string;
   isFavorited: boolean;
+  onShareWithFollower: () => void;
   onToggleFavorite: () => void;
   title: string;
 };
@@ -23,6 +24,7 @@ export function EventDetailHeroCard({
   coverImageUrl,
   eventId,
   isFavorited,
+  onShareWithFollower,
   onToggleFavorite,
   title,
 }: EventDetailHeroCardProps) {
@@ -53,9 +55,25 @@ export function EventDetailHeroCard({
       <Text style={styles.category}>{category}</Text>
 
       <View style={styles.actionsRow}>
-        <Pressable accessibilityRole="button" style={styles.primaryAction}>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.primaryAction}
+          onPress={onShareWithFollower}
+        >
           <Ionicons color={colors.brandDark} name="people-outline" size={18} />
           <Text style={styles.primaryActionText}>Mande para um seguidor</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: isFavorited }}
+          style={styles.iconAction}
+          onPress={onToggleFavorite}
+        >
+          <Ionicons
+            color={colors.brandDark}
+            name={isFavorited ? "heart" : "heart-outline"}
+            size={20}
+          />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -107,6 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 16,
     overflow: "hidden",
+    width: "100%",
   },
   primaryAction: {
     alignItems: "center",
