@@ -41,6 +41,12 @@ export default function PublicProfileEventsScreen() {
           params: { userId: resolvedUserId },
         })
       }
+      onOpenCreatedEvent={(eventId) =>
+        router.push({
+          pathname: "/event/[eventId]/analytics",
+          params: { eventId },
+        })
+      }
       onOpenEvent={(eventId) =>
         router.push({
           pathname: "/event/[eventId]",

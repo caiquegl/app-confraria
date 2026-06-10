@@ -17,6 +17,7 @@ export const apiRoutes = {
     unreadCount: "/chat/unread-count",
   },
   events: {
+    analytics: (eventId: string) => `/events/${eventId}/analytics`,
     create: "/events",
     detail: (eventId: string) => `/events/${eventId}`,
     favorite: (eventId: string) => `/events/${eventId}/favorite`,
