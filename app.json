@@ -8,8 +8,15 @@
     "scheme": "appconfraria",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "associatedDomains": ["applinks:confraria-web.vercel.app"],
-      "icon": "./assets/expo.icon"
+      "associatedDomains": [
+        "applinks:confraria-web.vercel.app",
+        "applinks:confraria-web.vercel.app"
+      ],
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.caiquegl22.appconfraria",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +29,10 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "category": ["BROWSABLE", "DEFAULT"],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
           "data": [
             {
               "host": "confraria-web.vercel.app",
@@ -34,7 +44,11 @@
       ],
       "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true,
-      "package": "com.caiquegl22.appconfraria"
+      "package": "com.caiquegl22.appconfraria",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
