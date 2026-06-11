@@ -5,6 +5,7 @@ import type {
   ChatConversation,
   ChatConversationsResponse,
   ChatMessage,
+  ChatReactionUpdatePayload,
 } from "../types/messages.types";
 
 export async function fetchChatConversations(): Promise<ChatConversationsResponse> {
@@ -35,6 +36,7 @@ export async function fetchChatMessages(
 export async function sendChatMessage(params: {
   conversationId?: string;
   recipientId?: string;
+  replyToMessageId?: string;
   sharedEventId?: string;
   sharedPostId?: string;
   text: string;
@@ -43,6 +45,17 @@ export async function sendChatMessage(params: {
     message: ChatMessage;
     senderConversation: ChatConversation;
   }>(apiRoutes.chat.sendMessage, params);
+  return data;
+}
+
+export async function reactToChatMessage(params: {
+  emoji: string;
+  messageId: string;
+}): Promise<ChatReactionUpdatePayload> {
+  const { data } = await api.post<ChatReactionUpdatePayload>(
+    apiRoutes.chat.messageReaction(params.messageId),
+    { emoji: params.emoji },
+  );
   return data;
 }
 

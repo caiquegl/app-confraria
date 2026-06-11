@@ -15,6 +15,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { getCurrentUserId } from "@/lib/auth";
 import { fetchUserBikes } from "@/pages/bikes/services/bikes.service";
 import { SharePostSheet } from "@/pages/home/components/SharePostSheet";
+import type { FeedPost } from "@/pages/home/types/feed.types";
 import { createChatConversation } from "@/pages/messages/services/messages.service";
 import { fetchJoinedPublicProfileEventsCount } from "@/pages/public-profile-events/services/public-profile-events.service";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
@@ -28,6 +29,7 @@ import { colors } from "@/theme/colors";
 
 import { usePublicProfile } from "../business/usePublicProfile";
 import { usePublicProfilePosts } from "../business/usePublicProfilePosts";
+import { PublicProfileDeletePostModal } from "../components/PublicProfileDeletePostModal";
 import { PublicProfilePostsViewer } from "../components/PublicProfilePostsViewer";
 import { PublicProfileTabsGrid } from "../components/PublicProfileTabsGrid";
 import {
@@ -57,6 +59,8 @@ export function PublicProfileView({
   const [profileStoryGroup, setProfileStoryGroup] = useState<StoryGroup | null>(null);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [postsViewerIndex, setPostsViewerIndex] = useState<number | null>(null);
+  const [postPendingDelete, setPostPendingDelete] = useState<FeedPost | null>(null);
+  const [isDeletingPost, setIsDeletingPost] = useState(false);
   const [bikeCount, setBikeCount] = useState(0);
   const [joinedEventsCount, setJoinedEventsCount] = useState(0);
   const { error, isLoading, profile, retry, updateFollowState } =
@@ -240,6 +244,25 @@ export function PublicProfileView({
 
       router.push({ pathname: "/users/[userId]", params: { userId: targetUserId } });
     });
+  };
+
+  const closeDeletePostModal = () => {
+    if (isDeletingPost) return;
+    setPostPendingDelete(null);
+  };
+
+  const handleDeletePost = async () => {
+    if (!postPendingDelete || isDeletingPost) return;
+
+    setIsDeletingPost(true);
+    try {
+      await profilePosts.deletePost(postPendingDelete.id);
+      setPostPendingDelete(null);
+      setPostsViewerIndex(null);
+      void retry();
+    } finally {
+      setIsDeletingPost(false);
+    }
   };
 
   return (
@@ -446,6 +469,7 @@ export function PublicProfileView({
             <PublicProfileTabsGrid
               isLoading={profilePosts.isLoading}
               posts={profilePosts.posts}
+              onPostLongPress={isOwnProfile ? setPostPendingDelete : undefined}
               onPostPress={setPostsViewerIndex}
             />
           ) : (
@@ -504,6 +528,15 @@ export function PublicProfileView({
           });
         }}
         onSendToFriend={profilePosts.shareToFriend}
+      />
+
+      <PublicProfileDeletePostModal
+        key={postPendingDelete?.id ?? "delete-post-modal"}
+        displayHandle={profile?.handle || profile?.name || "Meu perfil"}
+        isDeleting={isDeletingPost}
+        post={postPendingDelete}
+        onClose={closeDeletePostModal}
+        onConfirm={() => void handleDeletePost()}
       />
     </View>
   );

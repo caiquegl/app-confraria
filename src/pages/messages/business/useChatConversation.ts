@@ -7,8 +7,10 @@ import {
   joinChatConversation,
   markSocketConversationRead,
   sendSocketMessage,
+  sendSocketReaction,
   subscribeSocketError,
   subscribeSocketMessage,
+  subscribeSocketReaction,
   subscribeSocketRead,
   subscribeSocketUnread,
 } from "@/lib/messages-socket";
@@ -45,17 +47,22 @@ export function useChatConversation(conversationId: string) {
   }, [conversationId]);
 
   const sendMessage = useCallback(
-    (text: string) => {
+    (text: string, options?: { replyToMessageId?: string }) => {
       const trimmedText = text.trim();
       if (!trimmedText) return;
 
       sendSocketMessage({
         conversationId,
+        replyToMessageId: options?.replyToMessageId,
         text: trimmedText,
       });
     },
     [conversationId],
   );
+
+  const reactToMessage = useCallback((messageId: string, emoji: string) => {
+    sendSocketReaction({ emoji, messageId });
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -75,6 +82,21 @@ export function useChatConversation(conversationId: string) {
           current.map((message) =>
             payload.messageIds.includes(message.id)
               ? { ...message, readAt: payload.readAt }
+              : message,
+          ),
+        );
+      });
+      const unsubscribeReaction = subscribeSocketReaction((payload) => {
+        if (payload.conversationId !== conversationId) return;
+
+        setMessages((current) =>
+          current.map((message) =>
+            message.id === payload.messageId
+              ? {
+                  ...message,
+                  myReaction: payload.myReaction,
+                  reactions: payload.reactions,
+                }
               : message,
           ),
         );
@@ -100,6 +122,7 @@ export function useChatConversation(conversationId: string) {
 
       return () => {
         unsubscribeMessage();
+        unsubscribeReaction();
         unsubscribeRead();
         unsubscribeUnread();
         unsubscribeError();
@@ -111,6 +134,7 @@ export function useChatConversation(conversationId: string) {
     error,
     isLoading,
     messages,
+    reactToMessage,
     refresh: loadMessages,
     sendMessage,
   };

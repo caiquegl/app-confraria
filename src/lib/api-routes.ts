@@ -13,6 +13,7 @@ export const apiRoutes = {
       `/chat/conversations/${conversationId}/read`,
     messages: (conversationId: string) =>
       `/chat/conversations/${conversationId}/messages`,
+    messageReaction: (messageId: string) => `/chat/messages/${messageId}/reactions`,
     sendMessage: "/chat/messages",
     unreadCount: "/chat/unread-count",
   },

@@ -3,6 +3,7 @@ import { io, type Socket } from "socket.io-client";
 import type {
   ChatConversation,
   ChatMessage,
+  ChatReactionUpdatePayload,
   ChatUnreadPayload,
   MessageReadPayload,
 } from "@/pages/messages/types/messages.types";
@@ -16,6 +17,7 @@ type ChatErrorPayload = {
 
 type MessageListener = (message: ChatMessage) => void;
 type ConversationListener = (conversation: ChatConversation) => void;
+type ReactionListener = (payload: ChatReactionUpdatePayload) => void;
 type ReadListener = (payload: MessageReadPayload) => void;
 type UnreadListener = (payload: ChatUnreadPayload) => void;
 type ErrorListener = (payload: ChatErrorPayload) => void;
@@ -25,6 +27,7 @@ let unsubscribeEnvironment: (() => void) | null = null;
 
 const messageListeners = new Set<MessageListener>();
 const conversationListeners = new Set<ConversationListener>();
+const reactionListeners = new Set<ReactionListener>();
 const readListeners = new Set<ReadListener>();
 const unreadListeners = new Set<UnreadListener>();
 const errorListeners = new Set<ErrorListener>();
@@ -53,10 +56,18 @@ export function joinChatConversation(conversationId: string): void {
 export function sendSocketMessage(params: {
   conversationId?: string;
   recipientId?: string;
+  replyToMessageId?: string;
   sharedPostId?: string;
   text: string;
 }): void {
   socket?.emit("message:send", params);
+}
+
+export function sendSocketReaction(params: {
+  emoji: string;
+  messageId: string;
+}): void {
+  socket?.emit("message:react", params);
 }
 
 export function markSocketConversationRead(conversationId: string): void {
@@ -73,6 +84,11 @@ export function subscribeSocketConversation(
 ): () => void {
   conversationListeners.add(listener);
   return () => conversationListeners.delete(listener);
+}
+
+export function subscribeSocketReaction(listener: ReactionListener): () => void {
+  reactionListeners.add(listener);
+  return () => reactionListeners.delete(listener);
 }
 
 export function subscribeSocketRead(listener: ReadListener): () => void {
@@ -110,6 +126,9 @@ async function createSocket(): Promise<void> {
   });
   socket.on("conversation:update", (conversation: ChatConversation) => {
     conversationListeners.forEach((listener) => listener(conversation));
+  });
+  socket.on("message:reaction:update", (payload: ChatReactionUpdatePayload) => {
+    reactionListeners.forEach((listener) => listener(payload));
   });
   socket.on("message:read", (payload: MessageReadPayload) => {
     readListeners.forEach((listener) => listener(payload));

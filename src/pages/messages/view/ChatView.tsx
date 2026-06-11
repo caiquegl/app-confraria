@@ -1,12 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
+  PanResponder,
   Platform,
   Pressable,
   StyleSheet,
@@ -23,6 +26,8 @@ import { colors } from "@/theme/colors";
 
 import { useChatConversation } from "../business/useChatConversation";
 import type { ChatMessage } from "../types/messages.types";
+
+const CHAT_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
 type ChatViewProps = {
   conversationId: string;
@@ -41,7 +46,9 @@ export function ChatView({
   const listRef = useRef<FlatList<ChatMessage> | null>(null);
   const [draft, setDraft] = useState("");
   const [keyboardOffset, setKeyboardOffset] = useState(0);
-  const { error, isLoading, messages, refresh, sendMessage } =
+  const [reactionTarget, setReactionTarget] = useState<ChatMessage | null>(null);
+  const [replyingToMessage, setReplyingToMessage] = useState<ChatMessage | null>(null);
+  const { error, isLoading, messages, reactToMessage, refresh, sendMessage } =
     useChatConversation(conversationId);
 
   useEffect(() => {
@@ -65,8 +72,9 @@ export function ChatView({
     const text = draft.trim();
     if (!text) return;
 
-    sendMessage(text);
+    sendMessage(text, { replyToMessageId: replyingToMessage?.id });
     setDraft("");
+    setReplyingToMessage(null);
   };
 
   return (
@@ -106,7 +114,14 @@ export function ChatView({
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesContent}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          renderItem={({ item }) => <MessageBubble message={item} />}
+          renderItem={({ item }) => (
+            <MessageBubble
+              message={item}
+              onOpenReactions={setReactionTarget}
+              onReact={reactToMessage}
+              onReply={setReplyingToMessage}
+            />
+          )}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons color="#D1D5DB" name="chatbubbles-outline" size={34} />
@@ -121,10 +136,17 @@ export function ChatView({
           styles.composerWrap,
           {
             marginBottom: Platform.OS === "android" ? keyboardOffset : 0,
-            paddingBottom:12,
+            paddingBottom: 12,
           },
         ]}
       >
+        {replyingToMessage ? (
+          <ReplyComposerPreview
+            message={replyingToMessage}
+            participantName={participantName}
+            onCancel={() => setReplyingToMessage(null)}
+          />
+        ) : null}
         <View style={styles.composerRow}>
           <TextInput
             multiline
@@ -148,33 +170,226 @@ export function ChatView({
           </Pressable>
         </View>
       </View>
+
+      <ReactionPicker
+        message={reactionTarget}
+        onClose={() => setReactionTarget(null)}
+        onSelect={(emoji) => {
+          if (!reactionTarget) return;
+          reactToMessage(reactionTarget.id, emoji);
+          setReactionTarget(null);
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+  message,
+  onOpenReactions,
+  onReact,
+  onReply,
+}: {
+  message: ChatMessage;
+  onOpenReactions: (message: ChatMessage) => void;
+  onReact: (messageId: string, emoji: string) => void;
+  onReply: (message: ChatMessage) => void;
+}) {
+  const [translateX] = useState(() => new Animated.Value(0));
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          gestureState.dx > 12 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+        onPanResponderMove: (_, gestureState) => {
+          translateX.setValue(Math.min(72, Math.max(0, gestureState.dx)));
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dx > 56) {
+            onReply(message);
+          }
+
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        },
+      }),
+    [message, onReply, translateX],
+  );
+
   return (
     <View style={[styles.messageRow, message.isMine && styles.messageRowMine]}>
-      <View style={[styles.bubble, message.isMine ? styles.bubbleMine : styles.bubbleOther]}>
-        {message.sharedEvent ? (
-          <SharedEventCard message={message} />
-        ) : message.sharedPost ? (
-          <SharedPostCard message={message} />
-        ) : (
-          <Text style={[styles.messageText, message.isMine && styles.messageTextMine]}>
-            {message.text}
-          </Text>
-        )}
-        <Text style={[styles.messageMeta, message.isMine && styles.messageMetaMine]}>
-          {message.isMine
-            ? message.readAt
-              ? `Visualizada ${formatRelativeTime(message.readAt)}`
-              : "Não visualizada"
-            : formatRelativeTime(message.createdAt)}
-        </Text>
+      <View style={styles.swipeWrap}>
+        <View style={styles.swipeReplyIcon}>
+          <Ionicons color={colors.brandPrimary} name="return-up-forward" size={18} />
+        </View>
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={{ transform: [{ translateX }] }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            delayLongPress={260}
+            style={[styles.bubble, message.isMine ? styles.bubbleMine : styles.bubbleOther]}
+            onLongPress={() => onOpenReactions(message)}
+          >
+            {message.replyToMessage ? (
+              <MessageReplySnippet
+                isMine={message.isMine}
+                replyToMessage={message.replyToMessage}
+              />
+            ) : null}
+            {message.sharedEvent ? (
+              <SharedEventCard message={message} />
+            ) : message.sharedPost ? (
+              <SharedPostCard message={message} />
+            ) : (
+              <Text style={[styles.messageText, message.isMine && styles.messageTextMine]}>
+                {message.text}
+              </Text>
+            )}
+            <Text style={[styles.messageMeta, message.isMine && styles.messageMetaMine]}>
+              {message.isMine
+                ? message.readAt
+                  ? `Visualizada ${formatRelativeTime(message.readAt)}`
+                  : "Não visualizada"
+                : formatRelativeTime(message.createdAt)}
+            </Text>
+            <ReactionBadgeGroup message={message} onReact={onReact} />
+          </Pressable>
+        </Animated.View>
       </View>
     </View>
   );
+}
+
+function ReactionPicker({
+  message,
+  onClose,
+  onSelect,
+}: {
+  message: ChatMessage | null;
+  onClose: () => void;
+  onSelect: (emoji: string) => void;
+}) {
+  return (
+    <Modal animationType="fade" transparent statusBarTranslucent visible={Boolean(message)}>
+      <Pressable style={styles.reactionBackdrop} onPress={onClose} />
+      <View style={styles.reactionPickerWrap}>
+        <View style={styles.reactionPicker}>
+          {CHAT_REACTIONS.map((emoji) => {
+            const active = message?.myReaction === emoji;
+
+            return (
+              <Pressable
+                key={emoji}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                style={[styles.reactionOption, active && styles.reactionOptionActive]}
+                onPress={() => onSelect(emoji)}
+              >
+                <Text style={styles.reactionOptionText}>{emoji}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ReactionBadgeGroup({
+  message,
+  onReact,
+}: {
+  message: ChatMessage;
+  onReact: (messageId: string, emoji: string) => void;
+}) {
+  if (message.reactions.length === 0) return null;
+
+  return (
+    <View style={styles.reactionBadges}>
+      {message.reactions.map((reaction) => (
+        <Pressable
+          key={reaction.emoji}
+          accessibilityRole="button"
+          disabled={!reaction.reactedByMe}
+          hitSlop={6}
+          style={[
+            styles.reactionBadge,
+            reaction.reactedByMe && styles.reactionBadgeMine,
+          ]}
+          onPress={() => onReact(message.id, reaction.emoji)}
+        >
+          <Text style={styles.reactionBadgeEmoji}>{reaction.emoji}</Text>
+          {reaction.count > 1 ? (
+            <Text style={styles.reactionBadgeCount}>{reaction.count}</Text>
+          ) : null}
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function ReplyComposerPreview({
+  message,
+  participantName,
+  onCancel,
+}: {
+  message: ChatMessage;
+  participantName: string;
+  onCancel: () => void;
+}) {
+  return (
+    <View style={styles.replyComposerPreview}>
+      <View style={styles.replyComposerAccent} />
+      <View style={styles.replyComposerTextWrap}>
+        <Text style={styles.replyComposerTitle}>
+          Respondendo {message.isMine ? "você" : participantName}
+        </Text>
+        <Text numberOfLines={1} style={styles.replyComposerText}>
+          {getMessagePreviewText(message)}
+        </Text>
+      </View>
+      <Pressable accessibilityRole="button" hitSlop={8} onPress={onCancel}>
+        <Ionicons color="#6B7280" name="close" size={18} />
+      </Pressable>
+    </View>
+  );
+}
+
+function MessageReplySnippet({
+  isMine,
+  replyToMessage,
+}: {
+  isMine: boolean;
+  replyToMessage: NonNullable<ChatMessage["replyToMessage"]>;
+}) {
+  return (
+    <View style={[styles.replySnippet, isMine && styles.replySnippetMine]}>
+      <Text numberOfLines={1} style={styles.replySnippetTitle}>
+        {replyToMessage.senderName}
+      </Text>
+      <Text numberOfLines={2} style={styles.replySnippetText}>
+        {replyToMessage.text}
+      </Text>
+    </View>
+  );
+}
+
+function getMessagePreviewText(message: ChatMessage) {
+  if (message.text.trim()) return message.text.trim();
+  if (message.sharedEvent) return message.sharedEvent.title || "Evento compartilhado";
+  if (message.sharedPost) return message.sharedPost.caption || "Post compartilhado";
+  return "Mensagem";
 }
 
 function SharedEventCard({ message }: { message: ChatMessage }) {
@@ -266,7 +481,8 @@ const styles = StyleSheet.create({
   },
   bubble: {
     borderRadius: 22,
-    maxWidth: "78%",
+    maxWidth: "100%",
+    minWidth: 64,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
@@ -359,15 +575,15 @@ const styles = StyleSheet.create({
     color: "rgba(28,33,38,0.64)",
   },
   messageRow: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
+    alignItems: "flex-start",
     marginBottom: 10,
   },
   messageRowMine: {
-    justifyContent: "flex-end",
+    alignItems: "flex-end",
   },
   messageText: {
     color: "#374151",
+    flexShrink: 1,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -409,6 +625,78 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
   },
+  reactionBackdrop: {
+    backgroundColor: "rgba(0,0,0,0.12)",
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  reactionBadge: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  reactionBadgeCount: {
+    color: "#6B7280",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  reactionBadgeEmoji: {
+    fontSize: 13,
+  },
+  reactionBadgeMine: {
+    borderColor: colors.brandPrimary,
+  },
+  reactionBadges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 8,
+  },
+  reactionOption: {
+    alignItems: "center",
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  reactionOptionActive: {
+    backgroundColor: "#EEF3E2",
+  },
+  reactionOptionText: {
+    fontSize: 22,
+  },
+  reactionPicker: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 999,
+    borderWidth: 1,
+    elevation: 8,
+    flexDirection: "row",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    shadowColor: "#000000",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+  },
+  reactionPickerWrap: {
+    alignItems: "center",
+    bottom: 94,
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
   routeButton: {
     alignSelf: "flex-start",
     backgroundColor: "#FFFFFF",
@@ -423,6 +711,62 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 13,
     fontWeight: "800",
+  },
+  replyComposerAccent: {
+    backgroundColor: colors.brandPrimary,
+    borderRadius: 999,
+    width: 4,
+  },
+  replyComposerPreview: {
+    alignItems: "center",
+    backgroundColor: "#F7F8F4",
+    borderColor: "#E5E7EB",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  replyComposerText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  replyComposerTextWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  replyComposerTitle: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  replySnippet: {
+    backgroundColor: "#F3F4F6",
+    borderLeftColor: colors.brandPrimary,
+    borderLeftWidth: 3,
+    borderRadius: 12,
+    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  replySnippetMine: {
+    backgroundColor: "rgba(255,255,255,0.42)",
+  },
+  replySnippetText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  replySnippetTitle: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "900",
   },
   screen: {
     backgroundColor: colors.brandGray,
@@ -477,5 +821,22 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 12,
     fontWeight: "900",
+  },
+  swipeReplyIcon: {
+    alignItems: "center",
+    backgroundColor: "#EEF3E2",
+    borderRadius: 16,
+    height: 32,
+    justifyContent: "center",
+    left: 6,
+    marginTop: -16,
+    position: "absolute",
+    top: "50%",
+    width: 32,
+  },
+  swipeWrap: {
+    maxWidth: "84%",
+    minWidth: 64,
+    position: "relative",
   },
 });

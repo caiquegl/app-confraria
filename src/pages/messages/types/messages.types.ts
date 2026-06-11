@@ -19,6 +19,20 @@ export type ChatSharedEvent = {
   title: string;
 };
 
+export type ChatReplyMessage = {
+  id: string;
+  senderId: string;
+  senderName: string;
+  sharedType: "event" | "post" | null;
+  text: string;
+};
+
+export type ChatReactionSummary = {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+};
+
 export type ChatMessage = {
   id: string;
   conversationId: string;
@@ -29,6 +43,9 @@ export type ChatMessage = {
   isMine: boolean;
   sharedPost: ChatSharedPost | null;
   sharedEvent: ChatSharedEvent | null;
+  replyToMessage: ChatReplyMessage | null;
+  reactions: ChatReactionSummary[];
+  myReaction: string | null;
 };
 
 export type ChatConversation = {
@@ -57,4 +74,11 @@ export type MessageReadPayload = {
 
 export type ChatUnreadPayload = {
   unreadCount: number;
+};
+
+export type ChatReactionUpdatePayload = {
+  conversationId: string;
+  messageId: string;
+  reactions: ChatReactionSummary[];
+  myReaction: string | null;
 };

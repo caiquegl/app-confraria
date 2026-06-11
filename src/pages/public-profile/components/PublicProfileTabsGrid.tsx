@@ -18,6 +18,7 @@ type ProfileTabKey = "posts" | "places" | "events";
 type PublicProfileTabsGridProps = {
   isLoading: boolean;
   posts: FeedPost[];
+  onPostLongPress?: (post: FeedPost) => void;
   onPostPress: (index: number) => void;
 };
 
@@ -42,6 +43,7 @@ const ITEM_SIZE = Math.floor(
 export function PublicProfileTabsGrid({
   isLoading,
   posts,
+  onPostLongPress,
   onPostPress,
 }: PublicProfileTabsGridProps) {
   const [activeTab, setActiveTab] = useState<ProfileTabKey>("posts");
@@ -82,6 +84,7 @@ export function PublicProfileTabsGrid({
             <PublicProfilePostGridItem
               key={post.id}
               post={post}
+              onLongPress={onPostLongPress ? () => onPostLongPress(post) : undefined}
               onPress={() => onPostPress(index)}
             />
           ))}
@@ -92,9 +95,11 @@ export function PublicProfileTabsGrid({
 }
 
 function PublicProfilePostGridItem({
+  onLongPress,
   post,
   onPress,
 }: {
+  onLongPress?: () => void;
   post: FeedPost;
   onPress: () => void;
 }) {
@@ -108,7 +113,12 @@ function PublicProfilePostGridItem({
   const label = post.caption || post.eventTitle || post.routeTitle;
 
   return (
-    <Pressable style={styles.item} onPress={onPress}>
+    <Pressable
+      delayLongPress={320}
+      style={styles.item}
+      onLongPress={onLongPress}
+      onPress={onPress}
+    >
       {image && !hasImageError ? (
         <Image
           source={{ uri: image }}

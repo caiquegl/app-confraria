@@ -12,6 +12,7 @@ import {
 } from "@/pages/home/business/feed-comments.utils";
 import {
   createFeedPostComment,
+  deleteFeedPost,
   deleteFeedPostComment,
   FEED_PAGE_SIZE,
   fetchFeedPostComments,
@@ -249,6 +250,35 @@ export function usePublicProfilePosts(userId: string) {
     [updatePost],
   );
 
+  const deletePost = useCallback(async (postId: string) => {
+    const previousPosts = posts;
+
+    setPosts((current) => current.filter((post) => post.id !== postId));
+    if (sharePost?.id === postId) {
+      setSharePost(null);
+      setSentFriendId(null);
+    }
+
+    try {
+      await deleteFeedPost(postId);
+      if (!mountedRef.current) return;
+
+      Toast.show({
+        type: "success",
+        text1: "Post excluído",
+        text2: "O post foi removido do seu perfil.",
+      });
+    } catch {
+      if (!mountedRef.current) return;
+      setPosts(previousPosts);
+      Toast.show({
+        type: "error",
+        text1: "Erro ao excluir",
+        text2: "Não foi possível excluir o post.",
+      });
+    }
+  }, [posts, sharePost?.id]);
+
   const toggleLike = useCallback(
     async (postId: string) => {
       const currentPost = posts.find((post) => post.id === postId);
@@ -393,6 +423,7 @@ export function usePublicProfilePosts(userId: string) {
     closeShare,
     commentsLoadingByPost,
     deleteComment,
+    deletePost,
     editComment,
     friends: shareFriends,
     hasMore,

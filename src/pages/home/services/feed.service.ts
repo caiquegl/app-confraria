@@ -76,6 +76,10 @@ export async function toggleFeedPostLike(postId: string): Promise<FeedLikeRespon
   return data;
 }
 
+export async function deleteFeedPost(postId: string): Promise<void> {
+  await api.delete(apiRoutes.feed.post(postId));
+}
+
 export async function fetchFeedPostComments(postId: string): Promise<FeedComment[]> {
   const { data } = await api.get<FeedComment[]>(apiRoutes.feed.postComments(postId));
   return data;
