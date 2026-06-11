@@ -52,7 +52,7 @@ export function PublicProfileEventsView({
   const [joinedEventsError, setJoinedEventsError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const loadCreatedEvents = useCallback(async () => {
+  const loadCreatedEvents = useCallback(async (query?: string) => {
     if (!userId) {
       setCreatedEvents([]);
       setIsLoadingCreatedEvents(false);
@@ -63,7 +63,7 @@ export function PublicProfileEventsView({
     setIsLoadingCreatedEvents(true);
 
     try {
-      const response = await fetchCreatedPublicProfileEvents(userId);
+      const response = await fetchCreatedPublicProfileEvents(userId, query);
       setCreatedEvents(response);
     } catch {
       setCreatedEventsError(true);
@@ -73,7 +73,7 @@ export function PublicProfileEventsView({
     }
   }, [userId]);
 
-  const loadJoinedEvents = useCallback(async () => {
+  const loadJoinedEvents = useCallback(async (query?: string) => {
     if (!userId) {
       setJoinedEvents([]);
       setIsLoadingJoinedEvents(false);
@@ -84,7 +84,7 @@ export function PublicProfileEventsView({
     setIsLoadingJoinedEvents(true);
 
     try {
-      const response = await fetchJoinedPublicProfileEvents(userId);
+      const response = await fetchJoinedPublicProfileEvents(userId, query);
       setJoinedEvents(response);
     } catch {
       setJoinedEventsError(true);
@@ -95,13 +95,14 @@ export function PublicProfileEventsView({
   }, [userId]);
 
   useEffect(() => {
+    const normalizedSearch = searchQuery.trim();
     const timeoutId = setTimeout(() => {
-      void loadCreatedEvents();
-      void loadJoinedEvents();
-    }, 0);
+      void loadCreatedEvents(normalizedSearch || undefined);
+      void loadJoinedEvents(normalizedSearch || undefined);
+    }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [loadCreatedEvents, loadJoinedEvents]);
+  }, [loadCreatedEvents, loadJoinedEvents, searchQuery]);
 
   const handleToggleFavorite = useCallback(async (event: PublicProfileEvent) => {
     const setOptimisticFavorite = (isFavorited: boolean) => {
@@ -136,13 +137,9 @@ export function PublicProfileEventsView({
     () => {
       if (activeTab === "Criados") return createdEvents;
       if (activeTab === "Inscrito") return joinedEvents;
-      return getMockPublicProfileEvents(activeTab);
+      return filterEventsBySearch(getMockPublicProfileEvents(activeTab), searchQuery);
     },
-    [activeTab, createdEvents, joinedEvents],
-  );
-  const filteredEvents = useMemo(
-    () => filterEventsBySearch(events, searchQuery),
-    [events, searchQuery],
+    [activeTab, createdEvents, joinedEvents, searchQuery],
   );
   const shouldShowLoading =
     (activeTab === "Criados" && isLoadingCreatedEvents) ||
@@ -150,7 +147,7 @@ export function PublicProfileEventsView({
   const shouldShowError =
     (activeTab === "Criados" && createdEventsError) ||
     (activeTab === "Inscrito" && joinedEventsError);
-  const shouldShowEmpty = !shouldShowLoading && !shouldShowError && filteredEvents.length === 0;
+  const shouldShowEmpty = !shouldShowLoading && !shouldShowError && events.length === 0;
 
   return (
     <View style={styles.screen}>
@@ -198,9 +195,9 @@ export function PublicProfileEventsView({
             </View>
           ) : null}
 
-          {!shouldShowLoading && !shouldShowError && filteredEvents.length > 0 ? (
+          {!shouldShowLoading && !shouldShowError && events.length > 0 ? (
             <View style={styles.eventsList}>
-              {filteredEvents.map((event, index) => {
+              {events.map((event, index) => {
                 const primaryBadge = getPrimaryEventBadge(event, activeTab, index);
 
                 return (

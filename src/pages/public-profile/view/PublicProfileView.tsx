@@ -18,6 +18,7 @@ import { SharePostSheet } from "@/pages/home/components/SharePostSheet";
 import type { FeedPost } from "@/pages/home/types/feed.types";
 import { createChatConversation } from "@/pages/messages/services/messages.service";
 import { fetchJoinedPublicProfileEventsCount } from "@/pages/public-profile-events/services/public-profile-events.service";
+import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
 import {
   fetchUserStories,
@@ -28,6 +29,7 @@ import type { StoryGroup, StoryItem } from "@/pages/stories/types/stories.types"
 import { colors } from "@/theme/colors";
 
 import { usePublicProfile } from "../business/usePublicProfile";
+import { usePublicProfileGridEvents } from "../business/usePublicProfileGridEvents";
 import { usePublicProfilePosts } from "../business/usePublicProfilePosts";
 import { PublicProfileDeletePostModal } from "../components/PublicProfileDeletePostModal";
 import { PublicProfilePostsViewer } from "../components/PublicProfilePostsViewer";
@@ -65,6 +67,12 @@ export function PublicProfileView({
   const [joinedEventsCount, setJoinedEventsCount] = useState(0);
   const { error, isLoading, profile, retry, updateFollowState } =
     usePublicProfile(userId);
+  const {
+    createdEventIds,
+    events: profileEvents,
+    isLoading: isProfileEventsLoading,
+    refresh: refreshProfileEvents,
+  } = usePublicProfileGridEvents(userId);
   const profilePosts = usePublicProfilePosts(userId);
 
   useEffect(() => {
@@ -72,8 +80,9 @@ export function PublicProfileView({
 
     queueMicrotask(() => {
       void retry();
+      void refreshProfileEvents();
     });
-  }, [refreshKey, retry]);
+  }, [refreshKey, refreshProfileEvents, retry]);
 
   useEffect(() => {
     let cancelled = false;
@@ -263,6 +272,21 @@ export function PublicProfileView({
     } finally {
       setIsDeletingPost(false);
     }
+  };
+
+  const handleOpenProfileEvent = (event: PublicProfileEvent) => {
+    if (isOwnProfile && createdEventIds.has(event.id)) {
+      router.push({
+        pathname: "/event/[eventId]/analytics",
+        params: { eventId: event.id },
+      });
+      return;
+    }
+
+    router.push({
+      pathname: "/event/[eventId]",
+      params: { eventId: event.id },
+    });
   };
 
   return (
@@ -467,8 +491,11 @@ export function PublicProfileView({
 
           {profile.canViewPrivateContent ? (
             <PublicProfileTabsGrid
+              events={profileEvents}
+              isEventsLoading={isProfileEventsLoading}
               isLoading={profilePosts.isLoading}
               posts={profilePosts.posts}
+              onEventPress={handleOpenProfileEvent}
               onPostLongPress={isOwnProfile ? setPostPendingDelete : undefined}
               onPostPress={setPostsViewerIndex}
             />

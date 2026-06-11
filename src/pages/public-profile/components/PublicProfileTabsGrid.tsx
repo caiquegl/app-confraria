@@ -10,27 +10,29 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "@/theme/colors";
 import type { FeedPost } from "@/pages/home/types/feed.types";
+import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
+import { colors } from "@/theme/colors";
 
-type ProfileTabKey = "posts" | "places" | "events";
+type ProfileTabKey = "posts" | "events";
 
 type PublicProfileTabsGridProps = {
+  events: PublicProfileEvent[];
+  isEventsLoading: boolean;
   isLoading: boolean;
   posts: FeedPost[];
+  onEventPress: (event: PublicProfileEvent) => void;
   onPostLongPress?: (post: FeedPost) => void;
   onPostPress: (index: number) => void;
 };
 
 const TABS: { key: ProfileTabKey; label: string }[] = [
   { key: "posts", label: "Posts" },
-  { key: "places", label: "Lugares" },
   { key: "events", label: "Eventos" },
 ];
 
 const EMPTY_LABEL: Record<ProfileTabKey, string> = {
   events: "Nenhum evento ainda",
-  places: "Nenhuma rota ainda",
   posts: "Nenhum post ainda",
 };
 
@@ -41,14 +43,19 @@ const ITEM_SIZE = Math.floor(
 );
 
 export function PublicProfileTabsGrid({
+  events,
+  isEventsLoading,
   isLoading,
   posts,
+  onEventPress,
   onPostLongPress,
   onPostPress,
 }: PublicProfileTabsGridProps) {
   const [activeTab, setActiveTab] = useState<ProfileTabKey>("posts");
   const isPostsTab = activeTab === "posts";
-  const isEmpty = !isPostsTab || posts.length === 0;
+  const activeItemsCount = isPostsTab ? posts.length : events.length;
+  const isActiveTabLoading = isPostsTab ? isLoading : isEventsLoading;
+  const isEmpty = activeItemsCount === 0;
 
   return (
     <View style={styles.container}>
@@ -70,7 +77,7 @@ export function PublicProfileTabsGrid({
         })}
       </View>
 
-      {isLoading && isPostsTab ? (
+      {isActiveTabLoading ? (
         <View style={styles.empty}>
           <ActivityIndicator color={colors.brandPrimary} />
         </View>
@@ -78,7 +85,7 @@ export function PublicProfileTabsGrid({
         <View style={styles.empty}>
           <Text style={styles.emptyText}>{EMPTY_LABEL[activeTab]}</Text>
         </View>
-      ) : (
+      ) : isPostsTab ? (
         <View style={styles.grid}>
           {posts.map((post, index) => (
             <PublicProfilePostGridItem
@@ -86,6 +93,16 @@ export function PublicProfileTabsGrid({
               post={post}
               onLongPress={onPostLongPress ? () => onPostLongPress(post) : undefined}
               onPress={() => onPostPress(index)}
+            />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.grid}>
+          {events.map((event) => (
+            <PublicProfileEventGridItem
+              key={event.id}
+              event={event}
+              onPress={() => onEventPress(event)}
             />
           ))}
         </View>
@@ -154,6 +171,40 @@ function PublicProfilePostGridItem({
           </Text>
         </View>
       ) : null}
+    </Pressable>
+  );
+}
+
+function PublicProfileEventGridItem({
+  event,
+  onPress,
+}: {
+  event: PublicProfileEvent;
+  onPress: () => void;
+}) {
+  const [hasImageError, setHasImageError] = useState(false);
+
+  return (
+    <Pressable style={styles.item} onPress={onPress}>
+      {event.image && !hasImageError ? (
+        <Image
+          source={{ uri: event.image }}
+          style={styles.image}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          recyclingKey={`${event.id}-${event.image}`}
+          onError={() => setHasImageError(true)}
+        />
+      ) : (
+        <View style={styles.imageFallback}>
+          <Ionicons color="#9CA3AF" name="calendar-outline" size={24} />
+        </View>
+      )}
+      <View style={styles.labelBadge}>
+        <Text numberOfLines={1} style={styles.labelText}>
+          {event.title}
+        </Text>
+      </View>
     </Pressable>
   );
 }
