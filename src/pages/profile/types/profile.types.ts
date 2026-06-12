@@ -3,6 +3,12 @@ export type OwnProfileBikeCategory = {
   name: string;
 };
 
+export type OwnProfileCurvePreference = {
+  id: string;
+  name: string;
+  icon: string;
+};
+
 export type OwnProfile = {
   id: string;
   name: string;
@@ -21,6 +27,8 @@ export type OwnProfile = {
   followersCount: number;
   followingCount: number;
   bikeCategories: OwnProfileBikeCategory[];
+  curvePreference: OwnProfileCurvePreference | null;
+  customBikeCategory: string | null;
 };
 
 export type UpdateProfilePayload = {
@@ -32,6 +40,8 @@ export type UpdateProfilePayload = {
   phone: string;
   avatarUri?: string | null;
   bikeCategoryIds?: string[];
+  curvePreferenceId?: string | null;
+  customBikeCategory?: string | null;
 };
 
 export type UpdateContactVisibilityPayload = {

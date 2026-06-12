@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
     marginTop: 24,
-    paddingBottom: 8,
+    paddingBottom: 44,
   },
   footerLink: {
     color: colors.brandDark,

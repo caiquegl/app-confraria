@@ -4,6 +4,7 @@ import { saveToken } from "@/lib/auth";
 
 import type {
   BikeCategory,
+  CurvePreference,
   RegisterPayload,
   RegisterResponse,
   RidingCompanion,
@@ -18,6 +19,11 @@ export async function checkEmailExists(email: string): Promise<boolean> {
 
 export async function fetchBikeCategories(): Promise<BikeCategory[]> {
   const { data } = await api.get<BikeCategory[]>(apiRoutes.admin.bikeCategories);
+  return data;
+}
+
+export async function fetchCurvePreferences(): Promise<CurvePreference[]> {
+  const { data } = await api.get<CurvePreference[]>(apiRoutes.admin.curvePreferences);
   return data;
 }
 

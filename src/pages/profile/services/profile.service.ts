@@ -48,11 +48,15 @@ export async function updateOwnProfile(
   return JSON.parse(responseText) as OwnProfile;
 }
 
-export async function updateOwnProfileBikeCategories(
-  bikeCategoryIds: string[],
-): Promise<OwnProfile> {
+export async function updateOwnProfileRoadStyle(payload: {
+  bikeCategoryIds: string[];
+  curvePreferenceId: string | null;
+  customBikeCategory: string | null;
+}): Promise<OwnProfile> {
   const { data } = await api.patch<OwnProfile>(apiRoutes.users.me, {
-    bikeCategoryIds,
+    bikeCategoryIds: payload.bikeCategoryIds,
+    curvePreferenceId: payload.curvePreferenceId,
+    customBikeCategory: payload.customBikeCategory,
   });
   return data;
 }

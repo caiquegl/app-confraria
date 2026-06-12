@@ -44,6 +44,7 @@ export const registerSchema = step1Schema
 // ─── Tipos das entidades do backend ──────────────────────────────────────────
 
 export type BikeCategory = { id: string; name: string };
+export type CurvePreference = { id: string; name: string; icon: string };
 export type TripStyle = { id: string; name: string };
 export type RidingCompanion = { id: string; name: string };
 export type Term = {

@@ -2,6 +2,7 @@ export const apiRoutes = {
   admin: {
     bikeBrands: "/admin/bike-brands",
     bikeCategories: "/admin/bike-categories",
+    curvePreferences: "/admin/curve-preferences",
     eventCategories: "/admin/event-categories",
     ridingCompanions: "/admin/riding-companions",
     termsLatest: "/admin/terms/latest",

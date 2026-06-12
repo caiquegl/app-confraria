@@ -15,11 +15,14 @@ import {
   deleteOwnAccount,
   fetchOwnProfile,
   updateOwnProfileContactVisibility,
-  updateOwnProfileBikeCategories,
+  updateOwnProfileRoadStyle,
 } from "@/pages/profile/services/profile.service";
 import type { OwnProfile } from "@/pages/profile/types/profile.types";
-import { fetchBikeCategories } from "@/pages/wizard/services/wizard.service";
-import type { BikeCategory } from "@/pages/wizard/types/wizard.types";
+import {
+  fetchBikeCategories,
+  fetchCurvePreferences,
+} from "@/pages/wizard/services/wizard.service";
+import type { BikeCategory, CurvePreference } from "@/pages/wizard/types/wizard.types";
 import { colors } from "@/theme/colors";
 
 type SettingsCard = {
@@ -33,6 +36,7 @@ export default function ProfileSettingsScreen() {
   const updateInfo = getUpdateInfo();
   const easUpdateLabel = isAppliedEasUpdate(updateInfo.label) ? updateInfo.label : null;
   const [bikeCategories, setBikeCategories] = useState<BikeCategory[]>([]);
+  const [curvePreferences, setCurvePreferences] = useState<CurvePreference[]>([]);
   const [ownProfile, setOwnProfile] = useState<OwnProfile | null>(null);
   const [isBikeCategoriesOpen, setIsBikeCategoriesOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -62,13 +66,15 @@ export default function ProfileSettingsScreen() {
 
     setIsLoadingBikeCategories(true);
     try {
-      const [profile, categories] = await Promise.all([
+      const [profile, categories, preferences] = await Promise.all([
         fetchOwnProfile(),
         fetchBikeCategories(),
+        fetchCurvePreferences(),
       ]);
 
       setOwnProfile(profile);
       setBikeCategories(categories);
+      setCurvePreferences(preferences);
       setIsBikeCategoriesOpen(true);
     } catch {
       Toast.show({
@@ -81,23 +87,27 @@ export default function ProfileSettingsScreen() {
     }
   };
 
-  const saveBikeCategories = async (categoryIds: string[]) => {
-    if (categoryIds.length === 0 || isSavingBikeCategories) return;
+  const saveRoadStyle = async (payload: {
+    bikeCategoryIds: string[];
+    curvePreferenceId: string | null;
+    customBikeCategory: string | null;
+  }) => {
+    if (payload.bikeCategoryIds.length === 0 || isSavingBikeCategories) return;
 
     setIsSavingBikeCategories(true);
     try {
-      const updatedProfile = await updateOwnProfileBikeCategories(categoryIds);
+      const updatedProfile = await updateOwnProfileRoadStyle(payload);
       setOwnProfile(updatedProfile);
       setIsBikeCategoriesOpen(false);
       Toast.show({
         type: "success",
-        text1: "Categorias atualizadas",
+        text1: "Estilo atualizado",
         text2: "Seu estilo de estrada foi salvo.",
       });
     } catch (error) {
       Toast.show({
         type: "error",
-        text1: "Erro ao salvar categorias",
+        text1: "Erro ao salvar estilo",
         text2: error instanceof Error ? error.message : "Tente novamente.",
       });
     } finally {
@@ -317,13 +327,16 @@ export default function ProfileSettingsScreen() {
       {ownProfile ? (
         <BikeCategoriesEditorModal
           categories={bikeCategories}
+          curvePreferences={curvePreferences}
           isSaving={isSavingBikeCategories}
           selectedCategoryIds={ownProfile.bikeCategories.map((category) => category.id)}
+          selectedCurvePreferenceId={ownProfile.curvePreference?.id ?? null}
+          customBikeCategory={ownProfile.customBikeCategory}
           visible={isBikeCategoriesOpen}
           onClose={() => {
             if (!isSavingBikeCategories) setIsBikeCategoriesOpen(false);
           }}
-          onSave={saveBikeCategories}
+          onSave={saveRoadStyle}
         />
       ) : null}
 
