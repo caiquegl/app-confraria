@@ -16,10 +16,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatRelativeTime } from "@/pages/home/services/feed.service";
 
+import { StoryOwnerOptionsSheet } from "./StoryOwnerOptionsSheet";
 import type { StoryGroup, StoryItem } from "../types/stories.types";
 
 const STORY_DURATION_MS = 5000;
 const MAX_VIDEO_DURATION_MS = 30000;
+
+type StoryOverlay = "none" | "sheet" | "deleting";
 
 type StoryViewerProps = {
   groups: StoryGroup[];
@@ -27,6 +30,7 @@ type StoryViewerProps = {
   initialStoryIndex?: number;
   visible: boolean;
   onClose: () => void;
+  onDeleteStory?: (story: StoryItem) => Promise<void>;
   onOpenViewers: (story: StoryItem) => void;
   onStoryVisible: (story: StoryItem) => void;
   onToggleLike: (story: StoryItem) => void;
@@ -38,6 +42,7 @@ export function StoryViewer({
   initialStoryIndex = 0,
   visible,
   onClose,
+  onDeleteStory,
   onOpenViewers,
   onStoryVisible,
   onToggleLike,
@@ -45,14 +50,22 @@ export function StoryViewer({
   const insets = useSafeAreaInsets();
   const progress = useMemo(() => new Animated.Value(0), []);
   const didLongPressRef = useRef(false);
+  const deleteAbortRef = useRef<AbortController | null>(null);
   const progressValueRef = useRef(0);
   const [groupIndex, setGroupIndex] = useState(initialGroupIndex);
   const [loadedStoryId, setLoadedStoryId] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [overlay, setOverlay] = useState<StoryOverlay>("none");
   const [storyIndex, setStoryIndex] = useState(initialStoryIndex);
 
   const group = groups[groupIndex];
-  const story = group?.stories[storyIndex];
+  const clampedStoryIndex = useMemo(() => {
+    if (!group || group.stories.length === 0) return 0;
+    return Math.min(storyIndex, group.stories.length - 1);
+  }, [group, storyIndex]);
+  const story = group?.stories[clampedStoryIndex];
+  const isOverlayOpen = overlay !== "none";
+  const isPlaybackPaused = isPaused || isOverlayOpen;
   const isStoryLoaded = Boolean(story && loadedStoryId === story.id);
   const storyDurationMs =
     story?.mediaType === "video"
@@ -149,21 +162,79 @@ export function StoryViewer({
     goNext();
   }, [goNext]);
 
+  const handleCancelOverlay = useCallback(() => {
+    deleteAbortRef.current?.abort();
+    deleteAbortRef.current = null;
+    setOverlay("none");
+  }, []);
+
+  const handleRequestDelete = useCallback(async () => {
+    if (!story || !onDeleteStory) return;
+
+    setOverlay("deleting");
+    const controller = new AbortController();
+    deleteAbortRef.current = controller;
+
+    try {
+      await onDeleteStory(story);
+      if (controller.signal.aborted) return;
+      setOverlay("none");
+    } catch {
+      if (controller.signal.aborted) return;
+      setOverlay("sheet");
+    } finally {
+      if (deleteAbortRef.current === controller) {
+        deleteAbortRef.current = null;
+      }
+    }
+  }, [onDeleteStory, story]);
+
+  useEffect(() => {
+    if (!visible) {
+      deleteAbortRef.current?.abort();
+      deleteAbortRef.current = null;
+      queueMicrotask(() => {
+        setOverlay("none");
+      });
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const currentGroup = groups[groupIndex];
+    if (!currentGroup || currentGroup.stories.length === 0) {
+      queueMicrotask(() => {
+        onClose();
+      });
+    }
+  }, [groupIndex, groups, onClose, visible]);
+
   useEffect(() => {
     if (!visible || !story) return;
 
     onStoryVisible(story);
     progressValueRef.current = 0;
     progress.setValue(0);
+    queueMicrotask(() => {
+      setOverlay("none");
+    });
   }, [onStoryVisible, progress, story, visible]);
 
   useEffect(() => {
     if (!visible || !story || !isStoryLoaded) return;
 
+    if (isPlaybackPaused) {
+      progress.stopAnimation((value) => {
+        progressValueRef.current = value;
+      });
+      return;
+    }
+
     const animation = startProgressAnimation(progressValueRef.current);
 
     return () => animation.stop();
-  }, [isStoryLoaded, startProgressAnimation, story, visible]);
+  }, [isPlaybackPaused, isStoryLoaded, startProgressAnimation, story, visible]);
 
   if (!visible || !group || !story) return null;
 
@@ -171,7 +242,7 @@ export function StoryViewer({
     <Modal animationType="fade" visible={visible} statusBarTranslucent>
       <View style={styles.screen}>
         <StoryMedia
-          isPaused={isPaused}
+          isPaused={isPlaybackPaused}
           story={story}
           onLoaded={() => setLoadedStoryId(story.id)}
         />
@@ -186,9 +257,9 @@ export function StoryViewer({
         <View style={[styles.progressRow, { paddingTop: insets.top + 10 }]}>
           {group.stories.map((item, index) => (
             <View key={item.id} style={styles.progressTrack}>
-              {index < storyIndex ? (
+              {index < clampedStoryIndex ? (
                 <View style={styles.progressFull} />
-              ) : index === storyIndex ? (
+              ) : index === clampedStoryIndex ? (
                 <Animated.View
                   style={[
                     styles.progressFull,
@@ -209,30 +280,46 @@ export function StoryViewer({
           <UserAvatar avatarUrl={story.userAvatar} name={story.userName} size={36} />
           <Text style={styles.userName}>{story.userName}</Text>
           <Text style={styles.timeText}>{formatRelativeTime(story.createdAt)}</Text>
-          <Pressable
-            accessibilityLabel="Fechar story"
-            hitSlop={8}
-            style={styles.closeButton}
-            onPress={onClose}
-          >
-            <Ionicons color="#FFFFFF" name="close" size={26} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {story.isMine && onDeleteStory && (
+              <Pressable
+                accessibilityLabel="Opções do story"
+                hitSlop={8}
+                style={styles.headerActionButton}
+                onPress={() => setOverlay("sheet")}
+              >
+                <Ionicons color="#FFFFFF" name="ellipsis-horizontal" size={24} />
+              </Pressable>
+            )}
+            <Pressable
+              accessibilityLabel="Fechar story"
+              hitSlop={8}
+              style={styles.headerActionButton}
+              onPress={onClose}
+            >
+              <Ionicons color="#FFFFFF" name="close" size={26} />
+            </Pressable>
+          </View>
         </View>
 
-        <Pressable
-          accessibilityLabel="Story anterior"
-          style={styles.prevZone}
-          onLongPress={pauseProgress}
-          onPress={handlePressPrevious}
-          onPressOut={resumeProgress}
-        />
-        <Pressable
-          accessibilityLabel="Próximo story"
-          style={styles.nextZone}
-          onLongPress={pauseProgress}
-          onPress={handlePressNext}
-          onPressOut={resumeProgress}
-        />
+        {!isOverlayOpen && (
+          <>
+            <Pressable
+              accessibilityLabel="Story anterior"
+              style={styles.prevZone}
+              onLongPress={pauseProgress}
+              onPress={handlePressPrevious}
+              onPressOut={resumeProgress}
+            />
+            <Pressable
+              accessibilityLabel="Próximo story"
+              style={styles.nextZone}
+              onLongPress={pauseProgress}
+              onPress={handlePressNext}
+              onPressOut={resumeProgress}
+            />
+          </>
+        )}
 
         {story.isMine && (
           <Pressable
@@ -258,6 +345,24 @@ export function StoryViewer({
             />
             <Text style={styles.likeText}>{story.likeCount}</Text>
           </Pressable>
+        )}
+
+        <StoryOwnerOptionsSheet
+          visible={overlay === "sheet"}
+          onCancel={handleCancelOverlay}
+          onDelete={() => void handleRequestDelete()}
+        />
+
+        {overlay === "deleting" && (
+          <View style={styles.deletingOverlay}>
+            <View style={styles.deletingContent}>
+              <ActivityIndicator color="#FFFFFF" size="large" />
+              <Text style={styles.deletingText}>Apagando story…</Text>
+            </View>
+            <Pressable style={styles.deletingCancelButton} onPress={handleCancelOverlay}>
+              <Text style={styles.deletingCancelText}>Cancelar carregamento</Text>
+            </Pressable>
+          </View>
         )}
       </View>
     </Modal>
@@ -360,9 +465,45 @@ function StoryVideo({
 }
 
 const styles = StyleSheet.create({
-  closeButton: {
-    marginLeft: "auto",
+  deletingCancelButton: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 999,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+  },
+  deletingCancelText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  deletingContent: {
+    alignItems: "center",
+    gap: 12,
+  },
+  deletingOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    bottom: 0,
+    gap: 24,
+    justifyContent: "center",
+    left: 0,
+    paddingHorizontal: 32,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 20,
+  },
+  deletingText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+  },
+  headerActionButton: {
     padding: 4,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 4,
+    marginLeft: "auto",
   },
   header: {
     alignItems: "center",

@@ -12,7 +12,7 @@ import type {
 
 export const PUBLIC_PROFILE_EVENT_TABS: PublicProfileEventTab[] = [
   "Inscrito",
-  "Visitados",
+  //"Visitados",
   "Criados",
 ];
 

@@ -21,6 +21,7 @@ import { fetchJoinedPublicProfileEventsCount } from "@/pages/public-profile-even
 import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
 import {
+  deleteStory,
   fetchUserStories,
   markStoryViewed,
   toggleStoryLike,
@@ -216,6 +217,35 @@ export function PublicProfileView({
         text1: "Erro ao curtir story",
         text2: "Não foi possível atualizar sua curtida.",
       });
+    }
+  };
+
+  const handleDeleteStory = async (story: StoryItem) => {
+    if (!isOwnProfile || !story.isMine) return;
+
+    try {
+      await deleteStory(story.id);
+      setProfileStoryGroup((current) => {
+        if (!current) return null;
+
+        const nextStories = current.stories.filter((item) => item.id !== story.id);
+        if (nextStories.length === 0) {
+          setStoryViewerOpen(false);
+          return null;
+        }
+
+        return {
+          ...current,
+          stories: nextStories,
+        };
+      });
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: "Erro ao apagar story",
+        text2: "Não foi possível apagar este story.",
+      });
+      throw new Error("Failed to delete story");
     }
   };
 
@@ -511,6 +541,7 @@ export function PublicProfileView({
           initialGroupIndex={0}
           visible={storyViewerOpen}
           onClose={() => setStoryViewerOpen(false)}
+          onDeleteStory={isOwnProfile ? handleDeleteStory : undefined}
           onOpenViewers={() => undefined}
           onStoryVisible={handleStoryVisible}
           onToggleLike={(story) => void handleToggleStoryLike(story)}

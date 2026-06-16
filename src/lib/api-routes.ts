@@ -53,6 +53,7 @@ export const apiRoutes = {
   },
   stories: {
     create: "/stories",
+    delete: (storyId: string) => `/stories/${storyId}`,
     feed: "/stories/feed",
     like: (storyId: string) => `/stories/${storyId}/like`,
     markViewed: (storyId: string) => `/stories/${storyId}/view`,

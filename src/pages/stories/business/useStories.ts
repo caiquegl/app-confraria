@@ -3,6 +3,7 @@ import Toast from "react-native-toast-message";
 
 import {
   createStory,
+  deleteStory as deleteStoryRequest,
   fetchStoriesFeed,
   fetchStoryViewers,
   markStoryViewed,
@@ -223,11 +224,64 @@ export function useStories() {
     setViewers([]);
   }, []);
 
+  const removeStoryFromState = useCallback((storyId: string) => {
+    const filterGroups = (items: StoryGroup[]) =>
+      items
+        .map((group) => ({
+          ...group,
+          stories: group.stories.filter((item) => item.id !== storyId),
+        }))
+        .filter((group) => group.stories.length > 0);
+
+    setFeed((current) =>
+      current
+        ? {
+            ...current,
+            groups: filterGroups(current.groups),
+          }
+        : current,
+    );
+
+    setViewerState((current) => {
+      if (!current) return current;
+
+      const nextGroups = filterGroups(current.groups);
+      if (nextGroups.length === 0) return null;
+
+      return {
+        ...current,
+        groups: nextGroups,
+      };
+    });
+
+    setViewersStory((current) => (current?.id === storyId ? null : current));
+  }, []);
+
+  const deleteStory = useCallback(
+    async (story: StoryItem) => {
+      if (!story.isMine) return;
+
+      try {
+        await deleteStoryRequest(story.id);
+        removeStoryFromState(story.id);
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Erro ao apagar story",
+          text2: "Não foi possível apagar este story.",
+        });
+        throw new Error("Failed to delete story");
+      }
+    },
+    [removeStoryFromState],
+  );
+
   return {
     addStory,
     closeStoryViewer,
     closeViewers,
     currentUser,
+    deleteStory,
     groups,
     isLoading,
     isLoadingViewers,

@@ -85,6 +85,10 @@ export async function fetchStoryViewers(
   return data;
 }
 
+export async function deleteStory(storyId: string): Promise<void> {
+  await api.delete(apiRoutes.stories.delete(storyId));
+}
+
 function sendStoryRequest(params: {
   formData: FormData;
   onUploadProgress?: UploadProgressHandler;

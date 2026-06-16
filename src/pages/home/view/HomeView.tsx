@@ -226,6 +226,7 @@ export function HomeView() {
           initialStoryIndex={stories.viewerState.initialStoryIndex}
           visible
           onClose={stories.closeStoryViewer}
+          onDeleteStory={stories.deleteStory}
           onOpenViewers={stories.openViewers}
           onStoryVisible={stories.markAsViewed}
           onToggleLike={stories.toggleLike}
