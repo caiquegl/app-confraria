@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 import { colors } from "@/theme/colors";
 
@@ -8,7 +9,7 @@ import { useNotifications } from "../business/useNotifications";
 import { NotificationsList } from "../components/NotificationsList";
 import type { NotificationsViewProps } from "../types/notifications.types";
 
-export function NotificationsView({ onBack, onOpenPost }: NotificationsViewProps) {
+export function NotificationsView({ onBack, onOpenEvent, onOpenPost }: NotificationsViewProps) {
   const insets = useSafeAreaInsets();
   const { error, isLoading, newNotifications, oldNotifications } = useNotifications();
 
@@ -41,6 +42,19 @@ export function NotificationsView({ onBack, onOpenPost }: NotificationsViewProps
             newNotifications={newNotifications}
             oldNotifications={oldNotifications}
             onPressNotification={(notification) => {
+              if (notification.type === "event_cancelled") {
+                Toast.show({
+                  type: "info",
+                  text1: "Este evento foi cancelado",
+                });
+                return;
+              }
+
+              if (notification.eventId) {
+                onOpenEvent(notification.eventId);
+                return;
+              }
+
               if (notification.postId) onOpenPost(notification.postId);
             }}
           />

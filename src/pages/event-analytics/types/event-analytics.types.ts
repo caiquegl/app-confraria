@@ -10,6 +10,7 @@ export type EventAnalyticsParticipant = {
 };
 
 export type EventAnalytics = EventDetail & {
+  canEdit: boolean;
   participants: EventAnalyticsParticipant[];
   signupsLast7Days: number;
 };

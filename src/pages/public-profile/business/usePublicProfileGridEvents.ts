@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 
 import {
@@ -67,6 +68,12 @@ export function usePublicProfileGridEvents(userId: string) {
       void loadEvents();
     });
   }, [loadEvents]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadEvents();
+    }, [loadEvents]),
+  );
 
   return {
     createdEventIds,

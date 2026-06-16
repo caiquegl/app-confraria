@@ -7,6 +7,12 @@ export default function NotificationsScreen() {
   return (
     <NotificationsView
       onBack={() => router.back()}
+      onOpenEvent={(eventId) => {
+        router.push({
+          pathname: "/event/[eventId]",
+          params: { eventId },
+        });
+      }}
       onOpenPost={(postId) => {
         setHighlightPostId(postId);
         router.back();

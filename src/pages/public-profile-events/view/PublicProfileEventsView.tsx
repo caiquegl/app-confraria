@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -103,6 +104,14 @@ export function PublicProfileEventsView({
 
     return () => clearTimeout(timeoutId);
   }, [loadCreatedEvents, loadJoinedEvents, searchQuery]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const normalizedSearch = searchQuery.trim();
+      void loadCreatedEvents(normalizedSearch || undefined);
+      void loadJoinedEvents(normalizedSearch || undefined);
+    }, [loadCreatedEvents, loadJoinedEvents, searchQuery]),
+  );
 
   const handleToggleFavorite = useCallback(async (event: PublicProfileEvent) => {
     const setOptimisticFavorite = (isFavorited: boolean) => {

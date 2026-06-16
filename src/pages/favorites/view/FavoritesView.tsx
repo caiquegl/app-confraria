@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -55,6 +56,12 @@ export function FavoritesView({ onBack, onOpenEvent }: FavoritesViewProps) {
 
     return () => clearTimeout(timeoutId);
   }, [loadFavorites]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadFavorites();
+    }, [loadFavorites]),
+  );
 
   const handleToggleFavorite = useCallback(async (event: FavoriteEvent) => {
     setEvents((currentEvents) =>

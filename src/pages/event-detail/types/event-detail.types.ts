@@ -9,6 +9,7 @@ export type EventDetailPlace = {
 };
 
 export type EventDetail = {
+  canEdit: boolean;
   category: string;
   coverImageUrl: string | null;
   createdAt: string;

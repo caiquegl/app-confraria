@@ -8,6 +8,7 @@ type EventAnalyticsHeaderProps = {
   onBack: () => void;
   onDeleteEvent: () => void;
   onEditEvent: () => void;
+  participantsCount: number;
   topInset: number;
 };
 
@@ -15,9 +16,11 @@ export function EventAnalyticsHeader({
   onBack,
   onDeleteEvent,
   onEditEvent,
+  participantsCount,
   topInset,
 }: EventAnalyticsHeaderProps) {
   const [menuVisible, setMenuVisible] = useState(false);
+  const hasRegistrants = participantsCount > 0;
 
   const closeMenu = () => setMenuVisible(false);
 
@@ -63,8 +66,14 @@ export function EventAnalyticsHeader({
               onDeleteEvent();
             }}
           >
-            <Ionicons color="#EF4444" name="trash-outline" size={17} />
-            <Text style={[styles.menuItemText, styles.menuItemDanger]}>Apagar evento</Text>
+            <Ionicons
+              color="#EF4444"
+              name={hasRegistrants ? "calendar-outline" : "trash-outline"}
+              size={17}
+            />
+            <Text style={[styles.menuItemText, styles.menuItemDanger]}>
+              {hasRegistrants ? "Cancelar evento" : "Apagar evento"}
+            </Text>
           </Pressable>
         </View>
       </Modal>

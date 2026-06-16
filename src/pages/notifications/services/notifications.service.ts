@@ -5,6 +5,7 @@ import { formatRelativeTime } from "@/pages/home/services/feed.service";
 import type { AppNotification } from "../types/notifications.types";
 
 type NotificationApiItem = {
+  eventId: string | null;
   id: string;
   type: AppNotification["type"];
   postId: string | null;
@@ -21,6 +22,7 @@ type NotificationsApiResponse = {
 
 function mapNotification(item: NotificationApiItem): AppNotification {
   return {
+    eventId: item.eventId,
     id: item.id,
     message: item.message,
     postId: item.postId,

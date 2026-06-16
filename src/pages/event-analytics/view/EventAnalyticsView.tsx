@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -20,11 +20,15 @@ import { colors } from "@/theme/colors";
 import { EventAnalyticsHeader } from "../components/EventAnalyticsHeader";
 import { EventAnalyticsHeroCard } from "../components/EventAnalyticsHeroCard";
 import { EventAnalyticsTabs } from "../components/EventAnalyticsTabs";
+import { EventCancelEventModal } from "../components/EventCancelEventModal";
+import { EventDeleteConfirmModal } from "../components/EventDeleteConfirmModal";
+import { EventEditUnavailableModal } from "../components/EventEditUnavailableModal";
 import { EventMetricCard } from "../components/EventMetricCard";
 import { EventOccupancyCard } from "../components/EventOccupancyCard";
 import { EventOwnerActionsFooter } from "../components/EventOwnerActionsFooter";
 import { EventParticipantsList } from "../components/EventParticipantsList";
 import { fetchEventAnalytics } from "../services/event-analytics.service";
+import { deleteEvent } from "../services/event-delete.service";
 import type { EventAnalytics, EventAnalyticsTab } from "../types/event-analytics.types";
 
 type EventAnalyticsViewProps = {
@@ -45,6 +49,11 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
   const [shareEvent, setShareEvent] = useState<EventAnalytics | null>(null);
   const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
+  const [editUnavailableVisible, setEditUnavailableVisible] = useState(false);
+  const [deleteUnavailableVisible, setDeleteUnavailableVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadEvent = useCallback(async () => {
     if (!eventId) {
@@ -67,13 +76,11 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
     }
   }, [eventId]);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
+  useFocusEffect(
+    useCallback(() => {
       void loadEvent();
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [loadEvent]);
+    }, [loadEvent]),
+  );
 
   const places = useMemo(() => {
     const eventPlaces = event?.places ?? [];
@@ -138,13 +145,56 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
     [shareEvent, shareFriends],
   );
 
-  const showUnavailableActionToast = useCallback((action: string) => {
-    Toast.show({
-      type: "info",
-      text1: `${action} em breve`,
-      text2: "Essa ação ainda não possui endpoint integrado.",
+  const handleEditEvent = useCallback(() => {
+    if (!event?.canEdit) {
+      setEditUnavailableVisible(true);
+      return;
+    }
+
+    router.push({
+      pathname: "/event/[eventId]/edit",
+      params: { eventId },
     });
-  }, []);
+  }, [event?.canEdit, eventId]);
+
+  const handleDeletePress = useCallback(() => {
+    if (!event?.canEdit) {
+      setDeleteUnavailableVisible(true);
+      return;
+    }
+
+    if (event.participantsCount > 0) {
+      setCancelModalVisible(true);
+      return;
+    }
+
+    setDeleteModalVisible(true);
+  }, [event]);
+
+  const handleConfirmDelete = useCallback(
+    async (reason?: string) => {
+      setIsDeleting(true);
+
+      try {
+        await deleteEvent(eventId, reason);
+        Toast.show({
+          type: "success",
+          text1: event?.participantsCount ? "Evento cancelado" : "Evento removido",
+        });
+        onBack();
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível remover o evento",
+        });
+      } finally {
+        setIsDeleting(false);
+        setDeleteModalVisible(false);
+        setCancelModalVisible(false);
+      }
+    },
+    [event, eventId, onBack],
+  );
 
   const footerSpacerHeight = FOOTER_BASE_HEIGHT + Math.max(insets.bottom, 12);
   const canRenderOwnerPage = Boolean(event?.isOwner);
@@ -152,10 +202,11 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
   return (
     <View style={styles.screen}>
       <EventAnalyticsHeader
+        participantsCount={event?.participantsCount ?? 0}
         topInset={insets.top}
         onBack={onBack}
-        onDeleteEvent={() => showUnavailableActionToast("Exclusão")}
-        onEditEvent={() => showUnavailableActionToast("Edição")}
+        onDeleteEvent={handleDeletePress}
+        onEditEvent={handleEditEvent}
       />
 
       {isLoading ? (
@@ -236,16 +287,18 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
                   participantsCount={event.participantsCount}
                 />
 
-                <EventMetricCard
-                  delta="7 dias"
-                  icon={<Ionicons color="#15803D" name="trending-up-outline" size={18} />}
-                  label="Ritmo de inscrições"
-                  value={`+${event.signupsLast7Days}`}
-                >
-                  <Text style={styles.metricHelper}>
-                    novas inscrições nos últimos 7 dias
-                  </Text>
-                </EventMetricCard>
+                {event.canEdit ? (
+                  <EventMetricCard
+                    delta="7 dias"
+                    icon={<Ionicons color="#15803D" name="trending-up-outline" size={18} />}
+                    label="Ritmo de inscrições"
+                    value={`+${event.signupsLast7Days}`}
+                  >
+                    <Text style={styles.metricHelper}>
+                      novas inscrições nos últimos 7 dias
+                    </Text>
+                  </EventMetricCard>
+                ) : null}
 
                 <EventParticipantsList
                   participants={event.participants}
@@ -290,6 +343,35 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
           />
         </>
       ) : null}
+
+      <EventEditUnavailableModal
+        visible={editUnavailableVisible}
+        onClose={() => setEditUnavailableVisible(false)}
+      />
+
+      <EventEditUnavailableModal
+        description="Não é possível apagar ou cancelar um evento que já ocorreu ou está em andamento."
+        title="Ação indisponível"
+        visible={deleteUnavailableVisible}
+        onClose={() => setDeleteUnavailableVisible(false)}
+      />
+
+      <EventDeleteConfirmModal
+        eventTitle={event?.title ?? ""}
+        isDeleting={isDeleting}
+        visible={deleteModalVisible}
+        onClose={() => setDeleteModalVisible(false)}
+        onConfirm={() => void handleConfirmDelete()}
+      />
+
+      <EventCancelEventModal
+        eventTitle={event?.title ?? ""}
+        isDeleting={isDeleting}
+        participantsCount={event?.participantsCount ?? 0}
+        visible={cancelModalVisible}
+        onClose={() => setCancelModalVisible(false)}
+        onConfirm={(reason) => void handleConfirmDelete(reason)}
+      />
     </View>
   );
 }

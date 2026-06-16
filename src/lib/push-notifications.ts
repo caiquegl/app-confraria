@@ -148,6 +148,10 @@ function handleNotificationResponse(response: NotificationResponse): void {
     return;
   }
 
+  if (type === "event_cancelled") {
+    return;
+  }
+
   const eventId = getStringDataValue(data.eventId) ?? getStringDataValue(data.sharedEventId);
   if (eventId) {
     router.push({

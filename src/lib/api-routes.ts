@@ -21,10 +21,12 @@ export const apiRoutes = {
   events: {
     analytics: (eventId: string) => `/events/${eventId}/analytics`,
     create: "/events",
+    delete: (eventId: string) => `/events/${eventId}`,
     detail: (eventId: string) => `/events/${eventId}`,
     favorite: (eventId: string) => `/events/${eventId}/favorite`,
     favorites: "/events/favorites",
     join: (eventId: string) => `/events/${eventId}/join`,
+    update: (eventId: string) => `/events/${eventId}`,
     userCreated: (userId: string, query?: string) =>
       `/events/users/${userId}/created${query ? `?q=${encodeURIComponent(query)}` : ""}`,
     userJoined: (userId: string, query?: string) =>

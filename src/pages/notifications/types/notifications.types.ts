@@ -3,9 +3,12 @@ export type NotificationType =
   | "post_comment"
   | "comment_reply"
   | "comment_like"
-  | "follow_request";
+  | "follow_request"
+  | "event_updated"
+  | "event_cancelled";
 
 export type AppNotification = {
+  eventId: string | null;
   id: string;
   type: NotificationType;
   postId: string | null;
@@ -17,6 +20,7 @@ export type AppNotification = {
 
 export type NotificationsViewProps = {
   onBack: () => void;
+  onOpenEvent: (eventId: string) => void;
   onOpenPost: (postId: string) => void;
 };
 
