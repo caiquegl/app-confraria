@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 
 import { colors } from "@/theme/colors";
@@ -6,7 +6,7 @@ import { colors } from "@/theme/colors";
 const TRACK_WIDTH = 96;
 
 export function LoadingBar() {
-  const progress = useRef(new Animated.Value(0)).current;
+  const progress = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
     const loop = Animated.loop(

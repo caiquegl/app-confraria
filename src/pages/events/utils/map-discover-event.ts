@@ -1,5 +1,4 @@
-import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
-import type { PublicProfileEventListItem } from "@/pages/public-profile-events/types/public-profile-events.types";
+import type { PublicProfileEventListItem, PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
 
 export function formatDiscoverEventDate(dateValue: string) {
   const date = new Date(dateValue);

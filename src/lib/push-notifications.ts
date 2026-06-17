@@ -3,11 +3,12 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import type * as ExpoNotifications from "expo-notifications";
 import { router } from "expo-router";
-import { InteractionManager, Platform } from "react-native";
+import { Platform } from "react-native";
 
 import { api } from "./api";
 import { apiRoutes } from "./api-routes";
 import { setHighlightPostId } from "./feed-highlight-store";
+import { runWhenIdle } from "./run-when-idle";
 
 const PUSH_TOKEN_KEY = "@confraria/expo_push_token";
 const DEFAULT_CHANNEL_ID = "default";
@@ -136,9 +137,7 @@ export async function unregisterPushNotificationsAsync(): Promise<void> {
 }
 
 function navigateFromNotification(action: () => void): void {
-  InteractionManager.runAfterInteractions(() => {
-    action();
-  });
+  runWhenIdle(action);
 }
 
 function handleNotificationResponse(response: NotificationResponse): void {

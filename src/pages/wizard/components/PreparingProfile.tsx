@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Modal, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
@@ -14,7 +14,7 @@ const MESSAGES = [
 const STEP_INTERVAL_MS = 1200;
 const COMPLETE_DELAY_MS = 1000;
 
-const STEP_ICONS: Array<keyof typeof Ionicons.glyphMap> = [
+const STEP_ICONS: (keyof typeof Ionicons.glyphMap)[] = [
   "flash",
   "map",
   "bicycle",
@@ -27,28 +27,20 @@ export type PreparingProfileProps = {
   onComplete: () => void;
 };
 
-export function PreparingProfile({ onComplete, userName, visible }: PreparingProfileProps) {
+type PreparingProfileContentProps = {
+  userName: string;
+  onComplete: () => void;
+};
+
+function PreparingProfileContent({ onComplete, userName }: PreparingProfileContentProps) {
   const [step, setStep] = useState(0);
-  const spin = useRef(new Animated.Value(0)).current;
-  const progress = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(1)).current;
+  const spin = useMemo(() => new Animated.Value(0), []);
+  const progress = useMemo(() => new Animated.Value(0), []);
+  const pulse = useMemo(() => new Animated.Value(1), []);
   const completeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const completedRef = useRef(false);
 
   useEffect(() => {
-    if (!visible) {
-      setStep(0);
-      spin.setValue(0);
-      progress.setValue(0);
-      pulse.setValue(1);
-      completedRef.current = false;
-      if (completeTimeoutRef.current) {
-        clearTimeout(completeTimeoutRef.current);
-        completeTimeoutRef.current = null;
-      }
-      return;
-    }
-
     completedRef.current = false;
 
     const spinLoop = Animated.loop(
@@ -101,18 +93,16 @@ export function PreparingProfile({ onComplete, userName, visible }: PreparingPro
         completeTimeoutRef.current = null;
       }
     };
-  }, [onComplete, progress, pulse, spin, visible]);
+  }, [onComplete, pulse, spin]);
 
   useEffect(() => {
-    if (!visible) return;
-
     Animated.timing(progress, {
       duration: 1000,
       easing: Easing.out(Easing.ease),
       toValue: (step + 1) / MESSAGES.length,
       useNativeDriver: false,
     }).start();
-  }, [progress, step, visible]);
+  }, [progress, step]);
 
   const spinRotation = spin.interpolate({
     inputRange: [0, 1],
@@ -127,28 +117,36 @@ export function PreparingProfile({ onComplete, userName, visible }: PreparingPro
   const iconName = STEP_ICONS[step] ?? "flash";
 
   return (
-    <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
-      <View style={styles.overlay}>
-        <View style={styles.content}>
-          <View style={styles.iconWrapper}>
-            <Animated.View style={[styles.spinner, { transform: [{ rotate: spinRotation }] }]}>
-              <View style={styles.spinnerRing} />
-            </Animated.View>
-            <View style={styles.iconCenter}>
-              <Ionicons color={colors.brandGreen} name={iconName} size={40} />
-            </View>
+    <View style={styles.overlay}>
+      <View style={styles.content}>
+        <View style={styles.iconWrapper}>
+          <Animated.View style={[styles.spinner, { transform: [{ rotate: spinRotation }] }]}>
+            <View style={styles.spinnerRing} />
+          </Animated.View>
+          <View style={styles.iconCenter}>
+            <Ionicons color={colors.brandGreen} name={iconName} size={40} />
           </View>
-
-          <Text style={styles.title}>Segura aí, {userName}!</Text>
-          <Animated.Text style={[styles.message, { opacity: pulse }]}>
-            {MESSAGES[step]}
-          </Animated.Text>
         </View>
 
-        <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
-        </View>
+        <Text style={styles.title}>Segura aí, {userName}!</Text>
+        <Animated.Text style={[styles.message, { opacity: pulse }]}>
+          {MESSAGES[step]}
+        </Animated.Text>
       </View>
+
+      <View style={styles.progressTrack}>
+        <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+      </View>
+    </View>
+  );
+}
+
+export function PreparingProfile({ onComplete, userName, visible }: PreparingProfileProps) {
+  return (
+    <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
+      {visible ? (
+        <PreparingProfileContent onComplete={onComplete} userName={userName} />
+      ) : null}
     </Modal>
   );
 }

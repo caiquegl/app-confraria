@@ -6,13 +6,22 @@ import type { UserSearchResult } from "../types/search.types";
 const DEBOUNCE_MS = 400;
 const MIN_QUERY_LENGTH = 2;
 
+type SearchState = {
+  query: string;
+  results: UserSearchResult[];
+  error: string | null;
+};
+
+const EMPTY_SEARCH_STATE: SearchState = {
+  query: "",
+  results: [],
+  error: null,
+};
+
 export function useUserSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [results, setResults] = useState<UserSearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -24,34 +33,27 @@ export function useUserSearch() {
 
   useEffect(() => {
     if (debouncedQuery.length < MIN_QUERY_LENGTH) {
-      setResults([]);
-      setError(null);
-      setHasSearched(false);
-      setIsSearching(false);
       return;
     }
 
     let cancelled = false;
 
-    setIsSearching(true);
-    setError(null);
-
     void searchUsers(debouncedQuery)
       .then((data) => {
         if (cancelled) return;
-        setResults(data);
-        setHasSearched(true);
+        setSearchState({
+          query: debouncedQuery,
+          results: data,
+          error: null,
+        });
       })
       .catch(() => {
         if (cancelled) return;
-        setResults([]);
-        setHasSearched(true);
-        setError("Não foi possível buscar perfis. Tente novamente.");
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsSearching(false);
-        }
+        setSearchState({
+          query: debouncedQuery,
+          results: [],
+          error: "Não foi possível buscar perfis. Tente novamente.",
+        });
       });
 
     return () => {
@@ -59,11 +61,14 @@ export function useUserSearch() {
     };
   }, [debouncedQuery]);
 
+  const canSearch = debouncedQuery.length >= MIN_QUERY_LENGTH;
+  const matchesQuery = searchState.query === debouncedQuery;
+
   return {
-    error,
-    hasSearched,
-    isSearching,
-    results,
+    error: canSearch && matchesQuery ? searchState.error : null,
+    hasSearched: canSearch && matchesQuery,
+    isSearching: canSearch && !matchesQuery,
+    results: canSearch && matchesQuery ? searchState.results : [],
     searchQuery,
     setSearchQuery,
   };

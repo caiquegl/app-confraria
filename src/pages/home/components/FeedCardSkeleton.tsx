@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
 function SkeletonBlock({ height, style, width }: { height: number; style?: object; width?: number | `${number}%` }) {
-  const opacity = useRef(new Animated.Value(0.35)).current;
+  const opacity = useMemo(() => new Animated.Value(0.35), []);
 
   useEffect(() => {
     const animation = Animated.loop(

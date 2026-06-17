@@ -18,62 +18,79 @@ import { colors } from "@/theme/colors";
 import { fetchLatestTerm } from "../services/wizard.service";
 import type { LgpdTermsModalProps, Term } from "../types/wizard.types";
 
-export function LgpdTermsModal({ onClose, visible }: LgpdTermsModalProps) {
+type LgpdTermsModalContentProps = {
+  onClose: () => void;
+};
+
+function LgpdTermsModalContent({ onClose }: LgpdTermsModalContentProps) {
   const insets = useSafeAreaInsets();
   const [term, setTerm] = useState<Term | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!visible) {
-      setTerm(null);
-      setError(null);
-      return;
-    }
+    let cancelled = false;
 
-    setIsLoading(true);
-    setError(null);
+    void fetchLatestTerm()
+      .then((data) => {
+        if (cancelled) return;
+        setTerm(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setError("Não foi possível carregar os termos. Tente novamente.");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
 
-    fetchLatestTerm()
-      .then(setTerm)
-      .catch(() => setError("Não foi possível carregar os termos. Tente novamente."))
-      .finally(() => setIsLoading(false));
-  }, [visible]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const bottomPadding = Math.max(insets.bottom, Platform.OS === "android" ? 24 : 0) + 24;
 
   return (
-    <Modal animationType="fade" statusBarTranslucent transparent visible={visible}>
-      <View style={styles.backdrop}>
-        <View style={[styles.card, { paddingBottom: bottomPadding }]}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{term?.title ?? "Termos LGPD"}</Text>
-            <TouchableOpacity activeOpacity={0.65} hitSlop={8} onPress={onClose}>
-              <Ionicons color={colors.brandDark} name="close" size={24} />
-            </TouchableOpacity>
-          </View>
-
-          {isLoading ? (
-            <View style={styles.loading}>
-              <ActivityIndicator color={colors.brandGreen} size="large" />
-            </View>
-          ) : error ? (
-            <Text style={styles.error}>{error}</Text>
-          ) : (
-            <ScrollView
-              style={styles.scroll}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text style={styles.content}>{term?.content}</Text>
-            </ScrollView>
-          )}
-
-          <Button size="lg" style={styles.button} onPress={onClose}>
-            Entendi
-          </Button>
+    <View style={styles.backdrop}>
+      <View style={[styles.card, { paddingBottom: bottomPadding }]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{term?.title ?? "Termos LGPD"}</Text>
+          <TouchableOpacity activeOpacity={0.65} hitSlop={8} onPress={onClose}>
+            <Ionicons color={colors.brandDark} name="close" size={24} />
+          </TouchableOpacity>
         </View>
+
+        {isLoading ? (
+          <View style={styles.loading}>
+            <ActivityIndicator color={colors.brandGreen} size="large" />
+          </View>
+        ) : error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : (
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.content}>{term?.content}</Text>
+          </ScrollView>
+        )}
+
+        <Button size="lg" style={styles.button} onPress={onClose}>
+          Entendi
+        </Button>
       </View>
+    </View>
+  );
+}
+
+export function LgpdTermsModal({ onClose, visible }: LgpdTermsModalProps) {
+  return (
+    <Modal animationType="fade" statusBarTranslucent transparent visible={visible}>
+      {visible ? <LgpdTermsModalContent onClose={onClose} /> : null}
     </Modal>
   );
 }

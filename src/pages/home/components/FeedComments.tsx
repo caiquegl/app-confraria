@@ -70,19 +70,15 @@ function CommentItem({
   onSubmitReply,
   onToggleLike,
 }: CommentItemProps) {
-  const [repliesExpanded, setRepliesExpanded] = useState(false);
+  const [repliesToggled, setRepliesToggled] = useState(false);
   const replies = comment.replies ?? [];
   const isMine = comment.userId === currentUserId;
   const isEditing = editingId === comment.id;
   const isReplying = replyTarget?.replyToCommentId === comment.id;
   const isLiked = comment.isLiked ?? false;
   const likeCount = comment.likeCount ?? 0;
-
-  useEffect(() => {
-    if (depth === 0 && replyTarget?.parentId === comment.id) {
-      setRepliesExpanded(true);
-    }
-  }, [comment.id, depth, replyTarget?.parentId]);
+  const isActiveReplyParent = depth === 0 && replyTarget?.parentId === comment.id;
+  const repliesExpanded = isActiveReplyParent ? !repliesToggled : repliesToggled;
 
   return (
     <View style={[styles.commentBlock, depth > 0 && styles.nestedComment]}>
@@ -190,7 +186,7 @@ function CommentItem({
           <Pressable
             hitSlop={8}
             style={styles.repliesToggle}
-            onPress={() => setRepliesExpanded((value) => !value)}
+            onPress={() => setRepliesToggled((value) => !value)}
           >
             <View style={styles.repliesToggleLine} />
             <Text style={styles.repliesToggleText}>

@@ -234,7 +234,7 @@ export function StoryViewer({
     const animation = startProgressAnimation(progressValueRef.current);
 
     return () => animation.stop();
-  }, [isPlaybackPaused, isStoryLoaded, startProgressAnimation, story, visible]);
+  }, [isPlaybackPaused, isStoryLoaded, progress, startProgressAnimation, story, visible]);
 
   if (!visible || !group || !story) return null;
 

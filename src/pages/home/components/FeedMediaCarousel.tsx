@@ -13,6 +13,11 @@ import {
 } from "react-native";
 
 import type { FeedPostMedia } from "../types/feed.types";
+import {
+  pauseVideoPlayer,
+  playVideoPlayer,
+  setVideoPlayerMuted,
+} from "../utils/video-player-controls";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = 32;
@@ -169,17 +174,17 @@ function FeedVideoSlide({
 
   useEffect(() => {
     if (active) {
-      player.play();
+      playVideoPlayer(player);
       return;
     }
 
-    player.pause();
+    pauseVideoPlayer(player);
   }, [active, player]);
 
   const toggleMute = () => {
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
-    player.muted = nextMuted;
+    setVideoPlayerMuted(player, nextMuted);
   };
 
   return (

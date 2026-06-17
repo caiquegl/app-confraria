@@ -1,7 +1,6 @@
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
-import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
-import type { PublicProfileEventListItem } from "@/pages/public-profile-events/types/public-profile-events.types";
+import type { PublicProfileEventListItem, PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
 
 import type { EventsDiscoverQueryFilters } from "../utils/events-filters.utils";
 
@@ -21,10 +20,10 @@ export type EventsDiscoverSections = {
 };
 
 type DiscoverSectionsResponse = {
-  categories: Array<{
+  categories: {
     category: string;
     events: PublicProfileEventListItem[];
-  }>;
+  }[];
   thisMonth: PublicProfileEventListItem[];
   thisWeek: PublicProfileEventListItem[];
 };

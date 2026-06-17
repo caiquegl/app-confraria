@@ -5,7 +5,10 @@ import type { UseLoadingParams } from "../types/loading.types";
 
 export function useLoading({ onComplete }: UseLoadingParams): void {
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     let alive = true;
