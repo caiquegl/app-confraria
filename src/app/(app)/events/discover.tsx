@@ -2,10 +2,24 @@ import { router, useLocalSearchParams } from "expo-router";
 
 import { EventsDiscoverListView } from "@/pages/events/view/EventsDiscoverListView";
 import type { EventsDiscoverScope } from "@/pages/events/services/events-discover.service";
+import type { EventsDiscoverQueryFilters } from "@/pages/events/utils/events-filters.utils";
+
+function parseDiscoverFilters(rawFilters?: string): EventsDiscoverQueryFilters | undefined {
+  if (!rawFilters?.trim()) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawFilters) as EventsDiscoverQueryFilters;
+  } catch {
+    return undefined;
+  }
+}
 
 export default function EventsDiscoverScreen() {
-  const { category, scope, title } = useLocalSearchParams<{
+  const { category, filters, scope, title } = useLocalSearchParams<{
     category?: string;
+    filters?: string;
     scope?: EventsDiscoverScope;
     title?: string;
   }>();
@@ -16,6 +30,7 @@ export default function EventsDiscoverScreen() {
   return (
     <EventsDiscoverListView
       category={category}
+      filters={parseDiscoverFilters(filters)}
       scope={resolvedScope}
       title={title ?? "Eventos"}
       onBack={() => {

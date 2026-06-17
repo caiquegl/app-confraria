@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -21,9 +21,11 @@ import {
   fetchEventsDiscoverList,
   type EventsDiscoverScope,
 } from "../services/events-discover.service";
+import type { EventsDiscoverQueryFilters } from "../utils/events-filters.utils";
 
 type EventsDiscoverListViewProps = {
   category?: string;
+  filters?: EventsDiscoverQueryFilters;
   onBack: () => void;
   onOpenEvent: (eventId: string) => void;
   scope: EventsDiscoverScope;
@@ -32,6 +34,7 @@ type EventsDiscoverListViewProps = {
 
 export function EventsDiscoverListView({
   category,
+  filters,
   onBack,
   onOpenEvent,
   scope,
@@ -42,12 +45,18 @@ export function EventsDiscoverListView({
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const requestFilters = useMemo(() => filters, [filters]);
+
   const loadEvents = useCallback(async () => {
     setHasError(false);
     setIsLoading(true);
 
     try {
-      const response = await fetchEventsDiscoverList({ category, scope });
+      const response = await fetchEventsDiscoverList({
+        category,
+        filters: requestFilters,
+        scope,
+      });
       setEvents(response);
     } catch {
       setEvents([]);
@@ -55,7 +64,7 @@ export function EventsDiscoverListView({
     } finally {
       setIsLoading(false);
     }
-  }, [category, scope]);
+  }, [category, requestFilters, scope]);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,7 +87,7 @@ export function EventsDiscoverListView({
       const response = await toggleFavoriteEvent(event.id);
       setEvents((currentEvents) =>
         currentEvents.map((currentEvent) =>
-          currentEvent.id === response.eventId
+          currentEvent.id === event.id
             ? { ...currentEvent, isFavorited: response.favorited }
             : currentEvent,
         ),
@@ -99,55 +108,48 @@ export function EventsDiscoverListView({
   }, []);
 
   return (
-    <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
         <Pressable accessibilityRole="button" onPress={onBack}>
-          <Ionicons color={colors.brandDark} name="chevron-back" size={24} />
+          <Ionicons color={colors.brandDark} name="arrow-back" size={22} />
         </Pressable>
-        <Text numberOfLines={1} style={styles.headerTitle}>
-          {title}
-        </Text>
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       {isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator color={colors.brandPrimary} size="large" />
         </View>
-      ) : null}
-
-      {!isLoading && hasError ? (
+      ) : hasError ? (
         <View style={styles.centered}>
-          <Text style={styles.errorText}>Não foi possível carregar os eventos.</Text>
+          <Text style={styles.errorTitle}>Não foi possível carregar os eventos</Text>
+          <Pressable accessibilityRole="button" style={styles.retryButton} onPress={loadEvents}>
+            <Text style={styles.retryText}>Tentar novamente</Text>
+          </Pressable>
         </View>
-      ) : null}
-
-      {!isLoading && !hasError && events.length === 0 ? (
+      ) : events.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyTitle}>Nenhum evento encontrado</Text>
-          <Text style={styles.emptyText}>Volte em breve para ver novidades nesta seção.</Text>
         </View>
-      ) : null}
-
-      {!isLoading && !hasError && events.length > 0 ? (
+      ) : (
         <ScrollView
-          contentContainerStyle={{
-            gap: 14,
-            paddingBottom: Math.max(insets.bottom, 16) + 24,
-            paddingHorizontal: 16,
-            paddingTop: 16,
-          }}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 24 },
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {events.map((event) => (
             <PublicProfileEventCard
               key={event.id}
               event={event}
-              onPress={(selectedEvent) => onOpenEvent(selectedEvent.id)}
+              onPress={() => onOpenEvent(event.id)}
               onToggleFavorite={handleToggleFavorite}
             />
           ))}
         </ScrollView>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -159,42 +161,55 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
-  emptyText: {
-    color: "#6B7280",
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
-    textAlign: "center",
-  },
   emptyTitle: {
     color: colors.brandDark,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     textAlign: "center",
   },
-  errorText: {
-    color: "#6B7280",
-    fontSize: 14,
+  errorTitle: {
+    color: colors.brandDark,
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 12,
     textAlign: "center",
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#F3F4F6",
-    borderBottomWidth: 1,
     flexDirection: "row",
-    gap: 8,
-    paddingBottom: 12,
+    gap: 12,
     paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  headerTitle: {
+  headerSpacer: {
+    width: 22,
+  },
+  listContent: {
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  retryButton: {
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  retryText: {
     color: colors.brandDark,
-    flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
   },
   screen: {
     backgroundColor: colors.brandGray,
     flex: 1,
+  },
+  title: {
+    color: colors.brandDark,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "800",
+    textAlign: "center",
   },
 });

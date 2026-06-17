@@ -25,12 +25,15 @@ export type PublicProfileEventListItem = {
   id: string;
   image: string | null;
   isFavorited: boolean;
+  latitude: number | null;
   location: string | null;
+  longitude: number | null;
   organizer: {
     avatarUrl: string | null;
     id: string;
     name: string;
   };
+  region: string | null;
   routeDistanceMeters: number | null;
   routeDurationSeconds: number | null;
   title: string;

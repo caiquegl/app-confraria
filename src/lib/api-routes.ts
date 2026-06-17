@@ -1,3 +1,25 @@
+import type { EventsDiscoverQueryFilters } from "@/pages/events/utils/events-filters.utils";
+
+function appendDiscoverQueryFilters(
+  params: URLSearchParams,
+  filters?: EventsDiscoverQueryFilters,
+) {
+  if (!filters) {
+    return;
+  }
+
+  if (filters.category) params.set("category", filters.category);
+  if (filters.state) params.set("state", filters.state);
+  if (filters.latitude !== undefined) params.set("latitude", String(filters.latitude));
+  if (filters.longitude !== undefined) params.set("longitude", String(filters.longitude));
+  if (filters.minDistanceKm !== undefined) {
+    params.set("minDistanceKm", String(filters.minDistanceKm));
+  }
+  if (filters.maxDistanceKm !== undefined) {
+    params.set("maxDistanceKm", String(filters.maxDistanceKm));
+  }
+}
+
 export const apiRoutes = {
   admin: {
     bikeBrands: "/admin/bike-brands",
@@ -23,12 +45,26 @@ export const apiRoutes = {
     create: "/events",
     delete: (eventId: string) => `/events/${eventId}`,
     detail: (eventId: string) => `/events/${eventId}`,
-    discover: (scope: string, category?: string) => {
+    discover: (
+      scope: string,
+      options?: {
+        category?: string;
+        filters?: EventsDiscoverQueryFilters;
+      },
+    ) => {
       const params = new URLSearchParams({ scope });
-      if (category?.trim()) params.set("category", category.trim());
+      if (options?.category?.trim()) {
+        params.set("category", options.category.trim());
+      }
+      appendDiscoverQueryFilters(params, options?.filters);
       return `/events/discover?${params.toString()}`;
     },
-    discoverSections: "/events/discover/sections",
+    discoverSections: (filters?: EventsDiscoverQueryFilters) => {
+      const params = new URLSearchParams();
+      appendDiscoverQueryFilters(params, filters);
+      const query = params.toString();
+      return `/events/discover/sections${query ? `?${query}` : ""}`;
+    },
     favorite: (eventId: string) => `/events/${eventId}/favorite`,
     favorites: "/events/favorites",
     join: (eventId: string) => `/events/${eventId}/join`,
@@ -60,10 +96,11 @@ export const apiRoutes = {
     autocomplete: (input: string) => `/places/autocomplete?input=${encodeURIComponent(input)}`,
   },
   quickRides: {
-    list: (city?: string, region?: string) => {
+    list: (options?: { city?: string; region?: string; state?: string }) => {
       const params = new URLSearchParams();
-      if (city?.trim()) params.set("city", city.trim());
-      if (region?.trim()) params.set("region", region.trim());
+      if (options?.city?.trim()) params.set("city", options.city.trim());
+      if (options?.region?.trim()) params.set("region", options.region.trim());
+      if (options?.state?.trim()) params.set("state", options.state.trim());
       const query = params.toString();
       return `/quick-rides${query ? `?${query}` : ""}`;
     },

@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -23,21 +23,45 @@ import { EventsCreateActionSheet } from "../components/EventsCreateActionSheet";
 import { EventsCreateFab } from "../components/EventsCreateFab";
 import { EventsEmptyFiltersCard } from "../components/EventsEmptyFiltersCard";
 import { EventsFilterChips } from "../components/EventsFilterChips";
+import { EventsFiltersSheet } from "../components/EventsFiltersSheet";
 import { EventsHeaderSection } from "../components/EventsHeaderSection";
 import { EventsLocationGate } from "../components/EventsLocationGate";
 import { EventsSection } from "../components/EventsSection";
 import { EventsTopBar } from "../components/EventsTopBar";
 import { QuickRidesSection } from "../components/QuickRidesSection";
+import { useEventsLocation } from "../hooks/useEventsLocation";
 import {
   fetchEventsDiscoverList,
   fetchEventsDiscoverSections,
   type EventsDiscoverCategorySection,
   type EventsDiscoverScope,
 } from "../services/events-discover.service";
-import { useEventsLocation } from "../hooks/useEventsLocation";
-import type { EventsFilterChip } from "../types/events.types";
+import {
+  DEFAULT_EVENTS_FILTERS,
+  type EventsFilters,
+} from "../types/events-filters.types";
+import {
+  buildActiveFilterChips,
+  buildDiscoverQueryFilters,
+  getFilterCategoryFromPill,
+  getPillFromFilterCategory,
+  matchesQuickRideDistanceFilter,
+} from "../utils/events-filters.utils";
 
 const DISCOVER_SECTION_PREVIEW_LIMIT = 10;
+
+function filterEventsBySearch(events: PublicProfileEvent[], searchQuery: string) {
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  if (!normalizedSearch) {
+    return events;
+  }
+
+  return events.filter((event) =>
+    [event.title, event.category, event.location, event.organizer, event.date].some((value) =>
+      value.toLowerCase().includes(normalizedSearch),
+    ),
+  );
+}
 
 export function EventsView() {
   const insets = useSafeAreaInsets();
@@ -48,7 +72,9 @@ export function EventsView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tudo");
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeFilterChips] = useState<EventsFilterChip[]>([]);
+  const [filters, setFilters] = useState<EventsFilters>(DEFAULT_EVENTS_FILTERS);
+  const [draftFilters, setDraftFilters] = useState<EventsFilters>(DEFAULT_EVENTS_FILTERS);
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(storedProfile.avatar);
   const [userName, setUserName] = useState<string>(storedProfile.name ?? "Perfil");
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
@@ -58,53 +84,110 @@ export function EventsView() {
   const [categorySections, setCategorySections] = useState<EventsDiscoverCategorySection[]>([]);
   const [categoryFilteredEvents, setCategoryFilteredEvents] = useState<PublicProfileEvent[]>([]);
   const [isLoadingCategoryEvents, setIsLoadingCategoryEvents] = useState(false);
-  const isMountedRef = useRef(true);
 
   const isCategoryFilterActive = selectedCategory !== "Tudo";
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  const loadQuickRides = useCallback(() => {
-    if (location.status !== "ready" || !location.city) {
-      return;
+  const userCoords = useMemo(() => {
+    if (location.latitude === null || location.longitude === null) {
+      return null;
     }
 
-    void fetchActiveQuickRides({
-      city: location.city,
-      region: location.region,
-    })
-      .then((rides) => {
-        if (isMountedRef.current) {
-          setQuickRides(rides);
-        }
+    return {
+      latitude: location.latitude,
+      longitude: location.longitude,
+    };
+  }, [location.latitude, location.longitude]);
+
+  const discoverQueryFilters = useMemo(
+    () => buildDiscoverQueryFilters(filters, userCoords),
+    [filters, userCoords],
+  );
+
+  const loadQuickRides = useCallback(
+    (overrideFilters?: EventsFilters) => {
+      if (location.status !== "ready") {
+        return;
+      }
+
+      const activeFilters = overrideFilters ?? filters;
+      const stateFilter = activeFilters.state !== "ALL" ? activeFilters.state : undefined;
+
+      if (!stateFilter && !location.city) {
+        return;
+      }
+
+      void fetchActiveQuickRides({
+        city: location.city,
+        region: location.region,
+        state: stateFilter,
       })
-      .catch(() => {
-        if (isMountedRef.current) {
+        .then((rides) => {
+          const filteredRides = rides
+            .filter((ride) => isQuickRideDiscoverable(ride))
+            .filter((ride) =>
+              matchesQuickRideDistanceFilter(ride, userCoords, activeFilters.distanceRange),
+            );
+
+          setQuickRides(filteredRides);
+        })
+        .catch(() => {
           setQuickRides([]);
-        }
-      });
-  }, [location.city, location.region, location.status]);
+        });
+    },
+    [filters, location.city, location.region, location.status, userCoords],
+  );
 
   const loadDiscoverSections = useCallback(() => {
-    void fetchEventsDiscoverSections()
+    void fetchEventsDiscoverSections(discoverQueryFilters)
       .then((sections) => {
-        if (!isMountedRef.current) return;
         setThisWeekEvents(sections.thisWeek);
         setThisMonthEvents(sections.thisMonth);
         setCategorySections(sections.categories);
       })
       .catch(() => {
-        if (!isMountedRef.current) return;
         setThisWeekEvents([]);
         setThisMonthEvents([]);
         setCategorySections([]);
       });
-  }, []);
+  }, [discoverQueryFilters]);
+
+  const loadCategoryEvents = useCallback(
+    (category: string) => {
+      setIsLoadingCategoryEvents(true);
+
+      void fetchEventsDiscoverList({
+        category,
+        filters: discoverQueryFilters,
+        scope: "category",
+      })
+        .then((events) => {
+          setCategoryFilteredEvents(events);
+        })
+        .catch(() => {
+          setCategoryFilteredEvents([]);
+        })
+        .finally(() => {
+          setIsLoadingCategoryEvents(false);
+        });
+    },
+    [discoverQueryFilters],
+  );
+
+  const reloadDiscoverData = useCallback(() => {
+    if (isCategoryFilterActive) {
+      loadCategoryEvents(selectedCategory);
+    } else {
+      loadDiscoverSections();
+    }
+
+    loadQuickRides();
+  }, [
+    isCategoryFilterActive,
+    loadCategoryEvents,
+    loadDiscoverSections,
+    loadQuickRides,
+    selectedCategory,
+  ]);
 
   useEffect(() => {
     return subscribeStoredCurrentProfile((profile) => {
@@ -119,62 +202,135 @@ export function EventsView() {
       .catch(() => setCategories([]));
   }, []);
 
-  useEffect(() => {
-    if (location.status !== "ready" || !location.city) {
-      return;
-    }
-
-    loadQuickRides();
-  }, [loadQuickRides, location.city, location.status]);
-
   useFocusEffect(
     useCallback(() => {
-      loadQuickRides();
-      loadDiscoverSections();
-    }, [loadDiscoverSections, loadQuickRides]),
+      reloadDiscoverData();
+    }, [reloadDiscoverData]),
   );
 
-  const handleCategoryChange = useCallback((category: string) => {
-    setSelectedCategory(category);
+  const applyFilters = useCallback(
+    (nextFilters: EventsFilters) => {
+      const nextQuery = buildDiscoverQueryFilters(nextFilters, userCoords);
 
-    if (category === "Tudo") {
-      return;
-    }
+      setFilters(nextFilters);
+      setDraftFilters(nextFilters);
+      setSelectedCategory(getPillFromFilterCategory(nextFilters.category));
+      setFiltersSheetOpen(false);
 
-    setIsLoadingCategoryEvents(true);
+      if (nextFilters.category !== "ALL") {
+        setIsLoadingCategoryEvents(true);
+        void fetchEventsDiscoverList({
+          category: nextFilters.category,
+          filters: nextQuery,
+          scope: "category",
+        })
+          .then((events) => {
+            setCategoryFilteredEvents(events);
+          })
+          .catch(() => {
+            setCategoryFilteredEvents([]);
+          })
+          .finally(() => {
+            setIsLoadingCategoryEvents(false);
+          });
+      } else {
+        void fetchEventsDiscoverSections(nextQuery)
+          .then((sections) => {
+            setThisWeekEvents(sections.thisWeek);
+            setThisMonthEvents(sections.thisMonth);
+            setCategorySections(sections.categories);
+          })
+          .catch(() => {
+            setThisWeekEvents([]);
+            setThisMonthEvents([]);
+            setCategorySections([]);
+          });
+      }
 
-    void fetchEventsDiscoverList({
-      category,
-      scope: "category",
-    })
-      .then((events) => {
-        if (isMountedRef.current) {
+      loadQuickRides(nextFilters);
+    },
+    [loadQuickRides, userCoords],
+  );
+
+  const handleCategoryChange = useCallback(
+    (category: string) => {
+      const nextFilters = {
+        ...filters,
+        category: getFilterCategoryFromPill(category),
+      };
+      const nextQuery = buildDiscoverQueryFilters(nextFilters, userCoords);
+
+      setSelectedCategory(category);
+      setFilters(nextFilters);
+      setDraftFilters(nextFilters);
+
+      if (category === "Tudo") {
+        void fetchEventsDiscoverSections(nextQuery)
+          .then((sections) => {
+            setThisWeekEvents(sections.thisWeek);
+            setThisMonthEvents(sections.thisMonth);
+            setCategorySections(sections.categories);
+          })
+          .catch(() => {
+            setThisWeekEvents([]);
+            setThisMonthEvents([]);
+            setCategorySections([]);
+          });
+        return;
+      }
+
+      setIsLoadingCategoryEvents(true);
+      void fetchEventsDiscoverList({
+        category,
+        filters: nextQuery,
+        scope: "category",
+      })
+        .then((events) => {
           setCategoryFilteredEvents(events);
-        }
-      })
-      .catch(() => {
-        if (isMountedRef.current) {
+        })
+        .catch(() => {
           setCategoryFilteredEvents([]);
-        }
-      })
-      .finally(() => {
-        if (isMountedRef.current) {
+        })
+        .finally(() => {
           setIsLoadingCategoryEvents(false);
-        }
-      });
-  }, []);
+        });
+
+      loadQuickRides(nextFilters);
+    },
+    [filters, loadQuickRides, userCoords],
+  );
 
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
-    handleCategoryChange("Tudo");
-  }, [handleCategoryChange]);
+    setFilters(DEFAULT_EVENTS_FILTERS);
+    setDraftFilters(DEFAULT_EVENTS_FILTERS);
+    setSelectedCategory("Tudo");
+    setCategoryFilteredEvents([]);
+    setIsLoadingCategoryEvents(false);
+    void fetchEventsDiscoverSections()
+      .then((sections) => {
+        setThisWeekEvents(sections.thisWeek);
+        setThisMonthEvents(sections.thisMonth);
+        setCategorySections(sections.categories);
+      })
+      .catch(() => {
+        setThisWeekEvents([]);
+        setThisMonthEvents([]);
+        setCategorySections([]);
+      });
+    loadQuickRides(DEFAULT_EVENTS_FILTERS);
+  }, [loadQuickRides]);
 
   const handleOpenFilters = useCallback(() => {
-    Toast.show({
-      type: "info",
-      text1: "Filtros em breve",
-    });
-  }, []);
+    setDraftFilters(filters);
+    setFiltersSheetOpen(true);
+  }, [filters]);
+
+  const handleApplyFilters = useCallback(() => {
+    applyFilters(draftFilters);
+  }, [applyFilters, draftFilters]);
+
+  const activeFilterChips = buildActiveFilterChips(filters, applyFilters);
 
   const handleCreateEvent = useCallback(() => {
     setCreateSheetOpen(false);
@@ -225,12 +381,13 @@ export function EventsView() {
         pathname: "/events/discover",
         params: {
           category: category ?? "",
+          filters: JSON.stringify(discoverQueryFilters),
           scope,
           title,
         },
       });
     },
-    [],
+    [discoverQueryFilters],
   );
 
   const updateFavoriteState = useCallback(
@@ -270,28 +427,42 @@ export function EventsView() {
     [updateFavoriteState],
   );
 
-  const displayedQuickRides =
-    !isCategoryFilterActive && location.status === "ready" && location.city
-      ? quickRides.filter((ride) => isQuickRideDiscoverable(ride))
-      : [];
+  const displayedQuickRides = !isCategoryFilterActive ? quickRides : [];
 
-  const displayedCategoryEvents = useMemo(() => {
-    const normalizedSearch = searchQuery.trim().toLowerCase();
-    if (!normalizedSearch) {
-      return categoryFilteredEvents;
-    }
-
-    return categoryFilteredEvents.filter((event) =>
-      [event.title, event.category, event.location, event.organizer, event.date].some((value) =>
-        value.toLowerCase().includes(normalizedSearch),
-      ),
-    );
-  }, [categoryFilteredEvents, searchQuery]);
+  const displayedCategoryEvents = useMemo(
+    () => filterEventsBySearch(categoryFilteredEvents, searchQuery),
+    [categoryFilteredEvents, searchQuery],
+  );
 
   const displayedCategoryPreview = useMemo(
     () => displayedCategoryEvents.slice(0, DISCOVER_SECTION_PREVIEW_LIMIT),
     [displayedCategoryEvents],
   );
+
+  const displayedThisWeekEvents = useMemo(
+    () => filterEventsBySearch(thisWeekEvents, searchQuery),
+    [searchQuery, thisWeekEvents],
+  );
+
+  const displayedThisMonthEvents = useMemo(
+    () => filterEventsBySearch(thisMonthEvents, searchQuery),
+    [searchQuery, thisMonthEvents],
+  );
+
+  const displayedCategorySections = useMemo(
+    () =>
+      categorySections.map((section) => ({
+        ...section,
+        events: filterEventsBySearch(section.events, searchQuery),
+      })),
+    [categorySections, searchQuery],
+  );
+
+  const hasDiscoveryResults =
+    displayedThisWeekEvents.length > 0 ||
+    displayedQuickRides.length > 0 ||
+    displayedThisMonthEvents.length > 0 ||
+    displayedCategorySections.some((section) => section.events.length > 0);
 
   if (location.status !== "ready" || !location.cityLabel) {
     return (
@@ -352,10 +523,15 @@ export function EventsView() {
               onToggleFavorite={handleToggleFavorite}
             />
           )
+        ) : !hasDiscoveryResults ? (
+          <EventsEmptyFiltersCard
+            isLoading={false}
+            onClearFilters={clearAllFilters}
+          />
         ) : (
           <>
             <EventsSection
-              events={thisWeekEvents}
+              events={displayedThisWeekEvents}
               subtitle="Eventos nos próximos 7 dias"
               title="Esta semana"
               onEventPress={handleEventPress}
@@ -366,14 +542,14 @@ export function EventsView() {
             <QuickRidesSection rides={displayedQuickRides} onRidePress={handleQuickRidePress} />
 
             <EventsSection
-              events={thisMonthEvents}
+              events={displayedThisMonthEvents}
               title="Encontros do mês"
               onEventPress={handleEventPress}
               onSeeMore={() => handleOpenDiscoverList("this_month", "Encontros do mês")}
               onToggleFavorite={handleToggleFavorite}
             />
 
-            {categorySections.map((section) => (
+            {displayedCategorySections.map((section) => (
               <EventsSection
                 key={section.category}
                 events={section.events}
@@ -397,6 +573,16 @@ export function EventsView() {
         onCreateEvent={handleCreateEvent}
         onCreateQuickRide={handleCreateQuickRide}
         onOpenMyQuickRides={handleOpenMyQuickRides}
+      />
+
+      <EventsFiltersSheet
+        categories={categories}
+        draftFilters={draftFilters}
+        visible={filtersSheetOpen}
+        onApply={handleApplyFilters}
+        onChangeDraft={setDraftFilters}
+        onClose={() => setFiltersSheetOpen(false)}
+        onResetDraft={() => setDraftFilters(DEFAULT_EVENTS_FILTERS)}
       />
     </View>
   );

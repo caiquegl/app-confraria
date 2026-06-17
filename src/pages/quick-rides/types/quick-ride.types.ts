@@ -6,6 +6,7 @@ export type QuickRidePlace = {
   longitude: number;
   mainText: string;
   placeId: string;
+  region: string | null;
   role: string;
   secondaryText: string | null;
 };

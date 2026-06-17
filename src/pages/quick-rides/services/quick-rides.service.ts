@@ -27,18 +27,28 @@ export function mapQuickRidePlaceToReference(place: {
 }
 
 export async function fetchActiveQuickRides(params: {
-  city: string | null;
-  region: string | null;
+  city?: string | null;
+  region?: string | null;
+  state?: string | null;
 }): Promise<QuickRide[]> {
-  if (!params.city?.trim()) {
+  const state = params.state?.trim().toUpperCase();
+  const city = params.city?.trim();
+
+  if (!state && !city) {
     return [];
   }
 
   const region =
-    params.region && params.region.trim().length <= 3 ? params.region.trim() : undefined;
+    params.region && params.region.trim().length <= 3
+      ? params.region.trim()
+      : undefined;
 
   const { data } = await api.get<QuickRide[]>(
-    apiRoutes.quickRides.list(params.city, region),
+    apiRoutes.quickRides.list({
+      city: state ? undefined : city,
+      region: state ? undefined : region,
+      state,
+    }),
   );
   return data;
 }
