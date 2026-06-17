@@ -15,16 +15,20 @@ export function NotificationItem({ notification, onPress }: NotificationItemProp
     notification.type === "post_like" || notification.type === "comment_like";
   const isEventUpdated = notification.type === "event_updated";
   const isEventCancelled = notification.type === "event_cancelled";
+  const isQuickRideUpdated = notification.type === "quick_ride_updated";
+  const isQuickRideCancelled = notification.type === "quick_ride_cancelled";
   const isFollowRequest = notification.type === "follow_request";
   const iconName = isLike
     ? "heart"
     : isFollowRequest
       ? "person-add"
-      : isEventCancelled
+      : isEventCancelled || isQuickRideCancelled
         ? "close-circle-outline"
         : isEventUpdated
           ? "calendar-outline"
-          : "chatbubble";
+          : isQuickRideUpdated
+            ? "flame-outline"
+            : "chatbubble";
   const iconBg = isLike ? "#EF4444" : colors.brandPrimary;
 
   return (

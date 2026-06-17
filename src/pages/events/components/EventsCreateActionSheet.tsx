@@ -8,6 +8,7 @@ type EventsCreateActionSheetProps = {
   onClose: () => void;
   onCreateEvent: () => void;
   onCreateQuickRide: () => void;
+  onOpenMyQuickRides: () => void;
   visible: boolean;
 };
 
@@ -15,6 +16,7 @@ export function EventsCreateActionSheet({
   onClose,
   onCreateEvent,
   onCreateQuickRide,
+  onOpenMyQuickRides,
   visible,
 }: EventsCreateActionSheetProps) {
   const insets = useSafeAreaInsets();
@@ -35,6 +37,16 @@ export function EventsCreateActionSheet({
             <View style={styles.optionCopy}>
               <Text style={styles.optionTitle}>Rolê rápido</Text>
               <Text style={styles.optionDescription}>Chamar a galera pra hoje ou amanhã</Text>
+            </View>
+          </Pressable>
+
+          <Pressable accessibilityRole="button" style={styles.myRidesButton} onPress={onOpenMyQuickRides}>
+            <View style={styles.myRidesIconWrap}>
+              <Ionicons color={colors.brandDark} name="list-outline" size={18} />
+            </View>
+            <View style={styles.optionCopy}>
+              <Text style={styles.optionTitle}>Meus rolês rápidos</Text>
+              <Text style={styles.optionDescription}>Rolês que você criou ou está participando</Text>
             </View>
           </Pressable>
 
@@ -98,6 +110,23 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     height: 4,
     marginBottom: 16,
+    width: 40,
+  },
+  myRidesButton: {
+    alignItems: "center",
+    borderRadius: 18,
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  myRidesIconWrap: {
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 999,
+    height: 40,
+    justifyContent: "center",
     width: 40,
   },
   optionCopy: {

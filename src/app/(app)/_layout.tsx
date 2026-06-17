@@ -19,7 +19,7 @@ import { colors } from "@/theme/colors";
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
 export default function AppLayout() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const storedProfile = getStoredCurrentProfile();
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [profileAvatar, setProfileAvatar] = useState<string | null>(storedProfile.avatar);
@@ -29,6 +29,7 @@ export default function AppLayout() {
     pathname.startsWith("/profile/bikes") ||
     pathname.startsWith("/profile/favorites") ||
     pathname.startsWith("/profile/settings") ||
+    pathname.startsWith("/quick-rides/") ||
     (pathname.startsWith("/users/") && pathname.includes("/events"));
 
   useEffect(() => {
@@ -80,7 +81,9 @@ export default function AppLayout() {
     return addNotificationResponseListener();
   }, [authState]);
 
-  if (authState === "loading") return null;
+  if (authState === "loading") {
+    return <View style={styles.container} />;
+  }
 
   if (authState === "unauthenticated") {
     return <Redirect href="/landing" />;

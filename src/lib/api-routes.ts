@@ -53,6 +53,21 @@ export const apiRoutes = {
   places: {
     autocomplete: (input: string) => `/places/autocomplete?input=${encodeURIComponent(input)}`,
   },
+  quickRides: {
+    list: (city?: string, region?: string) => {
+      const params = new URLSearchParams();
+      if (city?.trim()) params.set("city", city.trim());
+      if (region?.trim()) params.set("region", region.trim());
+      const query = params.toString();
+      return `/quick-rides${query ? `?${query}` : ""}`;
+    },
+    create: "/quick-rides",
+    detail: (quickRideId: string) => `/quick-rides/${quickRideId}`,
+    join: (quickRideId: string) => `/quick-rides/${quickRideId}/join`,
+    mine: "/quick-rides/me",
+    update: (quickRideId: string) => `/quick-rides/${quickRideId}`,
+    cancel: (quickRideId: string) => `/quick-rides/${quickRideId}`,
+  },
   stories: {
     create: "/stories",
     delete: (storyId: string) => `/stories/${storyId}`,

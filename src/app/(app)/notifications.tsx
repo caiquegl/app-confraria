@@ -17,6 +17,12 @@ export default function NotificationsScreen() {
         setHighlightPostId(postId);
         router.back();
       }}
+      onOpenQuickRide={(quickRideId) => {
+        router.push({
+          pathname: "/quick-rides/[quickRideId]",
+          params: { quickRideId },
+        });
+      }}
     />
   );
 }

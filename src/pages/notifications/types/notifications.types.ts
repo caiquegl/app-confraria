@@ -5,10 +5,13 @@ export type NotificationType =
   | "comment_like"
   | "follow_request"
   | "event_updated"
-  | "event_cancelled";
+  | "event_cancelled"
+  | "quick_ride_updated"
+  | "quick_ride_cancelled";
 
 export type AppNotification = {
   eventId: string | null;
+  quickRideId: string | null;
   id: string;
   type: NotificationType;
   postId: string | null;
@@ -22,6 +25,7 @@ export type NotificationsViewProps = {
   onBack: () => void;
   onOpenEvent: (eventId: string) => void;
   onOpenPost: (postId: string) => void;
+  onOpenQuickRide: (quickRideId: string) => void;
 };
 
 export type UseNotificationsResult = {

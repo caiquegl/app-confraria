@@ -3,7 +3,7 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import type * as ExpoNotifications from "expo-notifications";
 import { router } from "expo-router";
-import { Platform } from "react-native";
+import { InteractionManager, Platform } from "react-native";
 
 import { api } from "./api";
 import { apiRoutes } from "./api-routes";
@@ -135,15 +135,23 @@ export async function unregisterPushNotificationsAsync(): Promise<void> {
   }
 }
 
+function navigateFromNotification(action: () => void): void {
+  InteractionManager.runAfterInteractions(() => {
+    action();
+  });
+}
+
 function handleNotificationResponse(response: NotificationResponse): void {
   const data = response.notification.request.content.data ?? {};
   const type = getStringDataValue(data.type);
   const conversationId = getStringDataValue(data.conversationId);
 
   if (type === "chat_message" && conversationId) {
-    router.push({
-      params: { conversationId },
-      pathname: "/messages/[conversationId]",
+    navigateFromNotification(() => {
+      router.push({
+        params: { conversationId },
+        pathname: "/messages/[conversationId]",
+      });
     });
     return;
   }
@@ -154,9 +162,11 @@ function handleNotificationResponse(response: NotificationResponse): void {
 
   const eventId = getStringDataValue(data.eventId) ?? getStringDataValue(data.sharedEventId);
   if (eventId) {
-    router.push({
-      params: { eventId },
-      pathname: "/event/[eventId]",
+    navigateFromNotification(() => {
+      router.push({
+        params: { eventId },
+        pathname: "/event/[eventId]",
+      });
     });
     return;
   }
@@ -164,7 +174,9 @@ function handleNotificationResponse(response: NotificationResponse): void {
   const postId = getStringDataValue(data.postId) ?? getStringDataValue(data.sharedPostId);
   if (postId) {
     setHighlightPostId(postId);
-    router.push("/feed");
+    navigateFromNotification(() => {
+      router.push("/feed");
+    });
   }
 }
 

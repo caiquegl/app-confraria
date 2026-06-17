@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -11,6 +11,9 @@ import {
 } from "@/lib/current-profile-store";
 import { fetchEventCategories } from "@/pages/event-create/services/event-create.service";
 import { useNotificationBadge } from "@/pages/notifications";
+import { fetchActiveQuickRides } from "@/pages/quick-rides/services/quick-rides.service";
+import type { QuickRide } from "@/pages/quick-rides/types/quick-ride.types";
+import { isQuickRideDiscoverable } from "@/pages/quick-rides/types/quick-ride.types";
 import { colors } from "@/theme/colors";
 
 import { EventsCategoryPills } from "../components/EventsCategoryPills";
@@ -20,6 +23,7 @@ import { EventsFilterChips } from "../components/EventsFilterChips";
 import { EventsHeaderSection } from "../components/EventsHeaderSection";
 import { EventsLocationGate } from "../components/EventsLocationGate";
 import { EventsTopBar } from "../components/EventsTopBar";
+import { QuickRidesSection } from "../components/QuickRidesSection";
 import { useEventsLocation } from "../hooks/useEventsLocation";
 import type { EventsFilterChip } from "../types/events.types";
 
@@ -36,6 +40,36 @@ export function EventsView() {
   const [userAvatar, setUserAvatar] = useState<string | null>(storedProfile.avatar);
   const [userName, setUserName] = useState<string>(storedProfile.name ?? "Perfil");
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [quickRides, setQuickRides] = useState<QuickRide[]>([]);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const loadQuickRides = useCallback(() => {
+    if (location.status !== "ready" || !location.city) {
+      return;
+    }
+
+    void fetchActiveQuickRides({
+      city: location.city,
+      region: location.region,
+    })
+      .then((rides) => {
+        if (isMountedRef.current) {
+          setQuickRides(rides);
+        }
+      })
+      .catch(() => {
+        if (isMountedRef.current) {
+          setQuickRides([]);
+        }
+      });
+  }, [location.city, location.region, location.status]);
 
   useEffect(() => {
     return subscribeStoredCurrentProfile((profile) => {
@@ -49,6 +83,20 @@ export function EventsView() {
       .then((items) => setCategories(items.map((item) => item.name)))
       .catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    if (location.status !== "ready" || !location.city) {
+      return;
+    }
+
+    loadQuickRides();
+  }, [loadQuickRides, location.city, location.status]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadQuickRides();
+    }, [loadQuickRides]),
+  );
 
   const handleOpenFilters = useCallback(() => {
     Toast.show({
@@ -78,11 +126,25 @@ export function EventsView() {
 
   const handleCreateQuickRide = useCallback(() => {
     setCreateSheetOpen(false);
-    Toast.show({
-      type: "info",
-      text1: "Rolê rápido em breve",
+    router.push("/quick-rides/create");
+  }, []);
+
+  const handleOpenMyQuickRides = useCallback(() => {
+    setCreateSheetOpen(false);
+    router.push("/quick-rides/mine");
+  }, []);
+
+  const handleQuickRidePress = useCallback((ride: QuickRide) => {
+    router.push({
+      pathname: "/quick-rides/[quickRideId]",
+      params: { quickRideId: ride.id },
     });
   }, []);
+
+  const displayedQuickRides =
+    location.status === "ready" && location.city
+      ? quickRides.filter((ride) => isQuickRideDiscoverable(ride))
+      : [];
 
   if (location.status !== "ready" || !location.cityLabel) {
     return (
@@ -126,6 +188,8 @@ export function EventsView() {
           onChange={setSelectedCategory}
         />
 
+        <QuickRidesSection rides={displayedQuickRides} onRidePress={handleQuickRidePress} />
+
         <View style={styles.placeholder}>
           <Text style={styles.placeholderText}>Listagem de eventos em breve</Text>
         </View>
@@ -138,6 +202,7 @@ export function EventsView() {
         onClose={() => setCreateSheetOpen(false)}
         onCreateEvent={handleCreateEvent}
         onCreateQuickRide={handleCreateQuickRide}
+        onOpenMyQuickRides={handleOpenMyQuickRides}
       />
     </View>
   );

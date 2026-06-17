@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
+import { useCallback, useRef } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -50,6 +51,8 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const NAVIGATION_COOLDOWN_MS = 400;
+
 type BottomNavProps = {
   userAvatar?: string | null;
   userName?: string | null;
@@ -58,9 +61,29 @@ type BottomNavProps = {
 export function BottomNav({ userAvatar, userName }: BottomNavProps) {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const isNavigatingRef = useRef(false);
 
-  const isActive = (item: NavItem) =>
-    item.matchPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isActive = useCallback(
+    (item: NavItem) =>
+      item.matchPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`)),
+    [pathname],
+  );
+
+  const handlePress = useCallback(
+    (item: NavItem) => {
+      if (isActive(item) || isNavigatingRef.current) {
+        return;
+      }
+
+      isNavigatingRef.current = true;
+      router.replace(item.href);
+
+      setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, NAVIGATION_COOLDOWN_MS);
+    },
+    [isActive],
+  );
 
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
@@ -70,9 +93,10 @@ export function BottomNav({ userAvatar, userName }: BottomNavProps) {
         return (
           <TouchableOpacity
             key={item.href}
-            activeOpacity={0.7}
+            activeOpacity={active ? 1 : 0.7}
+            disabled={active}
             style={styles.item}
-            onPress={() => router.replace(item.href)}
+            onPress={() => handlePress(item)}
           >
             <View style={[styles.indicator, active && styles.indicatorActive]} />
 
