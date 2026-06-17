@@ -46,6 +46,8 @@
       "usesCleartextTraffic": true,
       "package": "com.caiquegl22.appconfraria",
       "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS"
@@ -90,7 +92,13 @@
         }
       ],
       "expo-notifications",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Confraria usa sua localização para mostrar eventos perto de você."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
