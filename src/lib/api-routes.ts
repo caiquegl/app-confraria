@@ -23,6 +23,12 @@ export const apiRoutes = {
     create: "/events",
     delete: (eventId: string) => `/events/${eventId}`,
     detail: (eventId: string) => `/events/${eventId}`,
+    discover: (scope: string, category?: string) => {
+      const params = new URLSearchParams({ scope });
+      if (category?.trim()) params.set("category", category.trim());
+      return `/events/discover?${params.toString()}`;
+    },
+    discoverSections: "/events/discover/sections",
     favorite: (eventId: string) => `/events/${eventId}/favorite`,
     favorites: "/events/favorites",
     join: (eventId: string) => `/events/${eventId}/join`,
