@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -251,6 +251,8 @@ function MessageBubble({
               <SharedEventCard message={message} />
             ) : message.sharedPost ? (
               <SharedPostCard message={message} />
+            ) : message.sharedRoute ? (
+              <SharedRouteCard message={message} />
             ) : (
               <Text style={[styles.messageText, message.isMine && styles.messageTextMine]}>
                 {message.text}
@@ -389,6 +391,7 @@ function getMessagePreviewText(message: ChatMessage) {
   if (message.text.trim()) return message.text.trim();
   if (message.sharedEvent) return message.sharedEvent.title || "Evento compartilhado";
   if (message.sharedPost) return message.sharedPost.caption || "Post compartilhado";
+  if (message.sharedRoute) return message.sharedRoute.title || "Rota compartilhada";
   return "Mensagem";
 }
 
@@ -424,6 +427,32 @@ function SharedEventCard({ message }: { message: ChatMessage }) {
         </Text>
         <Text numberOfLines={2} style={styles.sharedCaption}>
           {sharedEvent.title || message.text}
+        </Text>
+      </View>
+      <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
+    </Pressable>
+  );
+}
+
+function SharedRouteCard({ message }: { message: ChatMessage }) {
+  const sharedRoute = message.sharedRoute;
+  if (!sharedRoute) return null;
+
+  const openRoute = () => {
+    router.push(`/routes/${sharedRoute.routeId}` as Href);
+  };
+
+  return (
+    <Pressable style={styles.sharedCard} onPress={openRoute}>
+      <View style={styles.sharedImageFallback}>
+        <Ionicons color="#9CA3AF" name="map-outline" size={20} />
+      </View>
+      <View style={styles.sharedInfo}>
+        <Text numberOfLines={1} style={styles.sharedLabel}>
+          Rota de {sharedRoute.creatorName}
+        </Text>
+        <Text numberOfLines={2} style={styles.sharedCaption}>
+          {sharedRoute.originLabel} → {sharedRoute.destinationLabel}
         </Text>
       </View>
       <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />

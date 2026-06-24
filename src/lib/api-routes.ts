@@ -94,6 +94,20 @@ export const apiRoutes = {
   },
   places: {
     autocomplete: (input: string) => `/places/autocomplete?input=${encodeURIComponent(input)}`,
+    details: (placeId: string) => `/places/details?placeId=${encodeURIComponent(placeId)}`,
+    directions: "/places/directions",
+    estimateFuel: "/places/estimate-fuel",
+  },
+  routes: {
+    create: "/routes",
+    mine: "/routes/me",
+    detail: (routeId: string) => `/routes/${routeId}`,
+    update: (routeId: string) => `/routes/${routeId}`,
+    updateStatus: (routeId: string) => `/routes/${routeId}/status`,
+    delete: (routeId: string) => `/routes/${routeId}`,
+    addStop: (dayId: string) => `/routes/days/${dayId}/stops`,
+    removeStop: (dayId: string, placeId: string) =>
+      `/routes/days/${dayId}/stops/${placeId}`,
   },
   quickRides: {
     list: (options?: { city?: string; region?: string; state?: string }) => {
