@@ -363,7 +363,7 @@ export function FeedComments({
         />
       ))}
 
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, text.trim() && styles.inputRowFocused]}>
         <TextInput
           value={text}
           onChangeText={setText}
@@ -371,20 +371,19 @@ export function FeedComments({
           placeholderTextColor="#9CA3AF"
           style={styles.input}
           returnKeyType="send"
+          editable={!isSubmitting}
           onSubmitEditing={() => void handleSubmit()}
         />
-        <Pressable
-          style={[styles.sendButton, (!text.trim() || isSubmitting) && styles.sendButtonDisabled]}
-          disabled={!text.trim() || isSubmitting}
-          hitSlop={8}
-          onPress={() => void handleSubmit()}
-        >
-          <Ionicons
-            name="checkmark-circle"
-            size={22}
-            color={text.trim() && !isSubmitting ? colors.brandGreen : "#D1D5DB"}
-          />
-        </Pressable>
+        {text.trim() ? (
+          <Pressable
+            style={styles.sendButtonInside}
+            disabled={isSubmitting}
+            hitSlop={8}
+            onPress={() => void handleSubmit()}
+          >
+            <Ionicons name="arrow-up" size={16} color="#FFFFFF" />
+          </Pressable>
+        ) : null}
       </View>
 
       <CommentActionSheet
@@ -474,20 +473,25 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   input: {
+    backgroundColor: "transparent",
+    color: colors.brandDark,
+    flex: 1,
+    fontSize: 13,
+    paddingVertical: 8,
+    paddingRight: 4,
+  },
+  inputRow: {
+    alignItems: "center",
     backgroundColor: "#F9FAFB",
     borderColor: "#E5E7EB",
     borderRadius: 999,
     borderWidth: 1,
-    color: colors.brandDark,
-    flex: 1,
-    fontSize: 13,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  inputRow: {
-    alignItems: "center",
     flexDirection: "row",
-    gap: 8,
+    paddingLeft: 12,
+    paddingRight: 6,
+  },
+  inputRowFocused: {
+    borderColor: colors.brandGreen,
   },
   likeButton: {
     alignItems: "center",
@@ -545,10 +549,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
   },
-  sendButton: {
-    padding: 4,
-  },
-  sendButtonDisabled: {
-    opacity: 0.6,
+  sendButtonInside: {
+    alignItems: "center",
+    backgroundColor: colors.brandGreen,
+    borderRadius: 999,
+    height: 28,
+    justifyContent: "center",
+    width: 28,
   },
 });

@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { getApiBaseUrl } from "@/lib/api-environment";
 import { apiRoutes } from "@/lib/api-routes";
 import { getToken } from "@/lib/auth";
+import { fetchPlaceAutocomplete } from "@/lib/places";
 
 import type {
   EventCategory,
@@ -18,10 +19,7 @@ export async function fetchEventCategories(): Promise<EventCategory[]> {
   return data;
 }
 
-export async function fetchPlaceAutocomplete(input: string): Promise<EventPlaceReference[]> {
-  const { data } = await api.get<EventPlaceReference[]>(apiRoutes.places.autocomplete(input));
-  return data;
-}
+export { fetchPlaceAutocomplete };
 
 export async function createEvent(payload: EventCreatePayload): Promise<EventCreateResponse> {
   const formData = createEventFormData(payload);

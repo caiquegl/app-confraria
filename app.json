@@ -43,6 +43,7 @@
         }
       ],
       "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize",
       "usesCleartextTraffic": true,
       "package": "com.caiquegl22.appconfraria",
       "permissions": [

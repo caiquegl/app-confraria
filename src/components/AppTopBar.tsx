@@ -4,29 +4,31 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
 
-type EventsTopBarProps = {
+type AppTopBarProps = {
   hasUnreadNotifications?: boolean;
   locationLabel: string;
   onOpenNotifications: () => void;
   onOpenProfile: () => void;
   onSearchChange: (value: string) => void;
+  searchPlaceholder: string;
   searchQuery: string;
   topInset: number;
   userAvatar: string | null;
   userName: string;
 };
 
-export function EventsTopBar({
+export function AppTopBar({
   hasUnreadNotifications = false,
   locationLabel,
   onOpenNotifications,
   onOpenProfile,
   onSearchChange,
+  searchPlaceholder,
   searchQuery,
   topInset,
   userAvatar,
   userName,
-}: EventsTopBarProps) {
+}: AppTopBarProps) {
   return (
     <View style={[styles.container, { paddingTop: topInset }]}>
       <View style={styles.topRow}>
@@ -52,7 +54,7 @@ export function EventsTopBar({
         <View style={styles.searchWrap}>
           <Ionicons color="#9CA3AF" name="search" size={20} style={styles.searchIcon} />
           <TextInput
-            placeholder="Buscar em eventos"
+            placeholder={searchPlaceholder}
             placeholderTextColor="#9CA3AF"
             style={styles.searchInput}
             value={searchQuery}

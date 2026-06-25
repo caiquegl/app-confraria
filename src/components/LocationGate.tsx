@@ -3,25 +3,45 @@ import { ActivityIndicator, Linking, StyleSheet, Text, View } from "react-native
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
+import type { GeolocationStatus } from "@/lib/location";
 import { colors } from "@/theme/colors";
 
-import type { EventsLocationStatus } from "../types/events.types";
+type LocationGatePurpose = "events" | "routes";
 
-type EventsLocationGateProps = {
+type LocationGateProps = {
   canAskAgain: boolean;
   onRequestPermission: () => void;
-  status: EventsLocationStatus;
+  purpose?: LocationGatePurpose;
+  status: GeolocationStatus;
 };
 
-export function EventsLocationGate({
+const PURPOSE_COPY: Record<
+  LocationGatePurpose,
+  { deniedDescription: string; loadingDescription: string }
+> = {
+  events: {
+    deniedDescription:
+      "Para ver eventos perto de você, o Confraria precisa acessar sua localização enquanto usa o app.",
+    loadingDescription: "Estamos identificando sua cidade para mostrar eventos na região.",
+  },
+  routes: {
+    deniedDescription:
+      "Para ver rotas perto de você, o Confraria precisa acessar sua localização enquanto usa o app.",
+    loadingDescription: "Estamos identificando sua cidade para mostrar rotas na região.",
+  },
+};
+
+export function LocationGate({
   canAskAgain,
   onRequestPermission,
+  purpose = "events",
   status,
-}: EventsLocationGateProps) {
+}: LocationGateProps) {
   const insets = useSafeAreaInsets();
   const isLoading = status === "idle" || status === "loading";
   const isDenied = status === "denied";
   const isError = status === "error";
+  const copy = PURPOSE_COPY[purpose];
 
   const title = isDenied
     ? "Localização necessária"
@@ -30,10 +50,10 @@ export function EventsLocationGate({
       : "Carregando localização";
 
   const description = isDenied
-    ? "Para ver eventos perto de você, o Confraria precisa acessar sua localização enquanto usa o app."
+    ? copy.deniedDescription
     : isError
       ? "Verifique se o GPS está ativo e tente novamente."
-      : "Estamos identificando sua cidade para mostrar eventos na região.";
+      : copy.loadingDescription;
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>

@@ -4,11 +4,14 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+import { AppTopBar } from "@/components/AppTopBar";
+import { LocationGate } from "@/components/LocationGate";
 import { getCurrentUserId } from "@/lib/auth";
 import {
   getStoredCurrentProfile,
   subscribeStoredCurrentProfile,
 } from "@/lib/current-profile-store";
+import { useGeolocation } from "@/lib/location";
 import { fetchEventCategories } from "@/pages/event-create/services/event-create.service";
 import { toggleFavoriteEvent } from "@/pages/favorites/services/favorites.service";
 import { useNotificationBadge } from "@/pages/notifications";
@@ -25,11 +28,8 @@ import { EventsEmptyFiltersCard } from "../components/EventsEmptyFiltersCard";
 import { EventsFilterChips } from "../components/EventsFilterChips";
 import { EventsFiltersSheet } from "../components/EventsFiltersSheet";
 import { EventsHeaderSection } from "../components/EventsHeaderSection";
-import { EventsLocationGate } from "../components/EventsLocationGate";
 import { EventsSection } from "../components/EventsSection";
-import { EventsTopBar } from "../components/EventsTopBar";
 import { QuickRidesSection } from "../components/QuickRidesSection";
-import { useEventsLocation } from "../hooks/useEventsLocation";
 import {
   fetchEventsDiscoverList,
   fetchEventsDiscoverSections,
@@ -66,7 +66,7 @@ function filterEventsBySearch(events: PublicProfileEvent[], searchQuery: string)
 export function EventsView() {
   const insets = useSafeAreaInsets();
   const { hasUnread } = useNotificationBadge();
-  const { location, requestPermission } = useEventsLocation();
+  const { location, requestPermission } = useGeolocation();
   const storedProfile = getStoredCurrentProfile();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -466,8 +466,9 @@ export function EventsView() {
 
   if (location.status !== "ready" || !location.cityLabel) {
     return (
-      <EventsLocationGate
+      <LocationGate
         canAskAgain={location.canAskAgain}
+        purpose="events"
         status={location.status}
         onRequestPermission={() => void requestPermission()}
       />
@@ -481,9 +482,10 @@ export function EventsView() {
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
       >
-        <EventsTopBar
+        <AppTopBar
           hasUnreadNotifications={hasUnread}
           locationLabel={location.cityLabel}
+          searchPlaceholder="Buscar em eventos"
           searchQuery={searchQuery}
           topInset={insets.top}
           userAvatar={userAvatar}

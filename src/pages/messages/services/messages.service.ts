@@ -39,6 +39,7 @@ export async function sendChatMessage(params: {
   replyToMessageId?: string;
   sharedEventId?: string;
   sharedPostId?: string;
+  sharedRouteId?: string;
   text: string;
 }): Promise<{ message: ChatMessage; senderConversation: ChatConversation }> {
   const { data } = await api.post<{

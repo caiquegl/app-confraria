@@ -19,11 +19,20 @@ export type ChatSharedEvent = {
   title: string;
 };
 
+export type ChatSharedRoute = {
+  routeId: string;
+  title: string;
+  originLabel: string;
+  destinationLabel: string;
+  distanceMeters: number | null;
+  creatorName: string;
+};
+
 export type ChatReplyMessage = {
   id: string;
   senderId: string;
   senderName: string;
-  sharedType: "event" | "post" | null;
+  sharedType: "event" | "post" | "route" | null;
   text: string;
 };
 
@@ -43,6 +52,7 @@ export type ChatMessage = {
   isMine: boolean;
   sharedPost: ChatSharedPost | null;
   sharedEvent: ChatSharedEvent | null;
+  sharedRoute: ChatSharedRoute | null;
   replyToMessage: ChatReplyMessage | null;
   reactions: ChatReactionSummary[];
   myReaction: string | null;

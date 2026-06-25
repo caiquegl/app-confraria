@@ -9,6 +9,7 @@ import {
   setStoredCurrentProfile,
   subscribeStoredCurrentProfile,
 } from "@/lib/current-profile-store";
+import { prefetchGeolocation } from "@/lib/location";
 import {
   addNotificationResponseListener,
   registerForPushNotificationsAsync,
@@ -31,7 +32,14 @@ export default function AppLayout() {
     pathname.startsWith("/profile/favorites") ||
     pathname.startsWith("/profile/settings") ||
     pathname.startsWith("/quick-rides/") ||
+    pathname.startsWith("/routes/create") ||
     (pathname.startsWith("/users/") && pathname.includes("/events"));
+
+  useEffect(() => {
+    if (authState !== "authenticated") return;
+
+    void prefetchGeolocation();
+  }, [authState]);
 
   useEffect(() => {
     return subscribeStoredCurrentProfile((profile) => {
@@ -113,5 +121,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    overflow: "visible",
   },
 });
