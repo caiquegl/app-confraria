@@ -11,6 +11,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
+import { getCurrentUserId } from "@/lib/auth";
+import {
+  ensureRouteBackgroundTracking,
+  stopRouteBackgroundTracking,
+} from "@/lib/route-background-tracking";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import { colors } from "@/theme/colors";
 
@@ -40,6 +45,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   const [showStopConfirm, setShowStopConfirm] = useState(false);
   const [tripDurationSeconds, setTripDurationSeconds] = useState(0);
   const [tripDistanceMeters, setTripDistanceMeters] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const navigation = useRouteNavigation({ routeId });
   const liveLocations = useRouteLiveLocations({
@@ -49,8 +55,38 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     routeId,
   });
 
+  const route = navigation.state.route;
+  const isOwner =
+    route?.isOwner === true ||
+    (currentUserId != null && route?.createdById === currentUserId);
+
+  const navigateToDetail = useCallback(() => {
+    setActiveNavigationRouteId(null);
+    setShowStopConfirm(false);
+    router.replace(`/routes/${routeId}` as Href);
+  }, [routeId]);
+
+  useEffect(() => {
+    void getCurrentUserId().then(setCurrentUserId);
+  }, []);
+
+  useEffect(() => {
+    if (!route || route.status !== "in_progress") return;
+
+    void ensureRouteBackgroundTracking(route.id, route.title).catch((error) => {
+      Toast.show({
+        text1: "Rastreamento em segundo plano",
+        text2: getApiErrorMessage(
+          error,
+          "Permita localização em segundo plano para continuar rastreado ao sair do app.",
+        ),
+        type: "error",
+      });
+    });
+  }, [route?.id, route?.status, route?.title]);
+
   const finishRoute = useCallback(async () => {
-    if (isFinishing) return;
+    if (isFinishing || !isOwner) return;
 
     setIsFinishing(true);
 
@@ -62,6 +98,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
       if (navigation.state.route?.status !== "finished") {
         await updateRouteStatus(routeId, "finished");
       }
+      await stopRouteBackgroundTracking();
       setActiveNavigationRouteId(null);
       setShowStopConfirm(false);
       setPhase("completed");
@@ -76,14 +113,20 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     }
   }, [
     isFinishing,
+    isOwner,
     navigation.state.route,
     navigation.state.traveledDistanceMeters,
     routeId,
   ]);
 
   const openStopConfirm = useCallback(() => {
+    if (!isOwner) {
+      navigateToDetail();
+      return;
+    }
+
     setShowStopConfirm(true);
-  }, []);
+  }, [isOwner, navigateToDetail]);
 
   const closeStopConfirm = useCallback(() => {
     if (isFinishing) return;
@@ -95,9 +138,9 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   }, [finishRoute]);
 
   useEffect(() => {
-    if (!navigation.state.isArrived || phase !== "navigating") return;
+    if (!navigation.state.isArrived || phase !== "navigating" || !isOwner) return;
     void finishRoute();
-  }, [finishRoute, navigation.state.isArrived, phase]);
+  }, [finishRoute, isOwner, navigation.state.isArrived, phase]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -179,23 +222,21 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
       </View>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <RouteNavigationStatsCard state={navigation.state} onStop={openStopConfirm} />
+        <RouteNavigationStatsCard canFinish={isOwner} state={navigation.state} onStop={openStopConfirm} />
       </View>
 
-      <RouteNavigationStopConfirmSheet
-        destinationLabel={navigation.state.route?.destinationLabel ?? "Destino"}
-        isFinishing={isFinishing}
-        routeTitle={navigation.state.route?.title ?? "Passeio em andamento"}
-        traveledDistanceMeters={navigation.state.traveledDistanceMeters}
-        tripDurationSeconds={
-          navigation.state.route
-            ? getRouteTripDurationSeconds(navigation.state.route)
-            : 0
-        }
-        visible={showStopConfirm}
-        onClose={closeStopConfirm}
-        onConfirm={handleConfirmStop}
-      />
+      {isOwner ? (
+        <RouteNavigationStopConfirmSheet
+          destinationLabel={route?.destinationLabel ?? "Destino"}
+          isFinishing={isFinishing}
+          routeTitle={route?.title ?? "Passeio em andamento"}
+          traveledDistanceMeters={navigation.state.traveledDistanceMeters}
+          tripDurationSeconds={route ? getRouteTripDurationSeconds(route) : 0}
+          visible={showStopConfirm}
+          onClose={closeStopConfirm}
+          onConfirm={handleConfirmStop}
+        />
+      ) : null}
     </View>
   );
 }

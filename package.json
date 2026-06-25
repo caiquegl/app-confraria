@@ -26,6 +26,7 @@
     "expo-status-bar": "~56.0.4",
     "expo-symbols": "~56.0.5",
     "expo-system-ui": "~56.0.5",
+    "expo-task-manager": "^56.0.19",
     "expo-updates": "~56.0.17",
     "expo-video": "~56.1.2",
     "expo-video-thumbnails": "~56.0.3",
@@ -63,8 +64,8 @@
     "build:android": "eas build --platform android --profile production",
     "build:ios": "eas build --platform ios --profile production",
     "build:preview": "eas build --profile preview",
-    "update:production": "eas update --channel production --message",
-    "update:preview": "eas update --channel preview --message"
+    "update:production": "eas update --channel production --platform all --message",
+    "update:preview": "eas update --channel preview --platform all --message"
   },
   "private": true
 }

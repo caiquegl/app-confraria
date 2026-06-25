@@ -79,6 +79,13 @@ export async function respondToRouteInvitation(
   return data;
 }
 
+export async function updateRouteLocation(
+  routeId: string,
+  payload: { heading?: number; latitude: number; longitude: number },
+): Promise<void> {
+  await api.patch(apiRoutes.routes.updateLocation(routeId), payload);
+}
+
 export async function removeRouteStop(
   dayId: string,
   placeId: string,

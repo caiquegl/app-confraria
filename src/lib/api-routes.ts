@@ -109,6 +109,7 @@ export const apiRoutes = {
     removeStop: (dayId: string, placeId: string) =>
       `/routes/days/${dayId}/stops/${placeId}`,
     respondInvitation: (routeId: string) => `/routes/${routeId}/invitations/respond`,
+    updateLocation: (routeId: string) => `/routes/${routeId}/location`,
   },
   quickRides: {
     list: (options?: { city?: string; region?: string; state?: string }) => {

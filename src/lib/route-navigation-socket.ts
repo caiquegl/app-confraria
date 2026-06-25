@@ -27,6 +27,7 @@ type RouteErrorPayload = {
 type Listener<T> = (payload: T) => void;
 
 let socket: Socket | null = null;
+let connectPromise: Promise<Socket | null> | null = null;
 let unsubscribeEnvironment: (() => void) | null = null;
 let activeRouteId: string | null = null;
 
@@ -34,26 +35,13 @@ const snapshotListeners = new Set<Listener<RouteLocationsSnapshotPayload>>();
 const locationListeners = new Set<Listener<RouteLocationUpdatePayload>>();
 const leftListeners = new Set<Listener<{ userId: string }>>();
 const errorListeners = new Set<Listener<RouteErrorPayload>>();
+const finishedListeners = new Set<Listener<{ routeId: string }>>();
 
 function notify<T>(listeners: Set<Listener<T>>, payload: T) {
   listeners.forEach((listener) => listener(payload));
 }
 
-async function createSocket() {
-  const baseUrl = await getApiBaseUrl();
-  const token = await getToken();
-
-  if (!token) {
-    return null;
-  }
-
-  const nextSocket = io(`${baseUrl}/route-navigation`, {
-    auth: { token },
-    autoConnect: true,
-    reconnection: true,
-    transports: ["websocket"],
-  });
-
+function attachSocketListeners(nextSocket: Socket) {
   nextSocket.on("route:locations:snapshot", (payload: RouteLocationsSnapshotPayload) => {
     notify(snapshotListeners, payload);
   });
@@ -70,36 +58,122 @@ async function createSocket() {
     notify(errorListeners, payload);
   });
 
+  nextSocket.on("route:finished", (payload: { routeId: string }) => {
+    notify(finishedListeners, payload);
+  });
+
   nextSocket.on("connect", () => {
     if (activeRouteId) {
       nextSocket.emit("route:join", { routeId: activeRouteId });
     }
   });
+}
 
+function waitForSocketConnection(target: Socket, timeoutMs = 12_000): Promise<void> {
+  if (target.connected) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("Tempo esgotado ao conectar na navegação em tempo real"));
+    }, timeoutMs);
+
+    const onConnect = () => {
+      cleanup();
+      resolve();
+    };
+
+    const onConnectError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      target.off("connect", onConnect);
+      target.off("connect_error", onConnectError);
+    };
+
+    target.on("connect", onConnect);
+    target.on("connect_error", onConnectError);
+
+    if (!target.active) {
+      target.connect();
+    }
+  });
+}
+
+async function createSocket(): Promise<Socket | null> {
+  const baseUrl = await getApiBaseUrl();
+  const token = await getToken();
+
+  if (!token) {
+    notify(errorListeners, { message: "Faça login para compartilhar sua localização na rota" });
+    return null;
+  }
+
+  const nextSocket = io(`${baseUrl}/route-navigation`, {
+    auth: { token },
+    autoConnect: true,
+    reconnection: true,
+    transports: ["websocket"],
+  });
+
+  attachSocketListeners(nextSocket);
   return nextSocket;
 }
 
-export async function connectRouteNavigationSocket(): Promise<void> {
+export async function connectRouteNavigationSocket(): Promise<Socket | null> {
   if (socket?.connected) {
-    return;
+    return socket;
   }
 
-  if (!socket) {
-    socket = await createSocket();
-    unsubscribeEnvironment = subscribeApiEnvironment(async () => {
-      await disconnectRouteNavigationSocket();
-      socket = await createSocket();
-      if (activeRouteId && socket) {
-        socket.emit("route:join", { routeId: activeRouteId });
-      }
-    });
+  if (connectPromise) {
+    return connectPromise;
   }
+
+  connectPromise = (async () => {
+    try {
+      if (!socket) {
+        socket = await createSocket();
+        if (!socket) {
+          return null;
+        }
+
+        unsubscribeEnvironment = subscribeApiEnvironment(async () => {
+          await disconnectRouteNavigationSocket();
+          await connectRouteNavigationSocket();
+          if (activeRouteId) {
+            await joinRouteNavigationRoom(activeRouteId);
+          }
+        });
+      }
+
+      await waitForSocketConnection(socket);
+      return socket;
+    } catch (error) {
+      notify(errorListeners, {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível conectar na navegação em tempo real",
+      });
+      return null;
+    } finally {
+      connectPromise = null;
+    }
+  })();
+
+  return connectPromise;
 }
 
 export async function disconnectRouteNavigationSocket(): Promise<void> {
   unsubscribeEnvironment?.();
   unsubscribeEnvironment = null;
   activeRouteId = null;
+  connectPromise = null;
 
   if (socket) {
     socket.removeAllListeners();
@@ -108,18 +182,20 @@ export async function disconnectRouteNavigationSocket(): Promise<void> {
   }
 }
 
-export function joinRouteNavigationRoom(routeId: string) {
+export async function joinRouteNavigationRoom(routeId: string): Promise<void> {
   activeRouteId = routeId;
-  socket?.emit("route:join", { routeId });
+  const activeSocket = await connectRouteNavigationSocket();
+  activeSocket?.emit("route:join", { routeId });
 }
 
-export function emitRouteNavigationLocation(params: {
+export async function emitRouteNavigationLocation(params: {
   heading: number;
   latitude: number;
   longitude: number;
   routeId: string;
-}) {
-  socket?.emit("route:location", params);
+}): Promise<void> {
+  const activeSocket = await connectRouteNavigationSocket();
+  activeSocket?.emit("route:location", params);
 }
 
 export function subscribeRouteLocationsSnapshot(listener: Listener<RouteLocationsSnapshotPayload>) {
@@ -140,4 +216,9 @@ export function subscribeRouteParticipantLeft(listener: Listener<{ userId: strin
 export function subscribeRouteNavigationError(listener: Listener<RouteErrorPayload>) {
   errorListeners.add(listener);
   return () => errorListeners.delete(listener);
+}
+
+export function subscribeRouteFinished(listener: Listener<{ routeId: string }>) {
+  finishedListeners.add(listener);
+  return () => finishedListeners.delete(listener);
 }

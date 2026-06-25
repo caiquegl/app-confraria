@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, type Href } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 import { AppTopBar } from "@/components/AppTopBar";
 import { Button } from "@/components/Button";
@@ -19,6 +20,9 @@ import {
   getStoredCurrentProfile,
   subscribeStoredCurrentProfile,
 } from "@/lib/current-profile-store";
+import { ensureRouteBackgroundTracking } from "@/lib/route-background-tracking";
+import { routeTrackingLog } from "@/lib/route-tracking-logger";
+import { getApiErrorMessage } from "@/lib/password-reset";
 import { useGeolocation } from "@/lib/location";
 import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
@@ -55,7 +59,10 @@ export function RoutesView() {
   const storedProfile = getStoredCurrentProfile();
   const { error, isLoading, routes } = useMyRoutes();
 
-  const [activeTab, setActiveTab] = useState<RoutesTab>("mine");
+  const [activeTab, setActiveTab] = useState<RoutesTab>(() =>
+    tab === "mine" || tab === "all" ? tab : "mine",
+  );
+  const [prevTabParam, setPrevTabParam] = useState(tab);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<SavedRouteFilters>(DEFAULT_ROUTE_FILTERS);
   const [draftFilters, setDraftFilters] = useState<SavedRouteFilters>(DEFAULT_ROUTE_FILTERS);
@@ -63,11 +70,12 @@ export function RoutesView() {
   const [userAvatar, setUserAvatar] = useState<string | null>(storedProfile.avatar);
   const [userName, setUserName] = useState<string>(storedProfile.name ?? "Perfil");
 
-  useEffect(() => {
+  if (tab !== prevTabParam) {
+    setPrevTabParam(tab);
     if (tab === "mine" || tab === "all") {
       setActiveTab(tab);
     }
-  }, [tab]);
+  }
 
   useEffect(() => {
     return subscribeStoredCurrentProfile((profile) => {
@@ -90,6 +98,36 @@ export function RoutesView() {
   const ongoingRoute = useMemo(() => routes.find(isRouteOngoing) ?? null, [routes]);
   const bikeOptions = useMemo(() => getUniqueBikeNames(routes), [routes]);
 
+  useEffect(() => {
+    if (!ongoingRoute) return;
+
+    routeTrackingLog.info("RoutesView:auto-start-tracking", {
+      routeId: ongoingRoute.id,
+      title: ongoingRoute.title,
+    });
+
+    void ensureRouteBackgroundTracking(ongoingRoute.id, ongoingRoute.title)
+      .then((result) => {
+        routeTrackingLog.info("RoutesView:auto-start-tracking:done", {
+          routeId: ongoingRoute.id,
+          wasAlreadyActive: result.wasAlreadyActive,
+        });
+      })
+      .catch((error) => {
+        routeTrackingLog.error("RoutesView:auto-start-tracking:failed", error, {
+          routeId: ongoingRoute.id,
+        });
+        Toast.show({
+        text1: "Rastreamento em segundo plano",
+        text2: getApiErrorMessage(
+          error,
+          "Permita localização e notificações para continuar rastreado ao sair do app.",
+        ),
+        type: "error",
+      });
+    });
+  }, [ongoingRoute]);
+
   const clearAllFilters = () => {
     setFilters(DEFAULT_ROUTE_FILTERS);
     setDraftFilters(DEFAULT_ROUTE_FILTERS);
@@ -99,6 +137,37 @@ export function RoutesView() {
     setDraftFilters(filters);
     setShowFiltersSheet(true);
   };
+
+  const handleResumeOngoingRoute = useCallback(async () => {
+    if (!ongoingRoute) return;
+
+    routeTrackingLog.info("RoutesView:resume-banner-pressed", {
+      routeId: ongoingRoute.id,
+      title: ongoingRoute.title,
+    });
+
+    try {
+      const result = await ensureRouteBackgroundTracking(ongoingRoute.id, ongoingRoute.title);
+      routeTrackingLog.info("RoutesView:resume-banner-pressed:done", {
+        routeId: ongoingRoute.id,
+        wasAlreadyActive: result.wasAlreadyActive,
+      });
+    } catch (error) {
+      routeTrackingLog.error("RoutesView:resume-banner-pressed:failed", error, {
+        routeId: ongoingRoute.id,
+      });
+      Toast.show({
+        text1: "Rastreamento em segundo plano",
+        text2: getApiErrorMessage(
+          error,
+          "Permita localização em segundo plano para continuar rastreado ao sair do app.",
+        ),
+        type: "error",
+      });
+    }
+
+    router.push(`/routes/${ongoingRoute.id}/navigate` as Href);
+  }, [ongoingRoute]);
 
   if (location.status !== "ready" || !location.cityLabel) {
     return (
@@ -236,7 +305,7 @@ export function RoutesView() {
               <Pressable
                 accessibilityRole="button"
                 style={styles.navigationBanner}
-                onPress={() => router.push(`/routes/${ongoingRoute.id}/navigate` as Href)}
+                onPress={() => void handleResumeOngoingRoute()}
               >
                 <View style={styles.navigationIcon}>
                   <Ionicons color={colors.brandDark} name="navigate" size={18} />

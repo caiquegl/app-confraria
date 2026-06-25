@@ -72,10 +72,10 @@ export function RouteNavigationMap({
         ref={mapRef}
         customMapStyle={isNightMode ? ROUTE_NAVIGATION_MAP_STYLE_NIGHT : ROUTE_PLANNER_MAP_STYLE}
         initialRegion={initialRegion}
-        pitchEnabled={false}
+        pitchEnabled={followUser}
         provider={PROVIDER_GOOGLE}
         rotateEnabled={false}
-        scrollEnabled={false}
+        scrollEnabled
         showsBuildings
         showsCompass={false}
         showsMyLocationButton={false}
@@ -84,8 +84,14 @@ export function RouteNavigationMap({
         showsUserLocation={false}
         style={styles.map}
         toolbarEnabled={false}
-        zoomEnabled={false}
+        zoomControlEnabled
+        zoomEnabled
         onPanDrag={onUserInteraction}
+        onRegionChangeStart={(_region, details) => {
+          if (details?.isGesture) {
+            onUserInteraction();
+          }
+        }}
       >
         {state.completedPolyline.length > 1 ? (
           <Polyline
@@ -127,23 +133,20 @@ export function RouteNavigationMap({
             </View>
           </Marker>
         ))}
-      </MapView>
 
-      {state.currentPosition ? (
-        <View
-          pointerEvents="none"
-          style={[
-            styles.puck,
-            {
-              transform: [{ rotate: `${state.heading}deg` }],
-            },
-          ]}
-        >
-          <View style={styles.puckInner}>
-            <Ionicons color={colors.brandGreen} name="navigate" size={20} />
-          </View>
-        </View>
-      ) : null}
+        {state.currentPosition ? (
+          <Marker
+            anchor={{ x: 0.5, y: 0.5 }}
+            coordinate={state.currentPosition}
+            flat
+            rotation={followUser ? 0 : state.heading}
+          >
+            <View style={styles.userPin}>
+              <Ionicons color={colors.brandGreen} name="navigate" size={20} />
+            </View>
+          </Marker>
+        ) : null}
+      </MapView>
     </View>
   );
 }
@@ -155,16 +158,7 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFill,
   },
-  puck: {
-    alignItems: "center",
-    justifyContent: "center",
-    left: "50%",
-    marginLeft: -24,
-    marginTop: -24,
-    position: "absolute",
-    top: "58%",
-  },
-  puckInner: {
+  userPin: {
     alignItems: "center",
     backgroundColor: colors.brandDark,
     borderColor: "#FFFFFF",

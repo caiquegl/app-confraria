@@ -6,6 +6,7 @@ import { colors } from "@/theme/colors";
 import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 
 type RouteNavigationStatsCardProps = {
+  canFinish: boolean;
   onStop: () => void;
   state: Pick<
     RouteNavigationState,
@@ -13,7 +14,7 @@ type RouteNavigationStatsCardProps = {
   >;
 };
 
-export function RouteNavigationStatsCard({ onStop, state }: RouteNavigationStatsCardProps) {
+export function RouteNavigationStatsCard({ canFinish, onStop, state }: RouteNavigationStatsCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.copy}>
@@ -25,8 +26,13 @@ export function RouteNavigationStatsCard({ onStop, state }: RouteNavigationStats
         </View>
       </View>
 
-      <Pressable accessibilityRole="button" style={styles.stopButton} onPress={onStop}>
-        <Ionicons color="#FFFFFF" name="stop-circle" size={22} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !canFinish }}
+        style={[styles.stopButton, !canFinish && styles.stopButtonDisabled]}
+        onPress={onStop}
+      >
+        <Ionicons color="#FFFFFF" name={canFinish ? "stop-circle" : "exit-outline"} size={22} />
       </Pressable>
     </View>
   );
@@ -82,5 +88,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     width: 52,
+  },
+  stopButtonDisabled: {
+    backgroundColor: "#6B7280",
+    shadowColor: "#6B7280",
+    shadowOpacity: 0.2,
   },
 });

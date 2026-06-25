@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, type Href } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,7 +18,13 @@ import Toast from "react-native-toast-message";
 import { Button } from "@/components/Button";
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
+import {
+  ensureRouteBackgroundTracking,
+  stopRouteBackgroundTracking,
+} from "@/lib/route-background-tracking";
+import { routeTrackingLog } from "@/lib/route-tracking-logger";
 import { fetchChatConversations, sendChatMessage } from "@/pages/messages/services/messages.service";
+import { getCurrentUserId } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import { colors } from "@/theme/colors";
 
@@ -178,6 +184,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const dayCarouselWidth = Math.min(340, screenWidth - 48);
   const canModifyStops = route?.status === "scheduled";
@@ -185,9 +192,15 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const isInProgress = route?.status === "in_progress";
   const isFinished = route?.status === "finished";
   const isScheduled = route?.status === "scheduled";
-  const isOwner = route?.isOwner ?? false;
-  const isParticipant = route?.isParticipant ?? false;
-  const hasPendingInvitation = route?.invitation?.status === "pending" && !isOwner;
+  const isOwner =
+    route?.isOwner === true ||
+    (currentUserId != null && route?.createdById === currentUserId);
+  const isParticipant =
+    route?.isParticipant === true ||
+    (currentUserId != null &&
+      (route?.participants ?? []).some((participant) => participant.userId === currentUserId));
+  const hasPendingInvitation =
+    route?.invitation?.status === "pending" && !isOwner && !isParticipant;
   const canUseRouteActions = isOwner || isParticipant;
 
   const draftDays = useMemo(
@@ -228,8 +241,18 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   }, [routeId]);
 
   useEffect(() => {
+    void getCurrentUserId().then(setCurrentUserId);
+  }, []);
+
+  useEffect(() => {
     void loadRoute();
   }, [loadRoute]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadRoute();
+    }, [loadRoute]),
+  );
 
   const loadShareFriends = useCallback(async () => {
     try {
@@ -335,19 +358,72 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     [route, shareFriends],
   );
 
-  const handleResumeNavigation = () => {
-    if (!route) return;
+  const handleResumeNavigation = async () => {
+    if (!route || isUpdatingStatus) return;
+
+    routeTrackingLog.info("RouteDetailView:resume-navigation-pressed", {
+      routeId: route.id,
+      status: route.status,
+      title: route.title,
+    });
+
+    try {
+      const result = await ensureRouteBackgroundTracking(route.id, route.title);
+      routeTrackingLog.info("RouteDetailView:resume-navigation-pressed:done", {
+        routeId: route.id,
+        wasAlreadyActive: result.wasAlreadyActive,
+      });
+    } catch (error) {
+      routeTrackingLog.error("RouteDetailView:resume-navigation-pressed:failed", error, {
+        routeId: route.id,
+      });
+      Toast.show({
+        text1: "Rastreamento em segundo plano",
+        text2: getApiErrorMessage(
+          error,
+          "Permita localização em segundo plano para continuar rastreado ao sair do app.",
+        ),
+        type: "error",
+      });
+    }
+
     router.push(`/routes/${route.id}/navigate` as Href);
   };
 
   const handleStartRoute = async () => {
     if (!route || isUpdatingStatus) return;
 
+    routeTrackingLog.info("RouteDetailView:start-route-pressed", {
+      routeId: route.id,
+      title: route.title,
+    });
+
     setIsUpdatingStatus(true);
 
     try {
       const updated = await updateRouteStatus(route.id, "in_progress");
       setRoute(updated);
+
+      try {
+        const result = await ensureRouteBackgroundTracking(updated.id, updated.title);
+        routeTrackingLog.info("RouteDetailView:start-route-pressed:tracking-done", {
+          routeId: updated.id,
+          wasAlreadyActive: result.wasAlreadyActive,
+        });
+      } catch (trackingError) {
+        routeTrackingLog.error("RouteDetailView:start-route-pressed:tracking-failed", trackingError, {
+          routeId: updated.id,
+        });
+        Toast.show({
+          text1: "Rastreamento em segundo plano",
+          text2: getApiErrorMessage(
+            trackingError,
+            "Permita localização em segundo plano para continuar rastreado ao sair do app.",
+          ),
+          type: "error",
+        });
+      }
+
       router.push(`/routes/${route.id}/navigate` as Href);
     } catch (error) {
       Toast.show({
@@ -361,12 +437,13 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   };
 
   const handleFinishRoute = async () => {
-    if (!route || isUpdatingStatus) return;
+    if (!route || isUpdatingStatus || !isOwner) return;
 
     setIsUpdatingStatus(true);
     try {
       const updated = await updateRouteStatus(route.id, "finished");
       setRoute(updated);
+      await stopRouteBackgroundTracking();
       Toast.show({
         text1: "Rota finalizada",
         type: "success",
@@ -385,8 +462,14 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const handlePrimaryAction = () => {
     if (!route || isUpdatingStatus) return;
 
+    routeTrackingLog.info("RouteDetailView:primary-action-pressed", {
+      isInProgress,
+      routeId: route.id,
+      status: route.status,
+    });
+
     if (isInProgress) {
-      handleResumeNavigation();
+      void handleResumeNavigation();
       return;
     }
 
@@ -512,7 +595,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
                     <Text style={styles.optionsItemText}>Editar</Text>
                   </Pressable>
                 ) : null}
-                {isInProgress ? (
+                {isInProgress && isOwner ? (
                   <>
                     <View style={styles.optionsDivider} />
                     <Pressable style={styles.optionsItem} onPress={() => void handleFinishFromMenu()}>
@@ -677,8 +760,8 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
           {isOwner && !isFinished ? (
             <View style={styles.section}>
               <RouteGuestsSection
-                participants={route.participants}
-                pendingInvites={route.pendingInvites}
+                participants={route.participants ?? []}
+                pendingInvites={route.pendingInvites ?? []}
                 onInvite={openInvite}
               />
             </View>
