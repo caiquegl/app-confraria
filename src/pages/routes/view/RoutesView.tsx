@@ -87,6 +87,7 @@ export function RoutesView() {
   );
   const hasAppliedFilters = hasAppliedRouteFilters(filters);
   const isActiveNavigation = routes.some(isRouteOngoing);
+  const ongoingRoute = useMemo(() => routes.find(isRouteOngoing) ?? null, [routes]);
   const bikeOptions = useMemo(() => getUniqueBikeNames(routes), [routes]);
 
   const clearAllFilters = () => {
@@ -231,8 +232,12 @@ export function RoutesView() {
               ))}
             </ScrollView>
 
-            {isActiveNavigation ? (
-              <Pressable accessibilityRole="button" style={styles.navigationBanner}>
+            {isActiveNavigation && ongoingRoute ? (
+              <Pressable
+                accessibilityRole="button"
+                style={styles.navigationBanner}
+                onPress={() => router.push(`/routes/${ongoingRoute.id}/navigate` as Href)}
+              >
                 <View style={styles.navigationIcon}>
                   <Ionicons color={colors.brandDark} name="navigate" size={18} />
                 </View>

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -257,15 +257,23 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         return;
       }
 
-      await createRoute(payload);
+      const createdRoute = await createRoute(payload);
       await draft.clearCache();
 
+      if (action === "start_now") {
+        Toast.show({
+          text1: "Passeio iniciado",
+          text2: "Abrindo navegação GPS.",
+          type: "success",
+        });
+
+        router.replace(`/routes/${createdRoute.id}/navigate` as Href);
+        return;
+      }
+
       Toast.show({
-        text1: action === "save_for_later" ? "Rota agendada" : "Passeio iniciado",
-        text2:
-          action === "save_for_later"
-            ? "Sua rota foi salva para o dia escolhido."
-            : "Sua rota está em andamento.",
+        text1: "Rota agendada",
+        text2: "Sua rota foi salva para o dia escolhido.",
         type: "success",
       });
 

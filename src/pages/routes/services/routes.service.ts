@@ -68,6 +68,17 @@ export async function addRouteStop(
   return data;
 }
 
+export async function respondToRouteInvitation(
+  routeId: string,
+  accept: boolean,
+): Promise<RouteApiResponse> {
+  const { data } = await api.patch<RouteApiResponse>(
+    apiRoutes.routes.respondInvitation(routeId),
+    { accept },
+  );
+  return data;
+}
+
 export async function removeRouteStop(
   dayId: string,
   placeId: string,

@@ -1,5 +1,27 @@
 export type RouteStatus = "scheduled" | "in_progress" | "finished";
 
+export type RouteInvitationStatus = "pending" | "accepted" | "declined";
+
+export type RouteInvitationResponse = {
+  id: string;
+  status: RouteInvitationStatus;
+};
+
+export type RouteParticipantResponse = {
+  avatarUrl: string | null;
+  id: string;
+  joinedAt: string;
+  name: string;
+  userId: string;
+};
+
+export type RoutePendingInviteResponse = {
+  avatarUrl: string | null;
+  invitedAt: string;
+  name: string;
+  userId: string;
+};
+
 export type RouteCreateAction = "start_now" | "save_for_later";
 
 export type RelativePeriod = "ALL" | "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "UPCOMING" | "NO_DATE";
@@ -133,14 +155,22 @@ export type RouteApiResponse = {
     name: string;
   };
   createdAt: string;
+  createdById: string;
   days: RouteDayApiResponse[];
   destinationLabel: string;
   distanceMeters: number | null;
   durationSeconds: number | null;
+  finishedAt: string | null;
   fuelCost: number | null;
   id: string;
+  invitation: RouteInvitationResponse | null;
+  isOwner: boolean;
+  isParticipant: boolean;
   optimizeFuel: boolean;
   originLabel: string;
+  participants: RouteParticipantResponse[];
+  pendingInvites: RoutePendingInviteResponse[];
+  startedAt: string | null;
   startsAt: string;
   status: RouteStatus;
   title: string;

@@ -27,6 +27,7 @@ export async function fetchPlaceDirections(
 ): Promise<PlaceDirectionsResponse> {
   const { data } = await api.post<PlaceDirectionsResponse>(apiRoutes.places.directions, {
     avoidTolls: options.avoidTolls ?? false,
+    includeSteps: options.includeSteps ?? false,
     waypoints,
   });
   return data;

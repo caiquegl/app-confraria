@@ -16,6 +16,7 @@ type RouteSharePreview = {
 
 type RouteShareSheetProps = {
   friends: FeedShareFriend[];
+  mode?: "invite" | "share";
   onClose: () => void;
   onSendToFriend: (friendId: string) => Promise<ShareSendResult | null>;
   onSent?: (result: ShareSendResult) => void;
@@ -25,6 +26,7 @@ type RouteShareSheetProps = {
 
 export function RouteShareSheet({
   friends,
+  mode = "share",
   onClose,
   onSendToFriend,
   onSent,
@@ -35,13 +37,17 @@ export function RouteShareSheet({
 
   if (!route) return null;
 
+  const isInvite = mode === "invite";
+
   const handleSend = async (friendId: string) => {
     try {
       const result = await onSendToFriend(friendId);
       Toast.show({
         type: "success",
-        text1: "Rota enviada",
-        text2: "Compartilhada por mensagem.",
+        text1: isInvite ? "Convite enviado" : "Rota enviada",
+        text2: isInvite
+          ? "Seu parceiro receberá o convite no chat."
+          : "Compartilhada por mensagem.",
         visibilityTime: 1800,
       });
       if (result) {
@@ -63,7 +69,9 @@ export function RouteShareSheet({
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Compartilhar com quem sigo</Text>
+            <Text style={styles.title}>
+              {isInvite ? "Convidar para o passeio" : "Compartilhar com quem sigo"}
+            </Text>
             <Text style={styles.subtitle} numberOfLines={2}>
               {route.title}
             </Text>

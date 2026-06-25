@@ -4,6 +4,7 @@ export type {
   EstimateFuelCostRequest,
   FuelCostEstimate,
   PlaceDirectionsResponse,
+  PlaceDirectionsStep,
   PlaceDirectionsWaypoint,
   PlaceGeometryDetails,
   PlaceReference,
