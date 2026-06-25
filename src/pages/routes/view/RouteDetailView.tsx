@@ -244,10 +244,6 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     void getCurrentUserId().then(setCurrentUserId);
   }, []);
 
-  useEffect(() => {
-    void loadRoute();
-  }, [loadRoute]);
-
   useFocusEffect(
     useCallback(() => {
       void loadRoute();
