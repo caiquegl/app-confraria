@@ -1,6 +1,7 @@
+import "@/lib/sentry-init";
 import "@/tasks/route-location-tracking.task";
 
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -14,11 +15,18 @@ import {
 } from "@/lib/route-background-tracking";
 import { routeTrackingLog } from "@/lib/route-tracking-logger";
 import { subscribeRouteFinished } from "@/lib/route-navigation-socket";
+import { addSentryBreadcrumb } from "@/lib/sentry";
 import { useConfigureVideoCache } from "@/lib/video-cache";
 import { colors } from "@/theme/colors";
 
 export default function RootLayout() {
+  const pathname = usePathname();
   useConfigureVideoCache();
+
+  useEffect(() => {
+    if (!pathname) return;
+    addSentryBreadcrumb("navigation", { pathname });
+  }, [pathname]);
 
   useEffect(() => {
     routeTrackingLog.info("RootLayout:resume-tracking-on-mount");
@@ -32,7 +40,9 @@ export default function RootLayout() {
       });
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (

@@ -1,9 +1,11 @@
 const path = require("path");
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 const mapsWebStub = path.resolve(__dirname, "src/lib/react-native-maps.web.tsx");
+
+const defaultResolveRequest = config.resolver.resolveRequest;
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === "web" && moduleName === "react-native-maps") {
@@ -11,6 +13,10 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
       filePath: mapsWebStub,
       type: "sourceFile",
     };
+  }
+
+  if (defaultResolveRequest) {
+    return defaultResolveRequest(context, moduleName, platform);
   }
 
   return context.resolveRequest(context, moduleName, platform);

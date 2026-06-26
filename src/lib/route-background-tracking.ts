@@ -7,6 +7,7 @@ import { Platform } from "react-native";
 
 import { API_ENVIRONMENTS, type ApiEnvironment } from "./api-environment";
 import { routeTrackingLog } from "./route-tracking-logger";
+import { captureRouteError } from "./sentry";
 
 const TOKEN_KEY = "@confraria/auth_token";
 const API_ENVIRONMENT_KEY = "@confraria/api_environment";
@@ -167,6 +168,17 @@ async function sendLocationToApi(
     return true;
   }
 
+  const responseBody = await response.text().catch(() => "");
+
+  captureRouteError(new Error(`Falha ao enviar localização em background (${response.status})`), {
+    latitude: location.coords.latitude,
+    longitude: location.coords.longitude,
+    responseBody: responseBody.slice(0, 500),
+    routeId: session.routeId,
+    source: "sendLocationToApi",
+    status: response.status,
+  });
+
   if ([400, 403, 404].includes(response.status)) {
     return false;
   }
@@ -182,6 +194,9 @@ export async function processBackgroundLocationTask({
 }>): Promise<void> {
   if (error) {
     routeTrackingLog.error("processBackgroundLocationTask:task-error", error);
+    captureRouteError(error, {
+      source: "processBackgroundLocationTask",
+    });
     return;
   }
 

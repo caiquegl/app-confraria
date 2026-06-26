@@ -7,6 +7,7 @@ import type { PlaceDirectionsStep } from "@/lib/places";
 import { fetchRoute } from "../services/routes.service";
 import { setActiveNavigationRouteId } from "../stores/active-navigation-store";
 import type { RouteApiResponse } from "../types/saved-route.types";
+import { captureRouteError } from "@/lib/sentry";
 import { buildRouteWaypointsFromApiRoute } from "../utils/build-route-waypoints";
 import {
   bearingBetween,
@@ -176,6 +177,11 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
         totalDistanceMeters: totalDistanceMetersRef.current,
       }));
     } catch (error) {
+      captureRouteError(error, {
+        routeId,
+        screen: "RouteNavigation",
+        source: "loadNavigation",
+      });
       setState((current) => ({
         ...current,
         error:

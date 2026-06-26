@@ -2,6 +2,7 @@ import { create } from "axios";
 
 import { getApiBaseUrl } from "./api-environment";
 import { getToken } from "./auth";
+import { captureApiError } from "./sentry";
 
 export const api = create({
   timeout: 60000,
@@ -16,16 +17,24 @@ api.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => {
-
-    return response;
-  },
+  (response) => response,
   (error) => {
+    const config = error.config;
+    const response = error.response;
+
+    captureApiError(error, {
+      baseURL: config?.baseURL,
+      method: config?.method,
+      requestData: config?.data,
+      responseData: response?.data,
+      status: response?.status,
+      statusText: response?.statusText,
+      url: config?.url,
+    });
 
     return Promise.reject(error);
   },
