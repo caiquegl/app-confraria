@@ -240,6 +240,41 @@ export function useRouteCreateDraft({
     }));
   }, [updateDay]);
 
+  const addSuggestedStopToDay = useCallback(
+    (
+      dayId: string,
+      suggestion: {
+        description: string;
+        latitude: number;
+        longitude: number;
+        name: string;
+        placeId: string;
+        typeLabel: string;
+      },
+    ) => {
+      const stop = createRouteStop();
+
+      updateDay(dayId, (day) => ({
+        ...day,
+        stops: [
+          ...day.stops,
+          {
+            ...stop,
+            place: {
+              description: suggestion.description,
+              latitude: suggestion.latitude,
+              longitude: suggestion.longitude,
+              mainText: suggestion.name,
+              placeId: suggestion.placeId,
+              secondaryText: suggestion.typeLabel,
+            },
+          },
+        ],
+      }));
+    },
+    [updateDay],
+  );
+
   const removeStopFromDay = useCallback((dayId: string, stopId: string) => {
     updateDay(dayId, (day) => ({
       ...day,
@@ -377,6 +412,7 @@ export function useRouteCreateDraft({
     activeDayIndex,
     addDay,
     addStopToDay,
+    addSuggestedStopToDay,
     canContinueStep1,
     canContinueStep2,
     canContinueStep3,

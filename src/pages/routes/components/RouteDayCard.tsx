@@ -3,27 +3,38 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { PlaceAutocompleteField } from "@/components/PlaceAutocompleteField";
 import type { PlaceReference } from "@/lib/places";
+import type { RouteDaySuggestionsResponse } from "@/lib/places";
 import { colors } from "@/theme/colors";
 
 import type { RouteDraftDay } from "../types/route-create.types";
+import { RouteDaySuggestions } from "./RouteDaySuggestions";
 import { getDayColor } from "../utils/route-day.utils";
 import { getDayOriginLabel } from "../utils/route-draft.utils";
 import { toPlaceReference } from "../utils/route-place.utils";
+
+import type { RouteStopSuggestion } from "@/lib/places";
 
 type RouteDayCardProps = {
   day: RouteDraftDay;
   dayIndex: number;
   days: RouteDraftDay[];
+  daySuggestions: RouteDaySuggestionsResponse | null;
   isActive: boolean;
   isFirstDay: boolean;
+  isLoadingSuggestions: boolean;
+  isLoadingMoreSuggestions: boolean;
   isSingleDay: boolean;
   onAddStop: () => void;
+  onAddSuggestedStop: (suggestion: RouteStopSuggestion) => void;
+  onLoadMoreSuggestions?: () => void;
   onChangeDestination: (place: PlaceReference | null) => void;
   onChangeOrigin: (place: PlaceReference | null) => void;
   onChangeStop: (stopId: string, place: PlaceReference | null) => void;
   onPress: () => void;
   onRemoveDay: () => void;
   onRemoveStop: (stopId: string) => void;
+  onSuggestionsScrollBegin?: () => void;
+  onSuggestionsScrollEnd?: () => void;
   width: number;
 };
 
@@ -31,16 +42,23 @@ export function RouteDayCard({
   day,
   dayIndex,
   days,
+  daySuggestions,
   isActive,
   isFirstDay,
+  isLoadingSuggestions,
+  isLoadingMoreSuggestions,
   isSingleDay,
   onAddStop,
+  onAddSuggestedStop,
+  onLoadMoreSuggestions,
   onChangeDestination,
   onChangeOrigin,
   onChangeStop,
   onPress,
   onRemoveDay,
   onRemoveStop,
+  onSuggestionsScrollBegin,
+  onSuggestionsScrollEnd,
   width,
 }: RouteDayCardProps) {
   const dayColor = getDayColor(dayIndex);
@@ -107,6 +125,20 @@ export function RouteDayCard({
           <Ionicons color={colors.brandDark} name="add" size={16} />
           <Text style={styles.addStopText}>Adicionar parada</Text>
         </Pressable>
+
+        <RouteDaySuggestions
+          alert={daySuggestions?.alert ?? null}
+          day={day}
+          dayLabel={day.label}
+          hasMore={daySuggestions?.hasMore ?? false}
+          isLoading={isLoadingSuggestions}
+          isLoadingMore={isLoadingMoreSuggestions}
+          suggestions={daySuggestions?.suggestions ?? []}
+          onAddSuggestion={onAddSuggestedStop}
+          onLoadMore={onLoadMoreSuggestions}
+          onScrollBegin={onSuggestionsScrollBegin}
+          onScrollEnd={onSuggestionsScrollEnd}
+        />
 
         <View style={styles.fieldBlock}>
           <Text style={styles.fieldLabel}>Destino</Text>

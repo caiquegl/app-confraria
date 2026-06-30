@@ -15,6 +15,7 @@ export type RoutePathOption = {
   coordinates: RouteCoordinate[];
   distanceMeters: number | null;
   durationSeconds: number | null;
+  encodedPolyline: string;
   id: string;
   isDefault: boolean;
   label: string;
@@ -129,6 +130,7 @@ export function useRouteDirections({
             coordinates: decodeEncodedPolyline(route.encodedPolyline),
             distanceMeters: route.distanceMeters,
             durationSeconds: route.durationSeconds,
+            encodedPolyline: route.encodedPolyline,
             id: `${plan.dayId}-${route.id}`,
             isDefault: route.isDefault,
             label: buildRouteOptionLabel(
@@ -308,8 +310,29 @@ export function useRouteDirections({
     };
   }, [dayPlans]);
 
+  const dayRoutePlans = useMemo(
+    () =>
+      [...dayPlans]
+        .sort((left, right) => left.dayIndex - right.dayIndex)
+        .map((plan) => {
+          const selected = plan.options.find((option) => option.id === plan.selectedOptionId);
+          if (!selected?.encodedPolyline || selected.distanceMeters == null) {
+            return null;
+          }
+
+          return {
+            dayId: plan.dayId,
+            distanceMeters: selected.distanceMeters,
+            encodedPolyline: selected.encodedPolyline,
+          };
+        })
+        .filter((plan): plan is NonNullable<typeof plan> => plan != null),
+    [dayPlans],
+  );
+
   return {
     alternativeRoutes,
+    dayRoutePlans,
     daySummaries: routeSummary.daySummaries,
     isLoading,
     selectRouteOption,

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 import type { PlaceReference } from "@/lib/places";
+import type { RouteDaySuggestionsResponse, RouteStopSuggestion } from "@/lib/places";
 import { colors } from "@/theme/colors";
 
 import { RouteDayCarousel } from "./RouteDayCarousel";
@@ -10,8 +11,13 @@ import type { RouteDraftDay } from "../types/route-create.types";
 type RouteCreateStep1Props = {
   activeDayId: string;
   days: RouteDraftDay[];
+  getDaySuggestions: (dayId: string) => RouteDaySuggestionsResponse | null;
+  isLoadingMoreForDay: (dayId: string) => boolean;
+  isLoadingSuggestions: boolean;
   onAddDay: () => void;
   onAddStop: (dayId: string) => void;
+  onAddSuggestedStop: (dayId: string, suggestion: RouteStopSuggestion) => void;
+  onLoadMoreSuggestions: (dayId: string) => void;
   onChangeDayDestination: (dayId: string, place: PlaceReference | null) => void;
   onChangeDayOrigin: (dayId: string, place: PlaceReference | null) => void;
   onChangeStop: (dayId: string, stopId: string, place: PlaceReference | null) => void;
@@ -23,8 +29,13 @@ type RouteCreateStep1Props = {
 export function RouteCreateStep1({
   activeDayId,
   days,
+  getDaySuggestions,
+  isLoadingMoreForDay,
+  isLoadingSuggestions,
   onAddDay,
   onAddStop,
+  onAddSuggestedStop,
+  onLoadMoreSuggestions,
   onChangeDayDestination,
   onChangeDayOrigin,
   onChangeStop,
@@ -36,6 +47,7 @@ export function RouteCreateStep1({
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
       showsVerticalScrollIndicator={false}
       style={styles.scroll}
     >
@@ -44,7 +56,12 @@ export function RouteCreateStep1({
       <RouteDayCarousel
         activeDayId={activeDayId}
         days={days}
+        getDaySuggestions={getDaySuggestions}
+        isLoadingMoreForDay={isLoadingMoreForDay}
+        isLoadingSuggestions={isLoadingSuggestions}
         onAddStop={onAddStop}
+        onAddSuggestedStop={onAddSuggestedStop}
+        onLoadMoreSuggestions={onLoadMoreSuggestions}
         onChangeDayDestination={onChangeDayDestination}
         onChangeDayOrigin={onChangeDayOrigin}
         onChangeStop={onChangeStop}

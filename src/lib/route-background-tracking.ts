@@ -27,7 +27,7 @@ async function getTrackingDiagnostics() {
   const [taskDefined, taskRegistered, isRunning, session] = await Promise.all([
     Promise.resolve(TaskManager.isTaskDefined(ROUTE_LOCATION_TASK_NAME)),
     isLocationTaskRegistered(),
-    Location.hasStartedLocationUpdatesAsync(ROUTE_LOCATION_TASK_NAME).catch(() => false),
+    hasLocationUpdatesStarted(),
     readTrackingSession(),
   ]);
 
@@ -38,6 +38,29 @@ async function getTrackingDiagnostics() {
     taskDefined,
     taskRegistered,
   };
+}
+
+function isBenignLocationTaskError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    message.includes("TaskNotFoundException") ||
+    message.includes("E_TASK_NOT_FOUND") ||
+    /task.*not found/i.test(message)
+  );
+}
+
+async function hasLocationUpdatesStarted(): Promise<boolean> {
+  try {
+    return await Location.hasStartedLocationUpdatesAsync(ROUTE_LOCATION_TASK_NAME);
+  } catch (error) {
+    if (isBenignLocationTaskError(error)) {
+      routeTrackingLog.info("hasLocationUpdatesStarted:task-not-found");
+      return false;
+    }
+
+    throw error;
+  }
 }
 
 async function getApiBaseUrlForTask(): Promise<string> {
@@ -57,13 +80,18 @@ async function isLocationTaskRegistered(): Promise<boolean> {
 
 async function safeStopLocationUpdates(): Promise<void> {
   try {
+    if (!TaskManager.isTaskDefined(ROUTE_LOCATION_TASK_NAME)) {
+      routeTrackingLog.info("safeStopLocationUpdates:skip", { reason: "task-not-defined" });
+      return;
+    }
+
     const isRegistered = await isLocationTaskRegistered();
     if (!isRegistered) {
       routeTrackingLog.info("safeStopLocationUpdates:skip", { reason: "task-not-registered" });
       return;
     }
 
-    const isRunning = await Location.hasStartedLocationUpdatesAsync(ROUTE_LOCATION_TASK_NAME);
+    const isRunning = await hasLocationUpdatesStarted();
     if (!isRunning) {
       routeTrackingLog.info("safeStopLocationUpdates:skip", { reason: "not-running" });
       return;
@@ -73,6 +101,11 @@ async function safeStopLocationUpdates(): Promise<void> {
     await Location.stopLocationUpdatesAsync(ROUTE_LOCATION_TASK_NAME);
     routeTrackingLog.info("safeStopLocationUpdates:stopped");
   } catch (error) {
+    if (isBenignLocationTaskError(error)) {
+      routeTrackingLog.info("safeStopLocationUpdates:skip", { reason: "task-not-found" });
+      return;
+    }
+
     routeTrackingLog.error("safeStopLocationUpdates:failed", error);
   }
 }
@@ -242,8 +275,12 @@ export async function isRouteBackgroundTrackingActiveForRoute(
       return false;
     }
 
-    return Location.hasStartedLocationUpdatesAsync(ROUTE_LOCATION_TASK_NAME);
+    return hasLocationUpdatesStarted();
   } catch (error) {
+    if (isBenignLocationTaskError(error)) {
+      return false;
+    }
+
     routeTrackingLog.error("isRouteBackgroundTrackingActiveForRoute:failed", error, { routeId });
     return false;
   }
@@ -302,8 +339,12 @@ export async function isRouteBackgroundTrackingActive(): Promise<boolean> {
       return false;
     }
 
-    return Location.hasStartedLocationUpdatesAsync(ROUTE_LOCATION_TASK_NAME);
+    return hasLocationUpdatesStarted();
   } catch (error) {
+    if (isBenignLocationTaskError(error)) {
+      return false;
+    }
+
     routeTrackingLog.error("isRouteBackgroundTrackingActive:failed", error);
     return false;
   }
@@ -445,7 +486,7 @@ export async function resumeRouteBackgroundTrackingIfNeeded(): Promise<void> {
       return;
     }
 
-    const isRunning = await Location.hasStartedLocationUpdatesAsync(ROUTE_LOCATION_TASK_NAME);
+    const isRunning = await hasLocationUpdatesStarted();
     routeTrackingLog.info("resumeRouteBackgroundTrackingIfNeeded:task-running", {
       isRunning,
       platform: Platform.OS,

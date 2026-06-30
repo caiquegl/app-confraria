@@ -97,6 +97,9 @@ export const apiRoutes = {
     details: (placeId: string) => `/places/details?placeId=${encodeURIComponent(placeId)}`,
     directions: "/places/directions",
     estimateFuel: "/places/estimate-fuel",
+    photoMedia: (photoName: string) =>
+      `/places/photos/media?name=${encodeURIComponent(photoName)}`,
+    routeSuggestions: "/places/route-suggestions",
   },
   routes: {
     create: "/routes",
