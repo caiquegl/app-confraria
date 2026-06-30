@@ -43,6 +43,7 @@ export type SavedRouteDay = {
   dayNumber: number;
   id: string;
   label: string;
+  overnight: boolean;
 };
 
 export type SavedRoute = {
@@ -55,7 +56,9 @@ export type SavedRoute = {
   destinationLabel: string;
   distanceLabel: string;
   durationLabel: string;
+  finishedAt: string | null;
   fuelCost: number | null;
+  hasOvernight: boolean;
   id: string;
   optimizeFuel: boolean;
   originLabel: string;
@@ -96,6 +99,7 @@ export type CreateRoutePayload = {
       placeId: string;
       secondaryText: string;
     };
+    overnight?: boolean;
     stops: Array<{
       description: string;
       latitude: number;
@@ -144,6 +148,7 @@ export type RouteDayApiResponse = {
   durationSeconds: number | null;
   id: string;
   label: string;
+  overnight: boolean;
   places: RoutePlaceResponse[];
 };
 

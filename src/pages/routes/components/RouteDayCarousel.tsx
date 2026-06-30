@@ -22,6 +22,7 @@ type RouteDayCarouselProps = {
   onRemoveDay: (dayId: string) => void;
   onRemoveStop: (dayId: string, stopId: string) => void;
   onSelectDay: (dayId: string) => void;
+  onToggleDayOvernight: (dayId: string) => void;
 };
 
 const CARD_GAP = 16;
@@ -42,6 +43,7 @@ export function RouteDayCarousel({
   onRemoveDay,
   onRemoveStop,
   onSelectDay,
+  onToggleDayOvernight,
 }: RouteDayCarouselProps) {
   const { width: screenWidth } = useWindowDimensions();
   const [lockDayCarousel, setLockDayCarousel] = useState(false);
@@ -93,6 +95,7 @@ export function RouteDayCarousel({
             onRemoveStop={(stopId) => onRemoveStop(item.id, stopId)}
             onSuggestionsScrollBegin={handleSuggestionsScrollBegin}
             onSuggestionsScrollEnd={handleSuggestionsScrollEnd}
+            onToggleOvernight={() => onToggleDayOvernight(item.id)}
           />
         )}
       />

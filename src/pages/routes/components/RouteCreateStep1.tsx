@@ -24,6 +24,7 @@ type RouteCreateStep1Props = {
   onRemoveDay: (dayId: string) => void;
   onRemoveStop: (dayId: string, stopId: string) => void;
   onSelectDay: (dayId: string) => void;
+  onToggleDayOvernight: (dayId: string) => void;
 };
 
 export function RouteCreateStep1({
@@ -42,6 +43,7 @@ export function RouteCreateStep1({
   onRemoveDay,
   onRemoveStop,
   onSelectDay,
+  onToggleDayOvernight,
 }: RouteCreateStep1Props) {
   return (
     <ScrollView
@@ -68,6 +70,7 @@ export function RouteCreateStep1({
         onRemoveDay={onRemoveDay}
         onRemoveStop={onRemoveStop}
         onSelectDay={onSelectDay}
+        onToggleDayOvernight={onToggleDayOvernight}
       />
 
       <Pressable accessibilityRole="button" style={styles.addDayButton} onPress={onAddDay}>

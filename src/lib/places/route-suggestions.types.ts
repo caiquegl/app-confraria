@@ -34,4 +34,5 @@ export type RouteDaySuggestionsRequest = {
   encodedPolyline: string;
   excludePlaceIds?: string[];
   limit?: number;
+  overnight?: boolean;
 };

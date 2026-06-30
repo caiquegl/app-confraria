@@ -282,6 +282,13 @@ export function useRouteCreateDraft({
     }));
   }, [updateDay]);
 
+  const toggleDayOvernight = useCallback((dayId: string) => {
+    updateDay(dayId, (day) => ({
+      ...day,
+      overnight: !day.overnight,
+    }));
+  }, [updateDay]);
+
   const addDay = useCallback(() => {
     setDraft((current) => {
       const nextDay = createRouteDayDraft(current.itinerary.days.length);
@@ -444,6 +451,7 @@ export function useRouteCreateDraft({
     setTripTime,
     sheetState,
     step,
+    toggleDayOvernight,
     togglePreference,
     toggleSheetState,
     tripDate: tripSchedule.tripDate,

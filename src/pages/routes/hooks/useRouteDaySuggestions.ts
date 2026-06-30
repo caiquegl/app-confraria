@@ -35,6 +35,7 @@ function buildSuggestionRequest(
     encodedPolyline: plan.encodedPolyline,
     excludePlaceIds,
     limit: SUGGESTIONS_PAGE_SIZE,
+    overnight: day?.overnight ?? false,
   };
 }
 
@@ -52,7 +53,7 @@ export function useRouteDaySuggestions({
 
   const requestKey = useMemo(() => {
     const dayKey = days
-      .map((day) => `${day.id}:${collectDayPlaceIds(day).join(",")}`)
+      .map((day) => `${day.id}:${day.overnight ? "1" : "0"}:${collectDayPlaceIds(day).join(",")}`)
       .join("|");
     const routeKey = dayRoutePlans
       .map((plan) => `${plan.dayId}:${plan.encodedPolyline.slice(0, 40)}:${plan.distanceMeters}`)

@@ -47,7 +47,8 @@ function isRouteDraftDay(value: unknown): boolean {
           isRoutePlace((stop as Record<string, unknown>).place)),
     ) &&
     (day.origin === null || isRoutePlace(day.origin)) &&
-    (day.destination === null || isRoutePlace(day.destination))
+    (day.destination === null || isRoutePlace(day.destination)) &&
+    (day.overnight === undefined || typeof day.overnight === "boolean")
   );
 }
 
@@ -90,7 +91,16 @@ export function parseRouteCreateCacheSnapshot(raw: string): RouteCreateCacheSnap
     if (!isTripSchedule(parsed.tripSchedule)) return null;
 
     return {
-      draft: parsed.draft,
+      draft: {
+        ...parsed.draft,
+        itinerary: {
+          ...parsed.draft.itinerary,
+          days: parsed.draft.itinerary.days.map((day) => ({
+            ...day,
+            overnight: day.overnight ?? false,
+          })),
+        },
+      },
       sheetState: parsed.sheetState,
       step: parsed.step,
       tripSchedule: parsed.tripSchedule,

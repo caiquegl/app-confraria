@@ -434,6 +434,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
             onRemoveDay={draft.removeDay}
             onRemoveStop={draft.removeStopFromDay}
             onSelectDay={draft.setActiveDayId}
+            onToggleDayOvernight={draft.toggleDayOvernight}
           />
         ) : null}
 

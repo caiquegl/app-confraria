@@ -21,6 +21,7 @@ export type RouteDraftDay = {
   id: string;
   label: string;
   origin: RoutePlace | null;
+  overnight: boolean;
   stops: RouteDraftStop[];
 };
 
@@ -55,6 +56,7 @@ export type RouteCreateDayPayload = {
   destination: RouteCreatePlacePayload;
   label: string;
   origin: RouteCreatePlacePayload;
+  overnight: boolean;
   stops: RouteCreatePlacePayload[];
 };
 
