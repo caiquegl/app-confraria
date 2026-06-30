@@ -86,6 +86,17 @@ export async function updateRouteLocation(
   await api.patch(apiRoutes.routes.updateLocation(routeId), payload);
 }
 
+export async function updateRoutePublish(
+  routeId: string,
+  isPublished: boolean,
+): Promise<RouteApiResponse> {
+  const { data } = await api.patch<RouteApiResponse>(
+    apiRoutes.routes.updatePublish(routeId),
+    { isPublished },
+  );
+  return data;
+}
+
 export async function removeRouteStop(
   dayId: string,
   placeId: string,

@@ -30,6 +30,7 @@ import { colors } from "@/theme/colors";
 
 import { RouteDetailMap } from "../components/RouteDetailMap";
 import { RouteGuestsSection } from "../components/RouteGuestsSection";
+import { RoutePublishNoticeModal } from "../components/RoutePublishNoticeModal";
 import { RouteShareSheet } from "../components/RouteShareSheet";
 import { useRouteDirections } from "../hooks/useRouteDirections";
 import {
@@ -37,6 +38,7 @@ import {
   fetchRoute,
   removeRouteStop,
   respondToRouteInvitation,
+  updateRoutePublish,
   updateRouteStatus,
 } from "../services/routes.service";
 import type { RouteApiResponse, RouteDayApiResponse, RoutePlaceResponse } from "../types/saved-route.types";
@@ -184,6 +186,10 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isPublishingRoute, setIsPublishingRoute] = useState(false);
+  const [publishNoticeMode, setPublishNoticeMode] = useState<
+    "published" | "unpublished" | null
+  >(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const dayCarouselWidth = Math.min(340, screenWidth - 48);
@@ -352,6 +358,29 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
       };
     },
     [route, shareFriends],
+  );
+
+  const handlePublishChange = useCallback(
+    async (nextPublished: boolean) => {
+      if (!route || !isOwner || isPublishingRoute) return;
+
+      setIsPublishingRoute(true);
+      try {
+        const updated = await updateRoutePublish(route.id, nextPublished);
+        setRoute(updated);
+        setPublishNoticeMode(nextPublished ? "published" : "unpublished");
+      } catch (error) {
+        Toast.show({
+          text1: nextPublished ? "Erro ao publicar" : "Erro ao despublicar",
+          text2: getApiErrorMessage(error, "Tente novamente em instantes."),
+          type: "error",
+        });
+        throw error;
+      } finally {
+        setIsPublishingRoute(false);
+      }
+    },
+    [isOwner, isPublishingRoute, route],
   );
 
   const handleResumeNavigation = async () => {
@@ -632,6 +661,13 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         ) : null}
       </View>
 
+      {route.isPublished ? (
+        <View style={styles.publishedBadge}>
+          <Ionicons color={colors.brandGreen} name="globe-outline" size={14} />
+          <Text style={styles.publishedBadgeText}>Publicado no Confraria</Text>
+        </View>
+      ) : null}
+
       {activeTab === "geral" ? (
         <ScrollView
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 88 }]}
@@ -878,6 +914,9 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
 
       <RouteShareSheet
         friends={shareFriends}
+        isOwner={isOwner}
+        isPublished={route.isPublished}
+        isPublishing={isPublishingRoute}
         mode="share"
         route={
           isShareOpen
@@ -893,6 +932,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
           setIsShareOpen(false);
           setSentFriendId(null);
         }}
+        onPublishChange={handlePublishChange}
         onSendToFriend={shareToFriend}
       />
 
@@ -914,6 +954,12 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
           setSentFriendId(null);
         }}
         onSendToFriend={inviteToFriend}
+      />
+
+      <RoutePublishNoticeModal
+        mode={publishNoticeMode}
+        visible={publishNoticeMode != null}
+        onContinue={() => setPublishNoticeMode(null)}
       />
     </View>
   );
@@ -1171,6 +1217,23 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 14,
     lineHeight: 20,
+  },
+  publishedBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(132, 169, 74, 0.15)",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  publishedBadgeText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "700",
   },
   optionsBackdrop: {
     ...StyleSheet.absoluteFill,

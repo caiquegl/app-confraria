@@ -171,10 +171,12 @@ export type RouteApiResponse = {
   invitation: RouteInvitationResponse | null;
   isOwner: boolean;
   isParticipant: boolean;
+  isPublished: boolean;
   optimizeFuel: boolean;
   originLabel: string;
   participants: RouteParticipantResponse[];
   pendingInvites: RoutePendingInviteResponse[];
+  publishedAt: string | null;
   startedAt: string | null;
   startsAt: string;
   status: RouteStatus;
