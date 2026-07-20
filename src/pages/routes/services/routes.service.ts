@@ -3,6 +3,7 @@ import { apiRoutes } from "@/lib/api-routes";
 
 import type {
   CreateRoutePayload,
+  PublishedRoutesPageResponse,
   RouteApiResponse,
   UpdateRoutePayload,
 } from "../types/saved-route.types";
@@ -15,6 +16,43 @@ export async function createRoute(payload: CreateRoutePayload): Promise<RouteApi
 
 export async function fetchMyRoutes(): Promise<RouteApiResponse[]> {
   const { data } = await api.get<RouteApiResponse[]>(apiRoutes.routes.mine);
+  return data;
+}
+
+export const PUBLISHED_ROUTES_PAGE_SIZE = 10;
+
+export async function fetchMyPublishedRoutes(options?: {
+  cursor?: string;
+  limit?: number;
+  q?: string;
+}): Promise<PublishedRoutesPageResponse> {
+  const { data } = await api.get<PublishedRoutesPageResponse>(
+    apiRoutes.routes.minePublished(options),
+  );
+  return data;
+}
+
+export async function fetchNearPublishedRoutes(options: {
+  city: string;
+  cursor?: string;
+  limit?: number;
+  q?: string;
+  region?: string;
+}): Promise<PublishedRoutesPageResponse> {
+  const { data } = await api.get<PublishedRoutesPageResponse>(
+    apiRoutes.routes.nearYou(options),
+  );
+  return data;
+}
+
+export async function fetchFriendsRoutes(options?: {
+  cursor?: string;
+  limit?: number;
+  q?: string;
+}): Promise<PublishedRoutesPageResponse> {
+  const { data } = await api.get<PublishedRoutesPageResponse>(
+    apiRoutes.routes.friends(options),
+  );
   return data;
 }
 

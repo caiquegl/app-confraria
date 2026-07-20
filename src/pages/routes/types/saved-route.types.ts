@@ -46,11 +46,18 @@ export type SavedRouteDay = {
   overnight: boolean;
 };
 
+export type SavedRouteCreator = {
+  avatarUrl: string | null;
+  id: string;
+  name: string;
+};
+
 export type SavedRoute = {
   avoidTolls: boolean;
   bikeId: string;
   bikeName: string;
   createdAt: string;
+  creator: SavedRouteCreator | null;
   dayCount: number;
   days: SavedRouteDay[];
   destinationLabel: string;
@@ -160,6 +167,11 @@ export type RouteApiResponse = {
     name: string;
   };
   createdAt: string;
+  createdBy: {
+    avatarUrl: string | null;
+    id: string;
+    name: string;
+  };
   createdById: string;
   days: RouteDayApiResponse[];
   destinationLabel: string;
@@ -188,3 +200,9 @@ export type RouteApiResponse = {
 };
 
 export type UpdateRoutePayload = Omit<CreateRoutePayload, "action">;
+
+export type PublishedRoutesPageResponse = {
+  data: RouteApiResponse[];
+  hasMore: boolean;
+  nextCursor: string | null;
+};

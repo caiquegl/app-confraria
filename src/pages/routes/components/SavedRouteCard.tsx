@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 
+import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
 
 import type { SavedRoute } from "../types/saved-route.types";
@@ -78,9 +79,15 @@ type SavedRouteCardProps = {
   fullWidth?: boolean;
   onPress: () => void;
   route: SavedRoute;
+  showAuthor?: boolean;
 };
 
-export function SavedRouteCard({ fullWidth = false, onPress, route }: SavedRouteCardProps) {
+export function SavedRouteCard({
+  fullWidth = false,
+  onPress,
+  route,
+  showAuthor = false,
+}: SavedRouteCardProps) {
   const ongoing = isRouteOngoing(route);
 
   return (
@@ -130,11 +137,40 @@ export function SavedRouteCard({ fullWidth = false, onPress, route }: SavedRoute
       <View style={styles.tagsRow}>
         <StatusTag route={route} />
       </View>
+
+      {showAuthor && route.creator ? (
+        <View style={styles.authorRow}>
+          <UserAvatar
+            avatarUrl={route.creator.avatarUrl}
+            name={route.creator.name}
+            size={28}
+          />
+          <Text numberOfLines={1} style={styles.authorName}>
+            {route.creator.name}
+          </Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  authorName: {
+    color: "#6B7280",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "600",
+    minWidth: 0,
+  },
+  authorRow: {
+    alignItems: "center",
+    borderTopColor: "#F3F4F6",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 12,
+  },
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,

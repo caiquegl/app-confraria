@@ -18,6 +18,13 @@ export function mapApiRouteToSavedRoute(route: import("../types/saved-route.type
     bikeId: route.bike.id,
     bikeName: route.bike.name,
     createdAt: route.createdAt,
+    creator: route.createdBy
+      ? {
+          avatarUrl: route.createdBy.avatarUrl,
+          id: route.createdBy.id,
+          name: route.createdBy.name,
+        }
+      : null,
     dayCount: route.days.length,
     days: route.days.map((day) => ({
       dayNumber: day.dayNumber,

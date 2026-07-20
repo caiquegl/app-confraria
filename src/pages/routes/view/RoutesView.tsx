@@ -28,8 +28,12 @@ import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
 
 import { RoutesFiltersSheet, getUniqueBikeNames } from "../components/RoutesFiltersSheet";
+import { RoutesHorizontalSection } from "../components/RoutesHorizontalSection";
 import { RoutesNewTripButton } from "../components/RoutesNewTripButton";
 import { SavedRouteCard } from "../components/SavedRouteCard";
+import { useFriendsRoutes } from "../hooks/useFriendsRoutes";
+import { useMyPublishedRoutes } from "../hooks/useMyPublishedRoutes";
+import { useNearPublishedRoutes } from "../hooks/useNearPublishedRoutes";
 import { useMyRoutes } from "../hooks/useMyRoutes";
 import type { SavedRouteFilters } from "../types/saved-route.types";
 import {
@@ -64,6 +68,20 @@ export function RoutesView() {
   );
   const [prevTabParam, setPrevTabParam] = useState(tab);
   const [searchQuery, setSearchQuery] = useState("");
+  const publishedRoutes = useMyPublishedRoutes({
+    enabled: activeTab === "all",
+    searchQuery,
+  });
+  const nearRoutes = useNearPublishedRoutes({
+    city: location.city,
+    enabled: activeTab === "all",
+    region: location.region,
+    searchQuery,
+  });
+  const friendsRoutes = useFriendsRoutes({
+    enabled: activeTab === "all",
+    searchQuery,
+  });
   const [filters, setFilters] = useState<SavedRouteFilters>(DEFAULT_ROUTE_FILTERS);
   const [draftFilters, setDraftFilters] = useState<SavedRouteFilters>(DEFAULT_ROUTE_FILTERS);
   const [showFiltersSheet, setShowFiltersSheet] = useState(false);
@@ -97,6 +115,13 @@ export function RoutesView() {
   const isActiveNavigation = routes.some(isRouteOngoing);
   const ongoingRoute = useMemo(() => routes.find(isRouteOngoing) ?? null, [routes]);
   const bikeOptions = useMemo(() => getUniqueBikeNames(routes), [routes]);
+  const hasCommunityContent =
+    publishedRoutes.routes.length > 0 ||
+    nearRoutes.routes.length > 0 ||
+    friendsRoutes.routes.length > 0;
+  const isCommunityLoading =
+    (publishedRoutes.isLoading || nearRoutes.isLoading || friendsRoutes.isLoading) &&
+    !hasCommunityContent;
 
   useEffect(() => {
     if (!ongoingRoute) return;
@@ -435,11 +460,56 @@ export function RoutesView() {
             )}
           </View>
         ) : (
-          <View style={styles.communityPlaceholder}>
-            <Text style={styles.communityTitle}>Todas as Rotas</Text>
-            <Text style={styles.communitySubtitle}>
-              Em breve você poderá explorar rotas da comunidade por aqui.
-            </Text>
+          <View style={styles.communityContent}>
+            <RoutesHorizontalSection
+              hasMore={publishedRoutes.hasMore}
+              isLoading={publishedRoutes.isLoading}
+              isLoadingMore={publishedRoutes.isLoadingMore}
+              routes={publishedRoutes.routes}
+              subtitle="Suas rotas disponíveis para o Confraria"
+              title="Publicadas por você"
+              onLoadMore={() => void publishedRoutes.loadMore()}
+              onRoutePress={(routeId) => router.push(`/routes/${routeId}` as Href)}
+            />
+
+            <RoutesHorizontalSection
+              hasMore={nearRoutes.hasMore}
+              isLoading={nearRoutes.isLoading}
+              isLoadingMore={nearRoutes.isLoadingMore}
+              routes={nearRoutes.routes}
+              subtitle="Roteiros compartilhados perto da sua região"
+              title="Rotas próximas de você"
+              onLoadMore={() => void nearRoutes.loadMore()}
+              onRoutePress={(routeId) => router.push(`/routes/${routeId}` as Href)}
+            />
+
+            <RoutesHorizontalSection
+              hasMore={friendsRoutes.hasMore}
+              isLoading={friendsRoutes.isLoading}
+              isLoadingMore={friendsRoutes.isLoadingMore}
+              routes={friendsRoutes.routes}
+              subtitle="Roteiros de quem você segue no Confraria"
+              title="Rotas de amigos"
+              onLoadMore={() => void friendsRoutes.loadMore()}
+              onRoutePress={(routeId) => router.push(`/routes/${routeId}` as Href)}
+            />
+
+            {isCommunityLoading ? (
+              <View style={styles.loadingState}>
+                <ActivityIndicator color={colors.brandDark} size="large" />
+              </View>
+            ) : !hasCommunityContent ? (
+              <View style={styles.communityPlaceholder}>
+                <Text style={styles.communityTitle}>
+                  {searchQuery.trim() ? "Nenhum resultado" : "Todas as Rotas"}
+                </Text>
+                <Text style={styles.communitySubtitle}>
+                  {searchQuery.trim()
+                    ? "Não encontramos rotas publicadas com esse termo."
+                    : "Publique uma rota, explore roteiros da sua cidade ou siga outros membros para ver mais passeios."}
+                </Text>
+              </View>
+            ) : null}
           </View>
         )}
       </ScrollView>
@@ -497,6 +567,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     paddingHorizontal: 8,
     paddingVertical: 6,
+  },
+  communityContent: {
+    paddingBottom: 24,
   },
   communityPlaceholder: {
     alignItems: "center",
