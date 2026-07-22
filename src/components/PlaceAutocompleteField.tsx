@@ -98,13 +98,15 @@ export function PlaceAutocompleteField({
     setQuery(text);
     setHasError(false);
 
-    if (value && text !== value.description) {
-      onChange(null);
-    }
-
     if (text.trim().length < MIN_SEARCH_LENGTH) {
       setSuggestions([]);
       setIsLoading(false);
+    }
+
+    // Keep the committed place while typing so map/directions/cache
+    // don't reset on every keystroke. Clear only when the field is emptied.
+    if (value && text.trim().length === 0) {
+      onChange(null);
     }
   };
 

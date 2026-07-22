@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
@@ -8,7 +9,7 @@ type RouteMapMarkerProps = {
   marker: MapMarkerPoint;
 };
 
-export function RouteMapMarker({ marker }: RouteMapMarkerProps) {
+function RouteMapMarkerComponent({ marker }: RouteMapMarkerProps) {
   const isStop = marker.kind === "stop";
   const isDestination = marker.kind === "day-destination";
 
@@ -35,6 +36,8 @@ export function RouteMapMarker({ marker }: RouteMapMarkerProps) {
     </View>
   );
 }
+
+export const RouteMapMarker = memo(RouteMapMarkerComponent);
 
 const styles = StyleSheet.create({
   pin: {

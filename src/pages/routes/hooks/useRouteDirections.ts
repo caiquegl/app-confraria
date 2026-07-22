@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { InteractionManager } from "react-native";
 
 import { decodeEncodedPolyline, fetchPlaceDirections } from "@/lib/places";
 
@@ -32,7 +33,9 @@ type DayRoutePlan = {
   waypointsKey: string;
 };
 
-const ROUTE_DEBOUNCE_MS = 400;
+const ROUTE_DEBOUNCE_MS = 500;
+const SELECTED_POLYLINE_MAX_POINTS = 160;
+const ALTERNATIVE_POLYLINE_MAX_POINTS = 64;
 
 function formatDistance(distanceMeters: number | null): string | null {
   if (distanceMeters == null) return null;
@@ -58,6 +61,26 @@ function buildRouteOptionLabel(
   return parts.join(" · ");
 }
 
+/** Downsample for MapView — full decode is expensive and rarely needed at pixel density. */
+function simplifyPolyline(
+  coordinates: RouteCoordinate[],
+  maxPoints: number,
+): RouteCoordinate[] {
+  if (coordinates.length <= maxPoints) {
+    return coordinates;
+  }
+
+  const result: RouteCoordinate[] = [];
+  const step = (coordinates.length - 1) / (maxPoints - 1);
+
+  for (let index = 0; index < maxPoints - 1; index += 1) {
+    result.push(coordinates[Math.round(index * step)]);
+  }
+
+  result.push(coordinates[coordinates.length - 1]);
+  return result;
+}
+
 function mergeCoordinates(segments: RouteCoordinate[][]): RouteCoordinate[] {
   const merged: RouteCoordinate[] = [];
 
@@ -77,28 +100,41 @@ function mergeCoordinates(segments: RouteCoordinate[][]): RouteCoordinate[] {
   return merged;
 }
 
+function yieldToUi(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
 type UseRouteDirectionsParams = {
   activeDayId: string;
   avoidTolls?: boolean;
   days: RouteDraftDay[];
+  enabled?: boolean;
 };
 
 export function useRouteDirections({
   activeDayId,
   avoidTolls = false,
   days,
+  enabled = true,
 }: UseRouteDirectionsParams) {
   const [dayPlans, setDayPlans] = useState<DayRoutePlan[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const dayPlansRef = useRef(dayPlans);
+  dayPlansRef.current = dayPlans;
 
   const dayWaypointPlans = useMemo(
     () =>
-      days.map((day, dayIndex) => ({
-        dayId: day.id,
-        dayIndex,
-        waypoints: buildDayWaypoints(days, dayIndex),
-        waypointsKey: JSON.stringify(buildDayWaypoints(days, dayIndex)),
-      })),
+      days.map((day, dayIndex) => {
+        const waypoints = buildDayWaypoints(days, dayIndex);
+        return {
+          dayId: day.id,
+          dayIndex,
+          waypoints,
+          waypointsKey: JSON.stringify(waypoints),
+        };
+      }),
     [days],
   );
 
@@ -110,79 +146,137 @@ export function useRouteDirections({
 
   useEffect(() => {
     let cancelled = false;
+    let interactionHandle: { cancel: () => void } | null = null;
 
-    const plansToFetch = dayWaypointPlans.filter((plan) => plan.waypoints.length >= 2);
-
-    if (plansToFetch.length === 0) {
+    if (!enabled) {
       setDayPlans([]);
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    const validPlans = dayWaypointPlans.filter((plan) => plan.waypoints.length >= 2);
+    const validDayIds = new Set(validPlans.map((plan) => plan.dayId));
+
+    if (validPlans.length === 0) {
+      setDayPlans([]);
+      setIsLoading(false);
+      return;
+    }
+
+    const plansToFetch = validPlans.filter((plan) => {
+      const existing = dayPlansRef.current.find((item) => item.dayId === plan.dayId);
+      return !existing || existing.waypointsKey !== plan.waypointsKey;
+    });
+
+    // Drop days that no longer have enough waypoints; keep the rest (stale-while-revalidate).
+    setDayPlans((current) => {
+      const next = current.filter((plan) => validDayIds.has(plan.dayId));
+      return next.length === current.length ? current : next;
+    });
+
+    if (plansToFetch.length === 0) {
+      setIsLoading(false);
+      return;
+    }
 
     const timer = setTimeout(() => {
+      setIsLoading(true);
+
       void Promise.all(
         plansToFetch.map(async (plan) => {
           const response = await fetchPlaceDirections(plan.waypoints, { avoidTolls });
+          await yieldToUi();
 
-          const options: RoutePathOption[] = response.routes.map((route, index) => ({
-            coordinates: decodeEncodedPolyline(route.encodedPolyline),
-            distanceMeters: route.distanceMeters,
-            durationSeconds: route.durationSeconds,
-            encodedPolyline: route.encodedPolyline,
-            id: `${plan.dayId}-${route.id}`,
-            isDefault: route.isDefault,
-            label: buildRouteOptionLabel(
-              {
-                distanceMeters: route.distanceMeters,
-                durationSeconds: route.durationSeconds,
-                isDefault: route.isDefault,
-              },
-              index,
-            ),
-            tollAvailable: route.tollAvailable,
-            tollCost: route.tollCost,
-            tollCount: route.tollCount,
-          }));
+          const options: RoutePathOption[] = [];
+
+          for (let index = 0; index < response.routes.length; index += 1) {
+            const route = response.routes[index];
+            const decoded = decodeEncodedPolyline(route.encodedPolyline);
+            const maxPoints = route.isDefault
+              ? SELECTED_POLYLINE_MAX_POINTS
+              : ALTERNATIVE_POLYLINE_MAX_POINTS;
+
+            options.push({
+              coordinates: simplifyPolyline(decoded, maxPoints),
+              distanceMeters: route.distanceMeters,
+              durationSeconds: route.durationSeconds,
+              encodedPolyline: route.encodedPolyline,
+              id: `${plan.dayId}-${route.id}`,
+              isDefault: route.isDefault,
+              label: buildRouteOptionLabel(
+                {
+                  distanceMeters: route.distanceMeters,
+                  durationSeconds: route.durationSeconds,
+                  isDefault: route.isDefault,
+                },
+                index,
+              ),
+              tollAvailable: route.tollAvailable,
+              tollCost: route.tollCost,
+              tollCount: route.tollCount,
+            });
+
+            // Yield between alternative decodes so the sheet stays responsive.
+            if (index < response.routes.length - 1) {
+              await yieldToUi();
+            }
+          }
 
           return {
             dayId: plan.dayId,
             dayIndex: plan.dayIndex,
             options,
-            selectedOptionId: options[0]?.id ?? null,
+            selectedOptionId: options.find((option) => option.isDefault)?.id ?? options[0]?.id ?? null,
             waypointsKey: plan.waypointsKey,
           } satisfies DayRoutePlan;
         }),
       )
-        .then((nextPlans) => {
+        .then((fetchedPlans) => {
           if (cancelled) return;
 
-          setDayPlans((current) =>
-            nextPlans.map((plan) => {
-              const previous = current.find((item) => item.dayId === plan.dayId);
-              const stillValid =
-                previous?.selectedOptionId &&
-                plan.options.some((option) => option.id === previous.selectedOptionId);
+          interactionHandle = InteractionManager.runAfterInteractions(() => {
+            if (cancelled) return;
 
-              return {
-                ...plan,
-                selectedOptionId: stillValid
-                  ? previous.selectedOptionId
-                  : (plan.options.find((option) => option.isDefault)?.id ??
-                    plan.options[0]?.id ??
-                    null),
-              };
-            }),
-          );
+            setDayPlans((current) => {
+              const byId = new Map(current.map((plan) => [plan.dayId, plan]));
+
+              fetchedPlans.forEach((plan) => {
+                const previous = byId.get(plan.dayId);
+                const stillValid =
+                  previous?.selectedOptionId &&
+                  plan.options.some((option) => option.id === previous.selectedOptionId);
+
+                byId.set(plan.dayId, {
+                  ...plan,
+                  selectedOptionId: stillValid
+                    ? previous.selectedOptionId
+                    : plan.selectedOptionId,
+                });
+              });
+
+              return validPlans.map((plan) => {
+                const existing = byId.get(plan.dayId);
+                if (existing && existing.waypointsKey === plan.waypointsKey) {
+                  return { ...existing, dayIndex: plan.dayIndex };
+                }
+                return (
+                  existing ?? {
+                    dayId: plan.dayId,
+                    dayIndex: plan.dayIndex,
+                    options: [],
+                    selectedOptionId: null,
+                    waypointsKey: plan.waypointsKey,
+                  }
+                );
+              });
+            });
+
+            setIsLoading(false);
+          });
         })
         .catch(() => {
           if (!cancelled) {
-            setDayPlans([]);
-          }
-        })
-        .finally(() => {
-          if (!cancelled) {
+            // Keep previous polylines on failure — clearing freezes UX for no benefit.
             setIsLoading(false);
           }
         });
@@ -191,8 +285,9 @@ export function useRouteDirections({
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      interactionHandle?.cancel();
     };
-  }, [avoidTolls, dayWaypointPlans, plansKey]);
+  }, [avoidTolls, dayWaypointPlans, enabled, plansKey]);
 
   const selectRouteOption = useCallback((optionId: string) => {
     setDayPlans((current) =>
@@ -215,7 +310,7 @@ export function useRouteDirections({
   );
 
   const selectedCoordinates = useMemo(() => {
-    const segments = dayPlans
+    const segments = [...dayPlans]
       .sort((left, right) => left.dayIndex - right.dayIndex)
       .map((plan) => {
         const selected = plan.options.find((option) => option.id === plan.selectedOptionId);
@@ -281,7 +376,7 @@ export function useRouteDirections({
     let hasTollCount = false;
     let allAvailable = true;
 
-    dayPlans
+    [...dayPlans]
       .sort((left, right) => left.dayIndex - right.dayIndex)
       .forEach((plan) => {
         const selected = plan.options.find((option) => option.id === plan.selectedOptionId);

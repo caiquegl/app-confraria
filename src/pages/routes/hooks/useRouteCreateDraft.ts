@@ -26,7 +26,6 @@ import {
   createDefaultTripSchedule,
   loadRouteCreateCache,
   saveRouteCreateCache,
-  serializeRouteCreateCacheSnapshot,
 } from "../utils/route-create-cache.storage";
 import {
   applyWaypointOrder,
@@ -69,6 +68,7 @@ export function useRouteCreateDraft({
 
   const skipNextSaveRef = useRef(true);
   const latestSnapshotRef = useRef<RouteCreateCacheSnapshot | null>(null);
+  const shouldPersistCacheRef = useRef(false);
 
   const { activeDayId, days } = draft.itinerary;
 
@@ -83,14 +83,14 @@ export function useRouteCreateDraft({
     [draft, sheetState, step, tripSchedule],
   );
 
-  const cacheSignature = useMemo(
-    () => serializeRouteCreateCacheSnapshot(cacheSnapshot),
-    [cacheSnapshot],
-  );
-
   useEffect(() => {
     latestSnapshotRef.current = cacheSnapshot;
   }, [cacheSnapshot]);
+
+  useEffect(() => {
+    shouldPersistCacheRef.current =
+      isCacheReady && !initialSnapshot && !editRouteId;
+  }, [editRouteId, initialSnapshot, isCacheReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,6 +126,7 @@ export function useRouteCreateDraft({
     };
   }, [editRouteId, initialSnapshot]);
 
+  // Debounced persist without JSON.stringify on the hot path (step clicks / typing).
   useEffect(() => {
     if (!isCacheReady || initialSnapshot || editRouteId) return;
 
@@ -142,12 +143,18 @@ export function useRouteCreateDraft({
 
     return () => {
       clearTimeout(timer);
+    };
+  }, [draft, editRouteId, initialSnapshot, isCacheReady, step, tripSchedule]);
+
+  useEffect(() => {
+    return () => {
+      if (!shouldPersistCacheRef.current) return;
       const snapshot = latestSnapshotRef.current;
       if (snapshot) {
         void saveRouteCreateCache(snapshot);
       }
     };
-  }, [cacheSignature, editRouteId, initialSnapshot, isCacheReady]);
+  }, []);
 
   const activeDayIndex = useMemo(
     () => Math.max(0, days.findIndex((day) => day.id === activeDayId)),

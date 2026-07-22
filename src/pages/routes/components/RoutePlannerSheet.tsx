@@ -15,6 +15,9 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useEnvironmentBannerInset } from "@/components/EnvironmentBanner";
 
 import type { SheetState } from "../types/route-create.types";
 import { getSheetHeight } from "../utils/route-day.utils";
@@ -39,9 +42,12 @@ export function RoutePlannerSheet({
   stepper,
 }: RoutePlannerSheetProps) {
   const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const bannerInset = useEnvironmentBannerInset();
+  const topInset = insets.top + bannerInset;
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const animatedHeight = useSharedValue(
-    getSheetHeight(windowHeight, "normal", bottomInset),
+    getSheetHeight(windowHeight, "normal", bottomInset, topInset),
   );
 
   useEffect(() => {
@@ -63,11 +69,14 @@ export function RoutePlannerSheet({
   }, [onKeyboardShow]);
 
   useEffect(() => {
-    animatedHeight.value = withTiming(getSheetHeight(windowHeight, sheetState, bottomInset), {
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [animatedHeight, bottomInset, sheetState, windowHeight]);
+    animatedHeight.value = withTiming(
+      getSheetHeight(windowHeight, sheetState, bottomInset, topInset),
+      {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      },
+    );
+  }, [animatedHeight, bottomInset, sheetState, topInset, windowHeight]);
 
   const sheetStyle = useAnimatedStyle(() => ({
     height: animatedHeight.value,
@@ -78,6 +87,7 @@ export function RoutePlannerSheet({
       <Pressable
         accessibilityLabel="Alternar tamanho do painel"
         accessibilityRole="button"
+        hitSlop={12}
         style={styles.handleArea}
         onPress={onToggleSize}
       >
@@ -129,8 +139,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomColor: "#F3F4F6",
     borderBottomWidth: 1,
-    paddingBottom: 10,
-    paddingTop: 8,
+    paddingBottom: 12,
+    paddingTop: 12,
   },
   sheet: {
     backgroundColor: "rgba(255,255,255,0.94)",

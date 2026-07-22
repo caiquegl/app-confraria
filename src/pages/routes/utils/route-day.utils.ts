@@ -12,8 +12,15 @@ export function getSheetHeight(
   windowHeight: number,
   sheetState: SheetState,
   bottomInset = 0,
+  topInset = 0,
 ): number {
-  const availableHeight = Math.max(windowHeight - bottomInset, 0);
+  const availableHeight = Math.max(windowHeight - bottomInset - topInset, 0);
+
+  // Full sheet must leave top inset free so the collapse handle stays tappable.
+  if (sheetState === "full") {
+    return availableHeight;
+  }
+
   return availableHeight * SHEET_HEIGHT_RATIO[sheetState];
 }
 

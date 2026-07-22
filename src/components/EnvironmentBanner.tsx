@@ -51,9 +51,10 @@ export function useEnvironmentBannerSuppression() {
 
 export function useEnvironmentBannerInset(): number {
   const { isHomolog } = useApiEnvironment();
-  const { suppressed } = useEnvironmentBannerSuppression();
 
-  if (!isHomolog || suppressed) {
+  // Always reserve space on homolog so suppressing the banner never
+  // resizes the screen (MapView camera jumps if the parent height changes).
+  if (!isHomolog) {
     return 0;
   }
 
@@ -64,17 +65,19 @@ export function EnvironmentBanner() {
   const { apiUrl, isHomolog } = useApiEnvironment();
   const { suppressed } = useEnvironmentBannerSuppression();
 
-  if (!isHomolog || suppressed) {
+  if (!isHomolog) {
     return null;
   }
 
   return (
     <>
       <View style={styles.spacer} />
-      <View pointerEvents="none" style={styles.banner}>
-        <Text style={styles.text}>AMBIENTE HOMOLOG</Text>
-        <Text style={styles.url}>{apiUrl}</Text>
-      </View>
+      {suppressed ? null : (
+        <View pointerEvents="none" style={styles.banner}>
+          <Text style={styles.text}>AMBIENTE HOMOLOG</Text>
+          <Text style={styles.url}>{apiUrl}</Text>
+        </View>
+      )}
     </>
   );
 }

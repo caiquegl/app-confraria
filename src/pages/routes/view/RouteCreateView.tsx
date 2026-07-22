@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -58,11 +58,10 @@ function canContinueWizardStep(
 function getMaxReachableWizardStep(
   currentStep: WizardStep,
   draft: ReturnType<typeof useRouteCreateDraft>,
-  isRecalculating: boolean,
 ): WizardStep {
   let maxReachable: WizardStep = 1;
 
-  if (draft.canContinueStep1 && !isRecalculating) {
+  if (draft.canContinueStep1) {
     maxReachable = 2;
   }
   if (maxReachable >= 2 && draft.canContinueStep2) {
@@ -162,12 +161,16 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
     totalDistanceMeters: directions.totalDistanceMeters,
   });
 
-  const userLocation =
-    location.latitude != null && location.longitude != null
-      ? { latitude: location.latitude, longitude: location.longitude }
-      : null;
+  const userLocation = useMemo(() => {
+    if (location.latitude == null || location.longitude == null) {
+      return null;
+    }
 
-  const isRecalculating = directions.isLoading;
+    return {
+      latitude: location.latitude,
+      longitude: location.longitude,
+    };
+  }, [location.latitude, location.longitude]);
 
   const [isSavingRoute, setIsSavingRoute] = useState(false);
 
@@ -177,11 +180,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   }, [draft.tripDate, draft.tripIntent, draft.tripTime]);
 
   const canContinue = canContinueWizardStep(draft.step, draft);
-  const maxReachableStep = getMaxReachableWizardStep(
-    draft.step,
-    draft,
-    isRecalculating,
-  );
+  const maxReachableStep = getMaxReachableWizardStep(draft.step, draft);
   const wizardStep = draft.step;
   const selectedBikeId = draft.motorcycle.bikeId;
   const setSelectedBikeId = draft.setSelectedBikeId;
@@ -218,6 +217,10 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
     if (step > maxReachableStep) return;
     draft.setStep(step);
   };
+
+  const handleSheetExpandForKeyboard = useCallback(() => {
+    draft.setSheetState("full");
+  }, [draft.setSheetState]);
 
   const handleContinue = () => {
     if (draft.step === 1) {
@@ -386,7 +389,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
 
     return (
       <Button
-        disabled={!canContinue || isRecalculating}
+        disabled={!canContinue}
         size="lg"
         style={styles.continueButton}
         onPress={handleContinue}
@@ -411,7 +414,6 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         isRecalculating={directions.isLoading}
         markers={draft.mapMarkers}
         selectedCoordinates={directions.selectedCoordinates}
-        sheetState={draft.sheetState}
         userLocation={userLocation}
         onSelectRouteOption={directions.selectRouteOption}
       />
@@ -438,7 +440,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
             onStepPress={handleStepPress}
           />
         }
-        onKeyboardShow={() => draft.setSheetState("full")}
+        onKeyboardShow={handleSheetExpandForKeyboard}
         onToggleSize={draft.toggleSheetState}
       >
         {draft.step === 1 ? (
