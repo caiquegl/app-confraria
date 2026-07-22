@@ -65,6 +65,7 @@ export function RouteDayCarousel({
         data={days}
         decelerationRate="fast"
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
         nestedScrollEnabled
         scrollEnabled={!lockDayCarousel}
         showsHorizontalScrollIndicator={false}

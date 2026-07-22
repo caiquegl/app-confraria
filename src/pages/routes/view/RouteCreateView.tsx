@@ -147,8 +147,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
       ? { latitude: location.latitude, longitude: location.longitude }
       : null;
 
-  const isRecalculating =
-    directions.isLoading && directions.selectedCoordinates.length > 1;
+  const isRecalculating = directions.isLoading;
 
   const [isSavingRoute, setIsSavingRoute] = useState(false);
 
@@ -383,6 +382,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
     <View style={styles.screen}>
       <RoutePlannerMap
         alternativeRoutes={directions.alternativeRoutes}
+        isRecalculating={directions.isLoading}
         markers={draft.mapMarkers}
         selectedCoordinates={directions.selectedCoordinates}
         sheetState={draft.sheetState}
@@ -394,8 +394,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         <Pressable
           accessibilityLabel="Voltar"
           accessibilityRole="button"
-          disabled={isRecalculating}
-          style={[styles.backButton, isRecalculating && styles.backButtonDisabled]}
+          style={styles.backButton}
           onPress={handleBack}
         >
           <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
@@ -478,16 +477,6 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
           />
         ) : null}
       </RoutePlannerSheet>
-
-      {isRecalculating ? (
-        <View pointerEvents="auto" style={styles.recalculatingOverlay}>
-          <View style={styles.recalculatingCard}>
-            <ActivityIndicator color={colors.brandDark} size="large" />
-            <Text style={styles.recalculatingTitle}>Recalculando rota...</Text>
-            <Text style={styles.recalculatingSubtitle}>Aguarde enquanto atualizamos o mapa.</Text>
-          </View>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -520,9 +509,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 48,
   },
-  backButtonDisabled: {
-    opacity: 0.5,
-  },
   backWrap: {
     left: 16,
     position: "absolute",
@@ -537,39 +523,6 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: "100%",
-  },
-  recalculatingCard: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 24,
-    borderWidth: 1,
-    gap: 8,
-    maxWidth: 280,
-    paddingHorizontal: 24,
-    paddingVertical: 28,
-    width: "100%",
-  },
-  recalculatingOverlay: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.88)",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    zIndex: 5000,
-  },
-  recalculatingSubtitle: {
-    color: "#6B7280",
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: "center",
-  },
-  recalculatingTitle: {
-    color: colors.brandDark,
-    fontSize: 18,
-    fontWeight: "800",
-    marginTop: 4,
-    textAlign: "center",
   },
   screen: {
     backgroundColor: colors.brandGray,

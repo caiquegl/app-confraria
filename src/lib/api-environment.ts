@@ -11,7 +11,7 @@ export type ApiEnvironment = "production" | "homolog";
  *   local (ex.: "192.168.0.10") e conecte o aparelho no mesmo Wi-Fi.
  */
 const HOMOLOG_HOST = Platform.select({
-  android: "172.17.144.1",
+  android: "192.168.0.9",
   default: "localhost",
 });
 

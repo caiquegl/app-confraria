@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
 import { colors } from "@/theme/colors";
@@ -22,6 +22,7 @@ type AlternativeRoute = {
 
 type RoutePlannerMapProps = {
   alternativeRoutes: AlternativeRoute[];
+  isRecalculating?: boolean;
   markers: MapMarkerPoint[];
   onSelectRouteOption: (optionId: string) => void;
   selectedCoordinates: RouteCoordinate[];
@@ -31,6 +32,7 @@ type RoutePlannerMapProps = {
 
 export function RoutePlannerMap({
   alternativeRoutes,
+  isRecalculating = false,
   markers,
   onSelectRouteOption,
   selectedCoordinates,
@@ -136,6 +138,13 @@ export function RoutePlannerMap({
         ))}
       </MapView>
 
+      {isRecalculating ? (
+        <View pointerEvents="none" style={styles.recalculatingBadge}>
+          <ActivityIndicator color={colors.brandDark} size="small" />
+          <Text style={styles.recalculatingBadgeText}>Atualizando mapa...</Text>
+        </View>
+      ) : null}
+
       <View pointerEvents="none" style={styles.vignette} />
     </View>
   );
@@ -148,6 +157,30 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFill,
+  },
+  recalculatingBadge: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.94)",
+    borderColor: "#E5E7EB",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    position: "absolute",
+    shadowColor: "#000",
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    top: 72,
+    zIndex: 2,
+  },
+  recalculatingBadgeText: {
+    color: colors.brandDark,
+    fontSize: 13,
+    fontWeight: "700",
   },
   vignette: {
     ...StyleSheet.absoluteFill,
