@@ -1,6 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
 export type ApiEnvironment = "production" | "homolog";
+
+/**
+ * URL do backend local visto de dentro do app:
+ * - Android emulador: a máquina host é acessível via 10.0.2.2 (não localhost)
+ * - iOS simulador: localhost aponta para a própria máquina
+ * - Dispositivo físico: troque HOMOLOG_HOST pelo IP da sua máquina na rede
+ *   local (ex.: "192.168.0.10") e conecte o aparelho no mesmo Wi-Fi.
+ */
+const HOMOLOG_HOST = Platform.select({
+  android: "172.17.144.1",
+  default: "localhost",
+});
 
 export const API_ENVIRONMENTS: Record<
   ApiEnvironment,
@@ -8,7 +21,7 @@ export const API_ENVIRONMENTS: Record<
 > = {
   homolog: {
     label: "Homolog",
-    url: "http://localhost:8080",
+    url: `http://${HOMOLOG_HOST}:8080`,
   },
   production: {
     label: "Produção",
@@ -17,8 +30,8 @@ export const API_ENVIRONMENTS: Record<
 };
 
 const API_ENVIRONMENT_KEY = "@confraria/api_environment";
-const DEFAULT_ENVIRONMENT: ApiEnvironment = "production";
-// const DEFAULT_ENVIRONMENT: ApiEnvironment = "homolog";
+// const DEFAULT_ENVIRONMENT: ApiEnvironment = "production";
+const DEFAULT_ENVIRONMENT: ApiEnvironment = "homolog";
 
 const listeners = new Set<(environment: ApiEnvironment) => void>();
 

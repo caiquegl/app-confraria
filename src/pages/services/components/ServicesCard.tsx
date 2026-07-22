@@ -25,7 +25,7 @@ export function ServicesCard({
         <Image
           cachePolicy="memory-disk"
           contentFit="cover"
-          source={{ uri: service.imageUrl }}
+          source={{ uri: service.imageUrl ?? undefined }}
           style={styles.image}
         />
 

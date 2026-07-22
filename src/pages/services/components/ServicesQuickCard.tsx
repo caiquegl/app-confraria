@@ -22,7 +22,7 @@ export function ServicesQuickCard({
       <Image
         cachePolicy="memory-disk"
         contentFit="cover"
-        source={{ uri: service.imageUrl }}
+        source={{ uri: service.imageUrl ?? undefined }}
         style={styles.image}
       />
       <View style={styles.info}>

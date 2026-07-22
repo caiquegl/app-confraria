@@ -63,8 +63,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   pillActive: {
-    backgroundColor: colors.brandPrimary,
-    borderColor: colors.brandPrimary,
+    backgroundColor: colors.brandGreen,
+    borderColor: colors.brandGreen,
   },
   pillText: {
     color: colors.brandDark,
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   pillTextActive: {
-    color: "#FFFFFF",
+    color: colors.brandDark,
     fontWeight: "700",
   },
 });

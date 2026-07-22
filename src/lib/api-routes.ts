@@ -125,6 +125,20 @@ export const apiRoutes = {
     update: (quickRideId: string) => `/quick-rides/${quickRideId}`,
     cancel: (quickRideId: string) => `/quick-rides/${quickRideId}`,
   },
+  services: {
+    list: (category?: string) => {
+      const trimmed = category?.trim();
+      return trimmed && trimmed !== "Tudo"
+        ? `/services?category=${encodeURIComponent(trimmed)}`
+        : "/services";
+    },
+    create: "/services",
+    detail: (serviceId: string) => `/services/${serviceId}`,
+    update: (serviceId: string) => `/services/${serviceId}`,
+    delete: (serviceId: string) => `/services/${serviceId}`,
+    favorite: (serviceId: string) => `/services/${serviceId}/favorite`,
+    reviews: (serviceId: string) => `/services/${serviceId}/reviews`,
+  },
   stories: {
     create: "/stories",
     delete: (storyId: string) => `/stories/${storyId}`,
