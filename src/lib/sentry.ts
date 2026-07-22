@@ -61,10 +61,11 @@ export function initSentry(): void {
     debug: false,
     environment: __DEV__ ? "development" : "production",
     release: `${Constants.expoConfig?.slug ?? "app-confraria"}@${Constants.expoConfig?.version ?? "0.0.0"}`,
-    dist: Constants.expoConfig?.runtimeVersion?.toString(),
     integrations: [expoRouterTracingIntegration],
     enableNative: true,
     enableNativeCrashHandling: true,
+    enableNdk: true,
+    enableTombstone: true,
     tracesSampleRate: __DEV__ ? 1 : 0.2,
     attachStacktrace: true,
     beforeBreadcrumb(breadcrumb) {

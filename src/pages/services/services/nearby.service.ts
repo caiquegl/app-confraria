@@ -13,13 +13,18 @@ export async function fetchNearbyPlaces(params: {
   latitude: number;
   longitude: number;
   radius?: number;
+  signal?: AbortSignal;
 }): Promise<NearbyPlace[]> {
-  const { data } = await api.post<NearbyPlace[]>(apiRoutes.places.nearby, {
-    category: params.category,
-    latitude: params.latitude,
-    longitude: params.longitude,
-    ...(params.radius ? { radius: params.radius } : {}),
-  });
+  const { data } = await api.post<NearbyPlace[]>(
+    apiRoutes.places.nearby,
+    {
+      category: params.category,
+      latitude: params.latitude,
+      longitude: params.longitude,
+      ...(params.radius ? { radius: params.radius } : {}),
+    },
+    { signal: params.signal },
+  );
   return data;
 }
 

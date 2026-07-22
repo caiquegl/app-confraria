@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -35,6 +35,7 @@ const NEARBY_CATEGORY = "Próximos";
 export function ServicesView() {
   const insets = useSafeAreaInsets();
   const storedProfile = getStoredCurrentProfile();
+  const [isFocused, setIsFocused] = useState(true);
 
   const {
     error,
@@ -57,11 +58,18 @@ export function ServicesView() {
     storedProfile.name ?? "Perfil",
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => setIsFocused(false);
+    }, []),
+  );
+
   const isNearby = selectedCategory === NEARBY_CATEGORY;
   const { location, requestPermission } = useGeolocation();
   const nearby = useNearbyServices(
     { latitude: location.latitude, longitude: location.longitude },
-    isNearby,
+    isNearby && isFocused,
   );
 
   useEffect(() => {

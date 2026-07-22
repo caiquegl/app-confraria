@@ -23,6 +23,15 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const isCanceled =
+      error?.code === "ERR_CANCELED" ||
+      error?.name === "CanceledError" ||
+      error?.name === "AbortError";
+
+    if (isCanceled) {
+      return Promise.reject(error);
+    }
+
     const config = error.config;
     const response = error.response;
 
