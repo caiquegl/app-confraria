@@ -30,8 +30,7 @@ export const API_ENVIRONMENTS: Record<
 };
 
 const API_ENVIRONMENT_KEY = "@confraria/api_environment";
-// const DEFAULT_ENVIRONMENT: ApiEnvironment = "production";
-const DEFAULT_ENVIRONMENT: ApiEnvironment = "homolog";
+const DEFAULT_ENVIRONMENT: ApiEnvironment = "production";
 
 const listeners = new Set<(environment: ApiEnvironment) => void>();
 
