@@ -29,6 +29,7 @@ import {
   serializeRouteCreateCacheSnapshot,
 } from "../utils/route-create-cache.storage";
 import {
+  applyWaypointOrder,
   buildMapMarkersFromDraft,
   buildRouteCreatePayload,
   canCompleteStep1,
@@ -38,6 +39,7 @@ import {
   createInitialRouteCreateDraft,
   getDayOrigin,
   placeFromReference,
+  type RouteWaypointOrderItem,
 } from "../utils/route-draft.utils";
 
 const ROUTE_CREATE_CACHE_DEBOUNCE_MS = 300;
@@ -282,6 +284,20 @@ export function useRouteCreateDraft({
     }));
   }, [updateDay]);
 
+  const reorderDayWaypoints = useCallback(
+    (dayId: string, orderedItems: RouteWaypointOrderItem[]) => {
+      const dayIndex = days.findIndex((day) => day.id === dayId);
+      if (dayIndex < 0) {
+        return;
+      }
+
+      updateDay(dayId, (day) =>
+        applyWaypointOrder(day, orderedItems, { lockOrigin: dayIndex > 0 }),
+      );
+    },
+    [days, updateDay],
+  );
+
   const toggleDayOvernight = useCallback((dayId: string) => {
     updateDay(dayId, (day) => ({
       ...day,
@@ -436,6 +452,7 @@ export function useRouteCreateDraft({
     preferences: draft.preferences,
     removeDay,
     removeStopFromDay,
+    reorderDayWaypoints,
     setActiveDayId,
     setDayDestination,
     setDayOrigin,

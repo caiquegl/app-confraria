@@ -1,18 +1,36 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  NestableDraggableFlatList,
+  ScaleDecorator,
+} from "react-native-draggable-flatlist";
+import type { RenderItemParams } from "react-native-draggable-flatlist";
 
 import { PlaceAutocompleteField } from "@/components/PlaceAutocompleteField";
-import type { PlaceReference } from "@/lib/places";
-import type { RouteDaySuggestionsResponse } from "@/lib/places";
+import type {
+  PlaceReference,
+  RouteDaySuggestionsResponse,
+  RouteStopSuggestion,
+} from "@/lib/places";
 import { colors } from "@/theme/colors";
 
-import type { RouteDraftDay } from "../types/route-create.types";
+import type { RouteDraftDay, RoutePlace } from "../types/route-create.types";
 import { RouteDaySuggestions } from "./RouteDaySuggestions";
 import { getDayColor } from "../utils/route-day.utils";
-import { getDayOriginLabel } from "../utils/route-draft.utils";
+import {
+  DESTINATION_WAYPOINT_ID,
+  getDayOriginLabel,
+  ORIGIN_WAYPOINT_ID,
+  type RouteWaypointOrderItem,
+} from "../utils/route-draft.utils";
 import { toPlaceReference } from "../utils/route-place.utils";
 
-import type { RouteStopSuggestion } from "@/lib/places";
+type WaypointRow = {
+  id: string;
+  kind: "destination" | "origin" | "stop";
+  place: RoutePlace | null;
+};
 
 type RouteDayCardProps = {
   day: RouteDraftDay;
@@ -30,14 +48,32 @@ type RouteDayCardProps = {
   onChangeDestination: (place: PlaceReference | null) => void;
   onChangeOrigin: (place: PlaceReference | null) => void;
   onChangeStop: (stopId: string, place: PlaceReference | null) => void;
+  onDragBegin?: () => void;
+  onDragEnd?: () => void;
   onPress: () => void;
   onRemoveDay: () => void;
   onRemoveStop: (stopId: string) => void;
+  onReorderWaypoints: (orderedItems: RouteWaypointOrderItem[]) => void;
   onSuggestionsScrollBegin?: () => void;
   onSuggestionsScrollEnd?: () => void;
   onToggleOvernight: () => void;
   width: number;
 };
+
+function getWaypointLabel(
+  index: number,
+  total: number,
+  isFirstDay: boolean,
+): string {
+  if (isFirstDay && index === 0) {
+    return "Origem";
+  }
+  if (index === total - 1) {
+    return "Destino";
+  }
+  const stopNumber = isFirstDay ? index : index + 1;
+  return `Parada ${stopNumber}`;
+}
 
 export function RouteDayCard({
   day,
@@ -55,9 +91,12 @@ export function RouteDayCard({
   onChangeDestination,
   onChangeOrigin,
   onChangeStop,
+  onDragBegin,
+  onDragEnd,
   onPress,
   onRemoveDay,
   onRemoveStop,
+  onReorderWaypoints,
   onSuggestionsScrollBegin,
   onSuggestionsScrollEnd,
   onToggleOvernight,
@@ -65,6 +104,129 @@ export function RouteDayCard({
 }: RouteDayCardProps) {
   const dayColor = getDayColor(dayIndex);
   const derivedOriginLabel = getDayOriginLabel(days, dayIndex);
+  const [isReordering, setIsReordering] = useState(false);
+
+  const sortableData = useMemo((): WaypointRow[] => {
+    const stops: WaypointRow[] = day.stops.map((stop) => ({
+      id: stop.id,
+      kind: "stop",
+      place: stop.place,
+    }));
+
+    if (isFirstDay) {
+      return [
+        { id: ORIGIN_WAYPOINT_ID, kind: "origin", place: day.origin },
+        ...stops,
+        {
+          id: DESTINATION_WAYPOINT_ID,
+          kind: "destination",
+          place: day.destination,
+        },
+      ];
+    }
+
+    return [
+      ...stops,
+      {
+        id: DESTINATION_WAYPOINT_ID,
+        kind: "destination",
+        place: day.destination,
+      },
+    ];
+  }, [day.destination, day.origin, day.stops, isFirstDay]);
+
+  const handlePlaceChange = useCallback(
+    (item: WaypointRow, index: number, place: PlaceReference | null) => {
+      const total = sortableData.length;
+      const isOrigin = isFirstDay && index === 0;
+      const isDestination = index === total - 1;
+
+      if (isOrigin) {
+        onChangeOrigin(place);
+        return;
+      }
+      if (isDestination) {
+        onChangeDestination(place);
+        return;
+      }
+      onChangeStop(item.id, place);
+    },
+    [
+      isFirstDay,
+      onChangeDestination,
+      onChangeOrigin,
+      onChangeStop,
+      sortableData.length,
+    ],
+  );
+
+  const renderWaypoint = useCallback(
+    ({ item, drag, getIndex, isActive: isDragging }: RenderItemParams<WaypointRow>) => {
+      const index = getIndex() ?? 0;
+      const total = sortableData.length;
+      const label = getWaypointLabel(index, total, isFirstDay);
+      const isStopRow =
+        !(isFirstDay && index === 0) && index !== total - 1;
+      const canRemove = isStopRow && item.kind === "stop";
+
+      return (
+        <ScaleDecorator>
+          <View style={[styles.fieldBlock, isDragging && styles.fieldBlockDragging]}>
+            <View style={styles.stopHeader}>
+              <Text style={styles.fieldLabel}>{label}</Text>
+              {canRemove ? (
+                <Pressable
+                  accessibilityLabel="Remover parada"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => onRemoveStop(item.id)}
+                >
+                  <Ionicons color="#9CA3AF" name="close" size={16} />
+                </Pressable>
+              ) : null}
+            </View>
+            <View style={styles.inputRow}>
+              <View style={styles.inputFlex}>
+                <PlaceAutocompleteField
+                  compact
+                  editable={!isReordering}
+                  placeholder={
+                    isFirstDay && index === 0
+                      ? "Minha localização"
+                      : index === total - 1
+                        ? "Digite o destino..."
+                        : "Digite uma parada..."
+                  }
+                  suppressSuggestions={isReordering}
+                  value={toPlaceReference(item.place)}
+                  onChange={(place) => handlePlaceChange(item, index, place)}
+                />
+              </View>
+              <Pressable
+                accessibilityLabel="Arrastar ponto"
+                accessibilityRole="button"
+                hitSlop={8}
+                style={[styles.dragHandle, isDragging && styles.dragHandleActive]}
+                onPressIn={() => {
+                  Keyboard.dismiss();
+                  drag();
+                }}
+              >
+                <Ionicons color="#9CA3AF" name="menu" size={20} />
+              </Pressable>
+            </View>
+          </View>
+        </ScaleDecorator>
+      );
+    },
+    [
+      handlePlaceChange,
+      isFirstDay,
+      isReordering,
+      onRemoveStop,
+      sortableData.length,
+    ],
+  );
 
   return (
     <View style={[styles.card, { width }, isActive && styles.cardActive]}>
@@ -79,45 +241,37 @@ export function RouteDayCard({
       </Pressable>
 
       <View style={styles.body}>
-        <View style={styles.fieldBlock}>
-          <Text style={styles.fieldLabel}>Origem</Text>
-          {isFirstDay ? (
-            <PlaceAutocompleteField
-              compact
-              placeholder="Minha localização"
-              value={toPlaceReference(day.origin)}
-              onChange={onChangeOrigin}
-            />
-          ) : (
+        {!isFirstDay ? (
+          <View style={styles.fieldBlock}>
+            <Text style={styles.fieldLabel}>Origem</Text>
             <View style={styles.fixedOrigin}>
               <Text numberOfLines={2} style={styles.fixedOriginText}>
                 {derivedOriginLabel}
               </Text>
             </View>
-          )}
-        </View>
-
-        {day.stops.map((stop, stopIndex) => (
-          <View key={stop.id} style={styles.fieldBlock}>
-            <View style={styles.stopHeader}>
-              <Text style={styles.fieldLabel}>Parada {stopIndex + 1}</Text>
-              <Pressable
-                accessibilityLabel="Remover parada"
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={() => onRemoveStop(stop.id)}
-              >
-                <Ionicons color="#9CA3AF" name="close" size={16} />
-              </Pressable>
-            </View>
-            <PlaceAutocompleteField
-              compact
-              placeholder="Digite uma parada..."
-              value={toPlaceReference(stop.place)}
-              onChange={(place) => onChangeStop(stop.id, place)}
-            />
           </View>
-        ))}
+        ) : null}
+
+        <NestableDraggableFlatList
+          activationDistance={8}
+          data={sortableData}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          scrollEnabled={false}
+          renderItem={renderWaypoint}
+          onDragBegin={() => {
+            Keyboard.dismiss();
+            setIsReordering(true);
+            onDragBegin?.();
+          }}
+          onDragEnd={({ data }) => {
+            setIsReordering(false);
+            onDragEnd?.();
+            onReorderWaypoints(
+              data.map((row) => ({ id: row.id, place: row.place })),
+            );
+          }}
+        />
 
         <Pressable
           accessibilityRole="button"
@@ -127,16 +281,6 @@ export function RouteDayCard({
           <Ionicons color={colors.brandDark} name="add" size={16} />
           <Text style={styles.addStopText}>Adicionar parada</Text>
         </Pressable>
-
-        <View style={styles.fieldBlock}>
-          <Text style={styles.fieldLabel}>Destino</Text>
-          <PlaceAutocompleteField
-            compact
-            placeholder="Digite o destino..."
-            value={toPlaceReference(day.destination)}
-            onChange={onChangeDestination}
-          />
-        </View>
 
         <RouteDaySuggestions
           alert={daySuggestions?.alert ?? null}
@@ -250,8 +394,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
   },
+  dragHandle: {
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    height: 44,
+    justifyContent: "center",
+    width: 40,
+  },
+  dragHandleActive: {
+    backgroundColor: "#E5E7EB",
+  },
   fieldBlock: {
     gap: 8,
+    marginBottom: 16,
+  },
+  fieldBlockDragging: {
+    opacity: 0.95,
   },
   fieldLabel: {
     color: "#6B7280",
@@ -279,6 +438,14 @@ const styles = StyleSheet.create({
   },
   headerCopy: {
     flex: 1,
+  },
+  inputFlex: {
+    flex: 1,
+  },
+  inputRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 8,
   },
   overnightButton: {
     alignItems: "center",

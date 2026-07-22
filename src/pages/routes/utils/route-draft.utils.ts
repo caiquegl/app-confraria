@@ -9,7 +9,77 @@ import type {
   RoutePlace,
 } from "../types/route-create.types";
 import type { MapMarkerPoint } from "../types/route-create.types";
-import { createRouteDayDraft, getDayColor } from "./route-day.utils";
+import { createRouteDayDraft, createRouteStop, getDayColor } from "./route-day.utils";
+
+export const ORIGIN_WAYPOINT_ID = "origin";
+export const DESTINATION_WAYPOINT_ID = "destination";
+
+export type RouteWaypointOrderItem = {
+  id: string;
+  place: RoutePlace | null;
+};
+
+function toStopId(id: string): string {
+  if (id === ORIGIN_WAYPOINT_ID || id === DESTINATION_WAYPOINT_ID) {
+    return createRouteStop().id;
+  }
+  return id;
+}
+
+/**
+ * Remaps origin / stops / destination from the visual sortable order.
+ * - Day 1 (`lockOrigin: false`): ordered includes origin; index 0 → origin, last → destination, middle → stops.
+ * - Day 2+ (`lockOrigin: true`): ordered is stops + destination only; last → destination, rest → stops.
+ */
+export function applyWaypointOrder(
+  day: RouteDraftDay,
+  ordered: RouteWaypointOrderItem[],
+  options: { lockOrigin: boolean },
+): RouteDraftDay {
+  if (ordered.length === 0) {
+    if (options.lockOrigin) {
+      return { ...day, destination: null, stops: [] };
+    }
+    return { ...day, destination: null, origin: null, stops: [] };
+  }
+
+  if (options.lockOrigin) {
+    const destinationItem = ordered[ordered.length - 1];
+    const stopItems = ordered.slice(0, -1);
+
+    return {
+      ...day,
+      destination: destinationItem.place,
+      stops: stopItems.map((item) => ({
+        id: toStopId(item.id),
+        place: item.place,
+      })),
+    };
+  }
+
+  if (ordered.length === 1) {
+    return {
+      ...day,
+      destination: null,
+      origin: ordered[0].place,
+      stops: [],
+    };
+  }
+
+  const originItem = ordered[0];
+  const destinationItem = ordered[ordered.length - 1];
+  const stopItems = ordered.slice(1, -1);
+
+  return {
+    ...day,
+    destination: destinationItem.place,
+    origin: originItem.place,
+    stops: stopItems.map((item) => ({
+      id: toStopId(item.id),
+      place: item.place,
+    })),
+  };
+}
 
 export function labelOnlyPlace(
   label: string,

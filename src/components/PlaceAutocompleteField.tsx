@@ -18,19 +18,23 @@ const SEARCH_DEBOUNCE_MS = 450;
 
 type PlaceAutocompleteFieldProps = {
   compact?: boolean;
+  editable?: boolean;
   label?: string;
   onChange: (place: PlaceReference | null) => void;
   placeholder: string;
   required?: boolean;
+  suppressSuggestions?: boolean;
   value: PlaceReference | null;
 };
 
 export function PlaceAutocompleteField({
   compact = false,
+  editable = true,
   label,
   onChange,
   placeholder,
   required = false,
+  suppressSuggestions = false,
   value,
 }: PlaceAutocompleteFieldProps) {
   const [query, setQuery] = useState(value?.description ?? "");
@@ -39,6 +43,23 @@ export function PlaceAutocompleteField({
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    if (!value) {
+      return;
+    }
+
+    setQuery(value.description);
+    setSuggestions([]);
+    setHasError(false);
+    setIsLoading(false);
+  }, [value?.description, value?.placeId]);
+
+  useEffect(() => {
+    if (suppressSuggestions || !editable) {
+      setSuggestions([]);
+      setIsLoading(false);
+      return;
+    }
+
     const trimmedQuery = query.trim();
     const queryMatchesSelectedPlace = value?.description === query;
 
@@ -71,7 +92,7 @@ export function PlaceAutocompleteField({
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [query, value?.description]);
+  }, [editable, query, suppressSuggestions, value?.description]);
 
   const handleChangeText = (text: string) => {
     setQuery(text);
@@ -104,6 +125,8 @@ export function PlaceAutocompleteField({
   };
 
   const shouldShowDropdown =
+    !suppressSuggestions &&
+    editable &&
     query.trim().length >= MIN_SEARCH_LENGTH &&
     value?.description !== query &&
     (isLoading || hasError || suggestions.length > 0);
@@ -121,6 +144,7 @@ export function PlaceAutocompleteField({
         <Ionicons color="#9CA3AF" name="location-outline" size={compact ? 16 : 18} />
         <TextInput
           autoCapitalize="words"
+          editable={editable}
           placeholder={placeholder}
           placeholderTextColor="#9CA3AF"
           style={[styles.input, compact && styles.inputCompact]}
@@ -128,7 +152,7 @@ export function PlaceAutocompleteField({
           onChangeText={handleChangeText}
         />
         {isLoading ? <ActivityIndicator color={colors.brandDark} size="small" /> : null}
-        {query ? (
+        {query && editable ? (
           <Pressable
             accessibilityLabel="Limpar endereço"
             accessibilityRole="button"

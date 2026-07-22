@@ -4,6 +4,7 @@ import "@/tasks/route-location-tracking.task";
 import { Stack, usePathname } from "expo-router";
 import { useEffect } from "react";
 import { View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -56,24 +57,26 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <EnvironmentBannerProvider>
-        <SafeAreaView
-          edges={["top", "left", "right"]}
-          style={{ flex: 1, backgroundColor: colors.brandGray }}
-        >
-          <EnvironmentBanner />
-          <View style={{ flex: 1, overflow: "visible", zIndex: 200 }}>
-            <Stack
-              screenOptions={{
-                contentStyle: { backgroundColor: colors.brandGray },
-                headerShown: false,
-              }}
-            />
-          </View>
-          <Toast />
-        </SafeAreaView>
-      </EnvironmentBannerProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <EnvironmentBannerProvider>
+          <SafeAreaView
+            edges={["top", "left", "right"]}
+            style={{ flex: 1, backgroundColor: colors.brandGray }}
+          >
+            <EnvironmentBanner />
+            <View style={{ flex: 1, overflow: "visible", zIndex: 200 }}>
+              <Stack
+                screenOptions={{
+                  contentStyle: { backgroundColor: colors.brandGray },
+                  headerShown: false,
+                }}
+              />
+            </View>
+            <Toast />
+          </SafeAreaView>
+        </EnvironmentBannerProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

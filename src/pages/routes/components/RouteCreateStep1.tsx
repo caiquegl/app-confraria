@@ -1,12 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
+import { NestableScrollContainer } from "react-native-draggable-flatlist";
 
-import type { PlaceReference } from "@/lib/places";
-import type { RouteDaySuggestionsResponse, RouteStopSuggestion } from "@/lib/places";
+import type {
+  PlaceReference,
+  RouteDaySuggestionsResponse,
+  RouteStopSuggestion,
+} from "@/lib/places";
 import { colors } from "@/theme/colors";
 
 import { RouteDayCarousel } from "./RouteDayCarousel";
 import type { RouteDraftDay } from "../types/route-create.types";
+import type { RouteWaypointOrderItem } from "../utils/route-draft.utils";
 
 type RouteCreateStep1Props = {
   activeDayId: string;
@@ -21,8 +26,11 @@ type RouteCreateStep1Props = {
   onChangeDayDestination: (dayId: string, place: PlaceReference | null) => void;
   onChangeDayOrigin: (dayId: string, place: PlaceReference | null) => void;
   onChangeStop: (dayId: string, stopId: string, place: PlaceReference | null) => void;
+  onDragBegin?: () => void;
+  onDragEnd?: () => void;
   onRemoveDay: (dayId: string) => void;
   onRemoveStop: (dayId: string, stopId: string) => void;
+  onReorderWaypoints: (dayId: string, orderedItems: RouteWaypointOrderItem[]) => void;
   onSelectDay: (dayId: string) => void;
   onToggleDayOvernight: (dayId: string) => void;
 };
@@ -40,13 +48,16 @@ export function RouteCreateStep1({
   onChangeDayDestination,
   onChangeDayOrigin,
   onChangeStop,
+  onDragBegin,
+  onDragEnd,
   onRemoveDay,
   onRemoveStop,
+  onReorderWaypoints,
   onSelectDay,
   onToggleDayOvernight,
 }: RouteCreateStep1Props) {
   return (
-    <ScrollView
+    <NestableScrollContainer
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
@@ -67,8 +78,11 @@ export function RouteCreateStep1({
         onChangeDayDestination={onChangeDayDestination}
         onChangeDayOrigin={onChangeDayOrigin}
         onChangeStop={onChangeStop}
+        onDragBegin={onDragBegin}
+        onDragEnd={onDragEnd}
         onRemoveDay={onRemoveDay}
         onRemoveStop={onRemoveStop}
+        onReorderWaypoints={onReorderWaypoints}
         onSelectDay={onSelectDay}
         onToggleDayOvernight={onToggleDayOvernight}
       />
@@ -77,7 +91,7 @@ export function RouteCreateStep1({
         <Ionicons color={colors.brandDark} name="add" size={18} />
         <Text style={styles.addDayText}>Adicionar novo dia ao roteiro</Text>
       </Pressable>
-    </ScrollView>
+    </NestableScrollContainer>
   );
 }
 
