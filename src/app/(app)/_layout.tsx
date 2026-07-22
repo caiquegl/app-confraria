@@ -33,6 +33,7 @@ export default function AppLayout() {
     pathname.startsWith("/profile/settings") ||
     pathname.startsWith("/quick-rides/") ||
     pathname.startsWith("/routes/create") ||
+    /\/routes\/[^/]+\/navigate/.test(pathname) ||
     (pathname.startsWith("/users/") && pathname.includes("/events"));
 
   useEffect(() => {

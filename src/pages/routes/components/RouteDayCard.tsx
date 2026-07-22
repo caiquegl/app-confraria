@@ -3,27 +3,39 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { PlaceAutocompleteField } from "@/components/PlaceAutocompleteField";
 import type { PlaceReference } from "@/lib/places";
+import type { RouteDaySuggestionsResponse } from "@/lib/places";
 import { colors } from "@/theme/colors";
 
 import type { RouteDraftDay } from "../types/route-create.types";
+import { RouteDaySuggestions } from "./RouteDaySuggestions";
 import { getDayColor } from "../utils/route-day.utils";
 import { getDayOriginLabel } from "../utils/route-draft.utils";
 import { toPlaceReference } from "../utils/route-place.utils";
+
+import type { RouteStopSuggestion } from "@/lib/places";
 
 type RouteDayCardProps = {
   day: RouteDraftDay;
   dayIndex: number;
   days: RouteDraftDay[];
+  daySuggestions: RouteDaySuggestionsResponse | null;
   isActive: boolean;
   isFirstDay: boolean;
+  isLoadingSuggestions: boolean;
+  isLoadingMoreSuggestions: boolean;
   isSingleDay: boolean;
   onAddStop: () => void;
+  onAddSuggestedStop: (suggestion: RouteStopSuggestion) => void;
+  onLoadMoreSuggestions?: () => void;
   onChangeDestination: (place: PlaceReference | null) => void;
   onChangeOrigin: (place: PlaceReference | null) => void;
   onChangeStop: (stopId: string, place: PlaceReference | null) => void;
   onPress: () => void;
   onRemoveDay: () => void;
   onRemoveStop: (stopId: string) => void;
+  onSuggestionsScrollBegin?: () => void;
+  onSuggestionsScrollEnd?: () => void;
+  onToggleOvernight: () => void;
   width: number;
 };
 
@@ -31,16 +43,24 @@ export function RouteDayCard({
   day,
   dayIndex,
   days,
+  daySuggestions,
   isActive,
   isFirstDay,
+  isLoadingSuggestions,
+  isLoadingMoreSuggestions,
   isSingleDay,
   onAddStop,
+  onAddSuggestedStop,
+  onLoadMoreSuggestions,
   onChangeDestination,
   onChangeOrigin,
   onChangeStop,
   onPress,
   onRemoveDay,
   onRemoveStop,
+  onSuggestionsScrollBegin,
+  onSuggestionsScrollEnd,
+  onToggleOvernight,
   width,
 }: RouteDayCardProps) {
   const dayColor = getDayColor(dayIndex);
@@ -118,15 +138,51 @@ export function RouteDayCard({
           />
         </View>
 
-        {!isSingleDay ? (
+        <RouteDaySuggestions
+          alert={daySuggestions?.alert ?? null}
+          day={day}
+          dayLabel={day.label}
+          hasMore={daySuggestions?.hasMore ?? false}
+          isLoading={isLoadingSuggestions}
+          isLoadingMore={isLoadingMoreSuggestions}
+          suggestions={daySuggestions?.suggestions ?? []}
+          onAddSuggestion={onAddSuggestedStop}
+          onLoadMore={onLoadMoreSuggestions}
+          onScrollBegin={onSuggestionsScrollBegin}
+          onScrollEnd={onSuggestionsScrollEnd}
+        />
+
+        <View style={styles.dayActions}>
           <Pressable
             accessibilityRole="button"
-            style={styles.removeDayButton}
-            onPress={onRemoveDay}
+            style={[styles.overnightButton, day.overnight && styles.overnightButtonActive]}
+            onPress={onToggleOvernight}
           >
-            <Text style={styles.removeDayText}>Remover dia</Text>
+            <Ionicons
+              color={day.overnight ? "#4E73D9" : "#6B7280"}
+              name="moon-outline"
+              size={12}
+            />
+            <Text
+              style={[
+                styles.overnightButtonText,
+                day.overnight && styles.overnightButtonTextActive,
+              ]}
+            >
+              Marcar pernoite
+            </Text>
           </Pressable>
-        ) : null}
+
+          {!isSingleDay ? (
+            <Pressable
+              accessibilityRole="button"
+              style={styles.removeDayButton}
+              onPress={onRemoveDay}
+            >
+              <Text style={styles.removeDayText}>Remover dia</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -164,6 +220,13 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 0, width: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
+  },
+  dayActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingTop: 4,
   },
   dayBadge: {
     alignItems: "center",
@@ -216,6 +279,26 @@ const styles = StyleSheet.create({
   },
   headerCopy: {
     flex: 1,
+  },
+  overnightButton: {
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  overnightButtonActive: {
+    backgroundColor: "#EEF4FF",
+  },
+  overnightButtonText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  overnightButtonTextActive: {
+    color: "#4E73D9",
   },
   removeDayButton: {
     alignSelf: "flex-start",

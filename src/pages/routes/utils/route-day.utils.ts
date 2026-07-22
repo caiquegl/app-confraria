@@ -23,6 +23,7 @@ export function createRouteDayDraft(index: number): RouteDraftDay {
     id: `day-${index + 1}`,
     label: `Dia ${index + 1}`,
     origin: null,
+    overnight: false,
     stops: [],
   };
 }

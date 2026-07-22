@@ -18,16 +18,26 @@ export function mapApiRouteToSavedRoute(route: import("../types/saved-route.type
     bikeId: route.bike.id,
     bikeName: route.bike.name,
     createdAt: route.createdAt,
+    creator: route.createdBy
+      ? {
+          avatarUrl: route.createdBy.avatarUrl,
+          id: route.createdBy.id,
+          name: route.createdBy.name,
+        }
+      : null,
     dayCount: route.days.length,
     days: route.days.map((day) => ({
       dayNumber: day.dayNumber,
       id: day.id,
       label: day.label,
+      overnight: day.overnight ?? false,
     })),
     destinationLabel: route.destinationLabel,
     distanceLabel: formatRouteDistance(route.distanceMeters),
     durationLabel: formatRouteDuration(route.durationSeconds),
+    finishedAt: route.finishedAt,
     fuelCost: route.fuelCost,
+    hasOvernight: route.days.some((day) => day.overnight),
     id: route.id,
     optimizeFuel: route.optimizeFuel,
     originLabel: route.originLabel,

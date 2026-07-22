@@ -59,6 +59,7 @@ export function mapApiRouteToEditSnapshot(route: RouteApiResponse): RouteCreateC
       id: day.id,
       label: day.label,
       origin: origin ? mapPlace(origin) : null,
+      overnight: day.overnight ?? false,
       stops: stops.map((stop) => ({
         id: stop.id,
         place: mapPlace(stop),

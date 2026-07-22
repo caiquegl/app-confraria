@@ -14,7 +14,11 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.caiquegl22.appconfraria",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "O Confraria rastreia sua posição durante passeios em andamento, inclusive com o app em segundo plano, para que seus parceiros vejam onde você está.",
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -49,6 +53,9 @@
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS"
@@ -97,7 +104,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "O Confraria usa sua localização para mostrar eventos perto de você."
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "O Confraria rastreia sua posição durante passeios em andamento, inclusive com o app em segundo plano, para que seus parceiros vejam onde você está.",
+          "locationWhenInUsePermission": "O Confraria usa sua localização para navegação e passeios em grupo."
         }
       ]
     ],

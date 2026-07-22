@@ -46,6 +46,7 @@ export function buildCreateRoutePayload({
           : {}),
         label: day.label,
         origin: day.origin,
+        overnight: day.overnight,
         stops: day.stops,
       };
     }),

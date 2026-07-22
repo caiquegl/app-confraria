@@ -45,8 +45,13 @@ export const STATUS_LABELS: Record<RouteStatusFilter, string> = {
 };
 
 export const ONGOING_GROUP_LABEL = "Em andamento";
+export const COMPLETED_GROUP_LABEL = "Rotas concluídas";
 const GROUP_ORDER = ["Hoje", "Esta Semana", "Este Mês", "Próximos", "Sem Data"];
-export const GROUP_DISPLAY_ORDER = [ONGOING_GROUP_LABEL, ...GROUP_ORDER];
+export const GROUP_DISPLAY_ORDER = [
+  ONGOING_GROUP_LABEL,
+  ...GROUP_ORDER,
+  COMPLETED_GROUP_LABEL,
+];
 
 const startOfDay = (date: Date) => {
   const next = new Date(date);
@@ -227,11 +232,32 @@ export function groupSavedRoutes(routes: SavedRoute[]): SavedRouteGroup[] {
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
   const activeOngoingId = ongoing[0]?.id;
 
+  const completed = routes
+    .filter(isRouteCompleted)
+    .sort((left, right) => {
+      const leftFinishedAt = left.finishedAt ? new Date(left.finishedAt).getTime() : 0;
+      const rightFinishedAt = right.finishedAt ? new Date(right.finishedAt).getTime() : 0;
+
+      if (leftFinishedAt && rightFinishedAt) {
+        return rightFinishedAt - leftFinishedAt;
+      }
+
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    });
+
   routes.forEach((route) => {
+    if (isRouteCompleted(route)) {
+      return;
+    }
+
     const label =
       route.id === activeOngoingId ? ONGOING_GROUP_LABEL : getGroupLabel(route, now);
     buckets.set(label, [...(buckets.get(label) ?? []), route]);
   });
+
+  if (completed.length > 0) {
+    buckets.set(COMPLETED_GROUP_LABEL, completed);
+  }
 
   return GROUP_DISPLAY_ORDER.map((label) => ({
     label,

@@ -240,10 +240,52 @@ export function useRouteCreateDraft({
     }));
   }, [updateDay]);
 
+  const addSuggestedStopToDay = useCallback(
+    (
+      dayId: string,
+      suggestion: {
+        description: string;
+        latitude: number;
+        longitude: number;
+        name: string;
+        placeId: string;
+        typeLabel: string;
+      },
+    ) => {
+      const stop = createRouteStop();
+
+      updateDay(dayId, (day) => ({
+        ...day,
+        stops: [
+          ...day.stops,
+          {
+            ...stop,
+            place: {
+              description: suggestion.description,
+              latitude: suggestion.latitude,
+              longitude: suggestion.longitude,
+              mainText: suggestion.name,
+              placeId: suggestion.placeId,
+              secondaryText: suggestion.typeLabel,
+            },
+          },
+        ],
+      }));
+    },
+    [updateDay],
+  );
+
   const removeStopFromDay = useCallback((dayId: string, stopId: string) => {
     updateDay(dayId, (day) => ({
       ...day,
       stops: day.stops.filter((stop) => stop.id !== stopId),
+    }));
+  }, [updateDay]);
+
+  const toggleDayOvernight = useCallback((dayId: string) => {
+    updateDay(dayId, (day) => ({
+      ...day,
+      overnight: !day.overnight,
     }));
   }, [updateDay]);
 
@@ -377,6 +419,7 @@ export function useRouteCreateDraft({
     activeDayIndex,
     addDay,
     addStopToDay,
+    addSuggestedStopToDay,
     canContinueStep1,
     canContinueStep2,
     canContinueStep3,
@@ -408,6 +451,7 @@ export function useRouteCreateDraft({
     setTripTime,
     sheetState,
     step,
+    toggleDayOvernight,
     togglePreference,
     toggleSheetState,
     tripDate: tripSchedule.tripDate,

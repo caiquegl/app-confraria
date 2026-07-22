@@ -25,12 +25,26 @@ export type PlaceDirectionsWaypoint = {
   longitude: number;
 };
 
+export type PlaceDirectionsStep = {
+  distanceMeters: number | null;
+  durationSeconds: number | null;
+  encodedPolyline: string | null;
+  endLatitude: number | null;
+  endLongitude: number | null;
+  id: string;
+  instructions: string | null;
+  maneuver: string | null;
+  startLatitude: number | null;
+  startLongitude: number | null;
+};
+
 export type PlaceDirectionsRouteOption = {
   distanceMeters: number | null;
   durationSeconds: number | null;
   encodedPolyline: string;
   id: string;
   isDefault: boolean;
+  steps?: PlaceDirectionsStep[];
   tollAvailable: boolean;
   tollCost: number | null;
   tollCount: number | null;
@@ -38,6 +52,7 @@ export type PlaceDirectionsRouteOption = {
 
 export type PlaceDirectionsRequestOptions = {
   avoidTolls?: boolean;
+  includeSteps?: boolean;
 };
 
 export type PlaceDirectionsResponse = {

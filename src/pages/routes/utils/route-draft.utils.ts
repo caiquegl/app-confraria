@@ -134,6 +134,7 @@ export function buildRouteCreatePayload(draft: RouteCreateDraft): RouteCreatePay
       destination,
       label: day.label,
       origin,
+      overnight: day.overnight ?? false,
       stops,
     });
   }

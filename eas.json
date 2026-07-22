@@ -7,7 +7,12 @@
     "development": {
       "channel": "development",
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a1e75dbaf565a4a6c5c6d20f28a26030@o4511631547105280.ingest.us.sentry.io/4511631549071360",
+        "SENTRY_ORG": "confraria",
+        "SENTRY_PROJECT": "react-native"
+      }
     },
     "preview": {
       "channel": "preview",
@@ -17,11 +22,21 @@
       },
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a1e75dbaf565a4a6c5c6d20f28a26030@o4511631547105280.ingest.us.sentry.io/4511631549071360",
+        "SENTRY_ORG": "confraria",
+        "SENTRY_PROJECT": "react-native"
       }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_SENTRY_DSN": "https://a1e75dbaf565a4a6c5c6d20f28a26030@o4511631547105280.ingest.us.sentry.io/4511631549071360",
+        "SENTRY_ORG": "confraria",
+        "SENTRY_PROJECT": "react-native"
+      }
     }
   },
   "submit": {

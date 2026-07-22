@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -16,7 +16,12 @@ type RouteSharePreview = {
 
 type RouteShareSheetProps = {
   friends: FeedShareFriend[];
+  isOwner?: boolean;
+  isPublished?: boolean;
+  isPublishing?: boolean;
+  mode?: "invite" | "share";
   onClose: () => void;
+  onPublishChange?: (isPublished: boolean) => Promise<void>;
   onSendToFriend: (friendId: string) => Promise<ShareSendResult | null>;
   onSent?: (result: ShareSendResult) => void;
   route: RouteSharePreview | null;
@@ -25,7 +30,12 @@ type RouteShareSheetProps = {
 
 export function RouteShareSheet({
   friends,
+  isOwner = false,
+  isPublished = false,
+  isPublishing = false,
+  mode = "share",
   onClose,
+  onPublishChange,
   onSendToFriend,
   onSent,
   route,
@@ -35,13 +45,18 @@ export function RouteShareSheet({
 
   if (!route) return null;
 
+  const isInvite = mode === "invite";
+  const showPublishAction = isOwner && !isInvite && onPublishChange;
+
   const handleSend = async (friendId: string) => {
     try {
       const result = await onSendToFriend(friendId);
       Toast.show({
         type: "success",
-        text1: "Rota enviada",
-        text2: "Compartilhada por mensagem.",
+        text1: isInvite ? "Convite enviado" : "Rota enviada",
+        text2: isInvite
+          ? "Seu parceiro receberá o convite no chat."
+          : "Compartilhada por mensagem.",
         visibilityTime: 1800,
       });
       if (result) {
@@ -56,6 +71,21 @@ export function RouteShareSheet({
     }
   };
 
+  const handlePublishPress = async () => {
+    if (!onPublishChange || isPublishing) return;
+
+    try {
+      await onPublishChange(!isPublished);
+      onClose();
+    } catch {
+      Toast.show({
+        type: "error",
+        text1: isPublished ? "Erro ao despublicar" : "Erro ao publicar",
+        text2: "Não foi possível atualizar a visibilidade da rota.",
+      });
+    }
+  };
+
   return (
     <Modal animationType="fade" transparent statusBarTranslucent visible={!!route}>
       <Pressable style={styles.backdrop} onPress={onClose} />
@@ -63,7 +93,9 @@ export function RouteShareSheet({
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Compartilhar com quem sigo</Text>
+            <Text style={styles.title}>
+              {isInvite ? "Convidar para o passeio" : "Compartilhar"}
+            </Text>
             <Text style={styles.subtitle} numberOfLines={2}>
               {route.title}
             </Text>
@@ -73,6 +105,66 @@ export function RouteShareSheet({
             <Ionicons name="close" size={20} color="#6B7280" />
           </Pressable>
         </View>
+
+        {showPublishAction ? (
+          <Pressable
+            disabled={isPublishing}
+            style={[
+              styles.publishAction,
+              isPublished ? styles.publishActionUnpublish : styles.publishActionPublish,
+            ]}
+            onPress={() => void handlePublishPress()}
+          >
+            <View
+              style={[
+                styles.publishIcon,
+                isPublished ? styles.publishIconUnpublish : styles.publishIconPublish,
+              ]}
+            >
+              {isPublishing ? (
+                <ActivityIndicator
+                  color={isPublished ? "#EF4444" : "#FFFFFF"}
+                  size="small"
+                />
+              ) : (
+                <Ionicons
+                  color={isPublished ? "#EF4444" : "#FFFFFF"}
+                  name="globe-outline"
+                  size={20}
+                />
+              )}
+            </View>
+
+            <View style={styles.publishText}>
+              <Text
+                style={[
+                  styles.publishTitle,
+                  isPublished ? styles.publishTitleUnpublish : styles.publishTitlePublish,
+                ]}
+              >
+                {isPublished ? "Remover do Confraria" : "Publicar no Confraria"}
+              </Text>
+              <Text
+                style={[
+                  styles.publishDescription,
+                  isPublished
+                    ? styles.publishDescriptionUnpublish
+                    : styles.publishDescriptionPublish,
+                ]}
+              >
+                {isPublished
+                  ? "Sua rota deixará de aparecer para outros membros"
+                  : "Deixe sua rota disponível para outros membros"}
+              </Text>
+            </View>
+
+            <Ionicons
+              color={isPublished ? "#FCA5A5" : "#D1D5DB"}
+              name="chevron-forward"
+              size={18}
+            />
+          </Pressable>
+        ) : null}
 
         <View style={styles.preview}>
           <View style={styles.previewFallback}>
@@ -88,6 +180,10 @@ export function RouteShareSheet({
           </View>
           <Ionicons name="send-outline" size={18} color={colors.brandPrimary} />
         </View>
+
+        <Text style={styles.sectionLabel}>
+          {isInvite ? "Convidar quem sigo" : "Compartilhar com quem sigo"}
+        </Text>
 
         <View style={styles.friends}>
           {friends.length === 0 ? (
@@ -145,7 +241,7 @@ const styles = StyleSheet.create({
   },
   friends: {
     gap: 12,
-    marginTop: 16,
+    marginTop: 12,
   },
   header: {
     alignItems: "flex-start",
@@ -189,6 +285,66 @@ const styles = StyleSheet.create({
   previewText: {
     flex: 1,
     minWidth: 0,
+  },
+  publishAction: {
+    alignItems: "center",
+    borderRadius: 20,
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  publishActionPublish: {
+    backgroundColor: "rgba(132, 169, 74, 0.1)",
+  },
+  publishActionUnpublish: {
+    backgroundColor: "#FEF2F2",
+  },
+  publishDescription: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  publishDescriptionPublish: {
+    color: "#6B7280",
+  },
+  publishDescriptionUnpublish: {
+    color: "#F87171",
+  },
+  publishIcon: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+  publishIconPublish: {
+    backgroundColor: colors.brandGreen,
+  },
+  publishIconUnpublish: {
+    backgroundColor: "#FEE2E2",
+  },
+  publishText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  publishTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  publishTitlePublish: {
+    color: colors.brandDark,
+  },
+  publishTitleUnpublish: {
+    color: "#DC2626",
+  },
+  sectionLabel: {
+    color: "#9CA3AF",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginTop: 16,
+    textTransform: "uppercase",
   },
   sheet: {
     backgroundColor: "#FFFFFF",

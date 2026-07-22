@@ -1,5 +1,27 @@
 export type RouteStatus = "scheduled" | "in_progress" | "finished";
 
+export type RouteInvitationStatus = "pending" | "accepted" | "declined";
+
+export type RouteInvitationResponse = {
+  id: string;
+  status: RouteInvitationStatus;
+};
+
+export type RouteParticipantResponse = {
+  avatarUrl: string | null;
+  id: string;
+  joinedAt: string;
+  name: string;
+  userId: string;
+};
+
+export type RoutePendingInviteResponse = {
+  avatarUrl: string | null;
+  invitedAt: string;
+  name: string;
+  userId: string;
+};
+
 export type RouteCreateAction = "start_now" | "save_for_later";
 
 export type RelativePeriod = "ALL" | "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "UPCOMING" | "NO_DATE";
@@ -21,6 +43,13 @@ export type SavedRouteDay = {
   dayNumber: number;
   id: string;
   label: string;
+  overnight: boolean;
+};
+
+export type SavedRouteCreator = {
+  avatarUrl: string | null;
+  id: string;
+  name: string;
 };
 
 export type SavedRoute = {
@@ -28,12 +57,15 @@ export type SavedRoute = {
   bikeId: string;
   bikeName: string;
   createdAt: string;
+  creator: SavedRouteCreator | null;
   dayCount: number;
   days: SavedRouteDay[];
   destinationLabel: string;
   distanceLabel: string;
   durationLabel: string;
+  finishedAt: string | null;
   fuelCost: number | null;
+  hasOvernight: boolean;
   id: string;
   optimizeFuel: boolean;
   originLabel: string;
@@ -74,6 +106,7 @@ export type CreateRoutePayload = {
       placeId: string;
       secondaryText: string;
     };
+    overnight?: boolean;
     stops: Array<{
       description: string;
       latitude: number;
@@ -122,6 +155,7 @@ export type RouteDayApiResponse = {
   durationSeconds: number | null;
   id: string;
   label: string;
+  overnight: boolean;
   places: RoutePlaceResponse[];
 };
 
@@ -133,14 +167,29 @@ export type RouteApiResponse = {
     name: string;
   };
   createdAt: string;
+  createdBy: {
+    avatarUrl: string | null;
+    id: string;
+    name: string;
+  };
+  createdById: string;
   days: RouteDayApiResponse[];
   destinationLabel: string;
   distanceMeters: number | null;
   durationSeconds: number | null;
+  finishedAt: string | null;
   fuelCost: number | null;
   id: string;
+  invitation: RouteInvitationResponse | null;
+  isOwner: boolean;
+  isParticipant: boolean;
+  isPublished: boolean;
   optimizeFuel: boolean;
   originLabel: string;
+  participants: RouteParticipantResponse[];
+  pendingInvites: RoutePendingInviteResponse[];
+  publishedAt: string | null;
+  startedAt: string | null;
   startsAt: string;
   status: RouteStatus;
   title: string;
@@ -151,3 +200,9 @@ export type RouteApiResponse = {
 };
 
 export type UpdateRoutePayload = Omit<CreateRoutePayload, "action">;
+
+export type PublishedRoutesPageResponse = {
+  data: RouteApiResponse[];
+  hasMore: boolean;
+  nextCursor: string | null;
+};

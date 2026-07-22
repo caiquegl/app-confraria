@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, type Href } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,22 +18,37 @@ import Toast from "react-native-toast-message";
 import { Button } from "@/components/Button";
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
+import {
+  ensureRouteBackgroundTracking,
+  stopRouteBackgroundTracking,
+} from "@/lib/route-background-tracking";
+import { routeTrackingLog } from "@/lib/route-tracking-logger";
 import { fetchChatConversations, sendChatMessage } from "@/pages/messages/services/messages.service";
+import { getCurrentUserId } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import { colors } from "@/theme/colors";
 
 import { RouteDetailMap } from "../components/RouteDetailMap";
+import { RouteGuestsSection } from "../components/RouteGuestsSection";
+import { RoutePublishNoticeModal } from "../components/RoutePublishNoticeModal";
 import { RouteShareSheet } from "../components/RouteShareSheet";
 import { useRouteDirections } from "../hooks/useRouteDirections";
 import {
   deleteRoute,
   fetchRoute,
   removeRouteStop,
+  respondToRouteInvitation,
+  updateRoutePublish,
   updateRouteStatus,
 } from "../services/routes.service";
 import type { RouteApiResponse, RouteDayApiResponse, RoutePlaceResponse } from "../types/saved-route.types";
 import { mapApiRouteToEditSnapshot } from "../utils/map-api-route-to-edit";
 import { formatRouteDistance, formatRouteDuration } from "../utils/route-format.utils";
+import {
+  formatRouteDateTime,
+  getRouteEffectiveStartedAt,
+  getRouteTripDurationSeconds,
+} from "../utils/route-trip-time.utils";
 import { buildMapMarkersFromDraft } from "../utils/route-draft.utils";
 
 type RouteDetailViewProps = {
@@ -168,8 +183,14 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const [showOptions, setShowOptions] = useState(false);
   const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isPublishingRoute, setIsPublishingRoute] = useState(false);
+  const [publishNoticeMode, setPublishNoticeMode] = useState<
+    "published" | "unpublished" | null
+  >(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const dayCarouselWidth = Math.min(340, screenWidth - 48);
   const canModifyStops = route?.status === "scheduled";
@@ -177,6 +198,16 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const isInProgress = route?.status === "in_progress";
   const isFinished = route?.status === "finished";
   const isScheduled = route?.status === "scheduled";
+  const isOwner =
+    route?.isOwner === true ||
+    (currentUserId != null && route?.createdById === currentUserId);
+  const isParticipant =
+    route?.isParticipant === true ||
+    (currentUserId != null &&
+      (route?.participants ?? []).some((participant) => participant.userId === currentUserId));
+  const hasPendingInvitation =
+    route?.invitation?.status === "pending" && !isOwner && !isParticipant;
+  const canUseRouteActions = isOwner || isParticipant;
 
   const draftDays = useMemo(
     () => (route ? mapApiRouteToEditSnapshot(route).draft.itinerary.days : []),
@@ -216,8 +247,14 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   }, [routeId]);
 
   useEffect(() => {
-    void loadRoute();
-  }, [loadRoute]);
+    void getCurrentUserId().then(setCurrentUserId);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadRoute();
+    }, [loadRoute]),
+  );
 
   const loadShareFriends = useCallback(async () => {
     try {
@@ -244,6 +281,61 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     void loadShareFriends();
   }, [loadShareFriends]);
 
+  const openInvite = useCallback(() => {
+    setIsInviteOpen(true);
+    setSentFriendId(null);
+    void loadShareFriends();
+  }, [loadShareFriends]);
+
+  const inviteToFriend = useCallback(
+    async (friendId: string): Promise<ShareSendResult | null> => {
+      if (!route) return null;
+
+      const result = await sendChatMessage({
+        recipientId: friendId,
+        sharedRouteId: route.id,
+        text: `Convite para o passeio: ${route.title}`,
+      });
+
+      setSentFriendId(friendId);
+      const updatedRoute = await fetchRoute(route.id);
+      setRoute(updatedRoute);
+
+      const friend = shareFriends.find((item) => item.id === friendId);
+
+      return {
+        conversationId: result.senderConversation.id,
+        participantAvatar:
+          friend?.avatar ?? result.senderConversation.participant.userAvatar,
+        participantName:
+          friend?.firstName ?? result.senderConversation.participant.userName,
+      };
+    },
+    [route, shareFriends],
+  );
+
+  const handleRespondInvitation = async (accept: boolean) => {
+    if (!route || isUpdatingStatus) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const updated = await respondToRouteInvitation(route.id, accept);
+      setRoute(updated);
+      Toast.show({
+        text1: accept ? "Convite aceito" : "Convite recusado",
+        type: "success",
+      });
+    } catch (error) {
+      Toast.show({
+        text1: "Não foi possível responder ao convite",
+        text2: getApiErrorMessage(error, "Tente novamente em instantes."),
+        type: "error",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const shareToFriend = useCallback(
     async (friendId: string): Promise<ShareSendResult | null> => {
       if (!route) return null;
@@ -268,17 +360,117 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     [route, shareFriends],
   );
 
-  const handleStartOrFinish = async () => {
+  const handlePublishChange = useCallback(
+    async (nextPublished: boolean) => {
+      if (!route || !isOwner || isPublishingRoute) return;
+
+      setIsPublishingRoute(true);
+      try {
+        const updated = await updateRoutePublish(route.id, nextPublished);
+        setRoute(updated);
+        setPublishNoticeMode(nextPublished ? "published" : "unpublished");
+      } catch (error) {
+        Toast.show({
+          text1: nextPublished ? "Erro ao publicar" : "Erro ao despublicar",
+          text2: getApiErrorMessage(error, "Tente novamente em instantes."),
+          type: "error",
+        });
+        throw error;
+      } finally {
+        setIsPublishingRoute(false);
+      }
+    },
+    [isOwner, isPublishingRoute, route],
+  );
+
+  const handleResumeNavigation = async () => {
     if (!route || isUpdatingStatus) return;
 
-    const nextStatus = isInProgress ? "finished" : "in_progress";
+    routeTrackingLog.info("RouteDetailView:resume-navigation-pressed", {
+      routeId: route.id,
+      status: route.status,
+      title: route.title,
+    });
+
+    try {
+      const result = await ensureRouteBackgroundTracking(route.id, route.title);
+      routeTrackingLog.info("RouteDetailView:resume-navigation-pressed:done", {
+        routeId: route.id,
+        wasAlreadyActive: result.wasAlreadyActive,
+      });
+    } catch (error) {
+      routeTrackingLog.error("RouteDetailView:resume-navigation-pressed:failed", error, {
+        routeId: route.id,
+      });
+      Toast.show({
+        text1: "Rastreamento em segundo plano",
+        text2: getApiErrorMessage(
+          error,
+          "Permita localização em segundo plano para continuar rastreado ao sair do app.",
+        ),
+        type: "error",
+      });
+    }
+
+    router.push(`/routes/${route.id}/navigate` as Href);
+  };
+
+  const handleStartRoute = async () => {
+    if (!route || isUpdatingStatus) return;
+
+    routeTrackingLog.info("RouteDetailView:start-route-pressed", {
+      routeId: route.id,
+      title: route.title,
+    });
+
     setIsUpdatingStatus(true);
 
     try {
-      const updated = await updateRouteStatus(route.id, nextStatus);
+      const updated = await updateRouteStatus(route.id, "in_progress");
       setRoute(updated);
+
+      try {
+        const result = await ensureRouteBackgroundTracking(updated.id, updated.title);
+        routeTrackingLog.info("RouteDetailView:start-route-pressed:tracking-done", {
+          routeId: updated.id,
+          wasAlreadyActive: result.wasAlreadyActive,
+        });
+      } catch (trackingError) {
+        routeTrackingLog.error("RouteDetailView:start-route-pressed:tracking-failed", trackingError, {
+          routeId: updated.id,
+        });
+        Toast.show({
+          text1: "Rastreamento em segundo plano",
+          text2: getApiErrorMessage(
+            trackingError,
+            "Permita localização em segundo plano para continuar rastreado ao sair do app.",
+          ),
+          type: "error",
+        });
+      }
+
+      router.push(`/routes/${route.id}/navigate` as Href);
+    } catch (error) {
       Toast.show({
-        text1: nextStatus === "in_progress" ? "Passeio iniciado" : "Rota finalizada",
+        text1: "Não foi possível iniciar o passeio",
+        text2: getApiErrorMessage(error, "Tente novamente em instantes."),
+        type: "error",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleFinishRoute = async () => {
+    if (!route || isUpdatingStatus || !isOwner) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const updated = await updateRouteStatus(route.id, "finished");
+      setRoute(updated);
+      await stopRouteBackgroundTracking();
+      Toast.show({
+        text1: "Rota finalizada",
         type: "success",
       });
     } catch (error) {
@@ -292,10 +484,27 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     }
   };
 
+  const handlePrimaryAction = () => {
+    if (!route || isUpdatingStatus) return;
+
+    routeTrackingLog.info("RouteDetailView:primary-action-pressed", {
+      isInProgress,
+      routeId: route.id,
+      status: route.status,
+    });
+
+    if (isInProgress) {
+      void handleResumeNavigation();
+      return;
+    }
+
+    void handleStartRoute();
+  };
+
   const handleFinishFromMenu = async () => {
     if (!route || !isInProgress) return;
     setShowOptions(false);
-    await handleStartOrFinish();
+    await handleFinishRoute();
   };
 
   const handleEdit = () => {
@@ -393,44 +602,46 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         <Pressable accessibilityRole="button" style={styles.headerButton} onPress={openShare}>
           <Ionicons color={colors.brandDark} name="share-social-outline" size={16} />
         </Pressable>
-        <View>
-          <Pressable
-            accessibilityRole="button"
-            style={styles.headerButton}
-            onPress={() => setShowOptions((current) => !current)}
-          >
-            <Ionicons color={colors.brandDark} name="ellipsis-vertical" size={16} />
-          </Pressable>
+        {!isFinished ? (
+          <View>
+            <Pressable
+              accessibilityRole="button"
+              style={styles.headerButton}
+              onPress={() => setShowOptions((current) => !current)}
+            >
+              <Ionicons color={colors.brandDark} name="ellipsis-vertical" size={16} />
+            </Pressable>
 
-          {showOptions ? (
-            <View style={styles.optionsMenu}>
-              {isScheduled ? (
-                <Pressable style={styles.optionsItem} onPress={handleEdit}>
-                  <Ionicons color="#9CA3AF" name="create-outline" size={15} />
-                  <Text style={styles.optionsItemText}>Editar</Text>
-                </Pressable>
-              ) : null}
-              {isInProgress ? (
-                <>
-                  <View style={styles.optionsDivider} />
-                  <Pressable style={styles.optionsItem} onPress={() => void handleFinishFromMenu()}>
-                    <Ionicons color="#9CA3AF" name="checkmark-circle-outline" size={15} />
-                    <Text style={styles.optionsItemText}>Finalizar rota</Text>
+            {showOptions ? (
+              <View style={styles.optionsMenu}>
+                {isScheduled ? (
+                  <Pressable style={styles.optionsItem} onPress={handleEdit}>
+                    <Ionicons color="#9CA3AF" name="create-outline" size={15} />
+                    <Text style={styles.optionsItemText}>Editar</Text>
                   </Pressable>
-                </>
-              ) : null}
-              {isScheduled ? (
-                <>
-                  <View style={styles.optionsDivider} />
-                  <Pressable style={styles.optionsItemDanger} onPress={confirmDelete}>
-                    <Ionicons color="#EF4444" name="trash-outline" size={15} />
-                    <Text style={styles.optionsItemDangerText}>Excluir</Text>
-                  </Pressable>
-                </>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
+                ) : null}
+                {isInProgress && isOwner ? (
+                  <>
+                    <View style={styles.optionsDivider} />
+                    <Pressable style={styles.optionsItem} onPress={() => void handleFinishFromMenu()}>
+                      <Ionicons color="#9CA3AF" name="checkmark-circle-outline" size={15} />
+                      <Text style={styles.optionsItemText}>Finalizar rota</Text>
+                    </Pressable>
+                  </>
+                ) : null}
+                {isScheduled ? (
+                  <>
+                    <View style={styles.optionsDivider} />
+                    <Pressable style={styles.optionsItemDanger} onPress={confirmDelete}>
+                      <Ionicons color="#EF4444" name="trash-outline" size={15} />
+                      <Text style={styles.optionsItemDangerText}>Excluir</Text>
+                    </Pressable>
+                  </>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.tabs}>
@@ -449,6 +660,13 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
           </Pressable>
         ) : null}
       </View>
+
+      {route.isPublished ? (
+        <View style={styles.publishedBadge}>
+          <Ionicons color={colors.brandGreen} name="globe-outline" size={14} />
+          <Text style={styles.publishedBadgeText}>Publicado no Confraria</Text>
+        </View>
+      ) : null}
 
       {activeTab === "geral" ? (
         <ScrollView
@@ -480,6 +698,19 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
                 {formatTripTime(route.startsAt) ? ` às ${formatTripTime(route.startsAt)}` : ""}
               </Text>
               <Text style={styles.scheduleMeta}>Criado em {formatCreatedAt(route.createdAt)}</Text>
+              {getRouteEffectiveStartedAt(route) ? (
+                <Text style={styles.scheduleMeta}>
+                  Iniciado em {formatRouteDateTime(getRouteEffectiveStartedAt(route))}
+                </Text>
+              ) : null}
+              {route.finishedAt ? (
+                <Text style={styles.scheduleMeta}>
+                  Finalizado em {formatRouteDateTime(route.finishedAt)}
+                  {route.status === "finished"
+                    ? ` • Duração ${formatRouteDuration(getRouteTripDurationSeconds(route))}`
+                    : ""}
+                </Text>
+              ) : null}
             </View>
           </View>
 
@@ -557,6 +788,16 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
               <Text style={styles.noteText}>{route.tripNote}</Text>
             </View>
           ) : null}
+
+          {isOwner && !isFinished ? (
+            <View style={styles.section}>
+              <RouteGuestsSection
+                participants={route.participants ?? []}
+                pendingInvites={route.pendingInvites ?? []}
+                onInvite={openInvite}
+              />
+            </View>
+          ) : null}
         </ScrollView>
       ) : null}
 
@@ -627,28 +868,56 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         </View>
       ) : null}
 
-      {activeTab === "geral" && !isFinished ? (
+      {activeTab === "geral" && hasPendingInvitation ? (
+        <View style={styles.footer}>
+          <View style={styles.invitationActions}>
+            <Button
+              disabled={isUpdatingStatus}
+              size="lg"
+              style={styles.invitationSecondaryButton}
+              variant="secondary"
+              onPress={() => void handleRespondInvitation(false)}
+            >
+              Recusar
+            </Button>
+            <Button
+              disabled={isUpdatingStatus}
+              size="lg"
+              style={styles.invitationPrimaryButton}
+              onPress={() => void handleRespondInvitation(true)}
+            >
+              {isUpdatingStatus ? "Atualizando..." : "Aceitar convite"}
+            </Button>
+          </View>
+        </View>
+      ) : null}
+
+      {activeTab === "geral" && canUseRouteActions && !isFinished && !hasPendingInvitation ? (
         <View style={styles.footer}>
           <Button
             disabled={isUpdatingStatus}
             size="lg"
-            onPress={() => void handleStartOrFinish()}
+            onPress={() => handlePrimaryAction()}
           >
             {isUpdatingStatus
               ? "Atualizando..."
               : isInProgress
-                ? "Finalizar rota"
+                ? "Voltar para a rota"
                 : "Iniciar o passeio"}
           </Button>
         </View>
       ) : null}
 
-      {showOptions ? (
+      {showOptions && !isFinished ? (
         <Pressable style={styles.optionsBackdrop} onPress={() => setShowOptions(false)} />
       ) : null}
 
       <RouteShareSheet
         friends={shareFriends}
+        isOwner={isOwner}
+        isPublished={route.isPublished}
+        isPublishing={isPublishingRoute}
+        mode="share"
         route={
           isShareOpen
             ? {
@@ -663,7 +932,34 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
           setIsShareOpen(false);
           setSentFriendId(null);
         }}
+        onPublishChange={handlePublishChange}
         onSendToFriend={shareToFriend}
+      />
+
+      <RouteShareSheet
+        friends={shareFriends}
+        mode="invite"
+        route={
+          isInviteOpen
+            ? {
+                destinationLabel: route.destinationLabel,
+                originLabel: route.originLabel,
+                title: route.title,
+              }
+            : null
+        }
+        sentFriendId={sentFriendId}
+        onClose={() => {
+          setIsInviteOpen(false);
+          setSentFriendId(null);
+        }}
+        onSendToFriend={inviteToFriend}
+      />
+
+      <RoutePublishNoticeModal
+        mode={publishNoticeMode}
+        visible={publishNoticeMode != null}
+        onContinue={() => setPublishNoticeMode(null)}
       />
     </View>
   );
@@ -796,6 +1092,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
   },
+  invitationActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  invitationPrimaryButton: {
+    flex: 1,
+  },
+  invitationSecondaryButton: {
+    flex: 1,
+  },
   header: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -911,6 +1217,23 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 14,
     lineHeight: 20,
+  },
+  publishedBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(132, 169, 74, 0.15)",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  publishedBadgeText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "700",
   },
   optionsBackdrop: {
     ...StyleSheet.absoluteFill,

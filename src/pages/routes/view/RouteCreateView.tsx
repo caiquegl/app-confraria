@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +23,7 @@ import { RouteWizardStepper } from "../components/RouteWizardStepper";
 import { useRouteBikes } from "../hooks/useRouteBikes";
 import { useRouteCostEstimate } from "../hooks/useRouteCostEstimate";
 import { useRouteCreateDraft } from "../hooks/useRouteCreateDraft";
+import { useRouteDaySuggestions } from "../hooks/useRouteDaySuggestions";
 import { useRouteDirections } from "../hooks/useRouteDirections";
 import { createRoute, fetchRoute, updateRoute } from "../services/routes.service";
 import type { RouteCreateAction } from "../types/saved-route.types";
@@ -59,16 +60,15 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   const [editSnapshot, setEditSnapshot] = useState(
     null as ReturnType<typeof mapApiRouteToEditSnapshot> | null,
   );
-  const [isLoadingEdit, setIsLoadingEdit] = useState(Boolean(editRouteId));
+  const [loadedEditRouteId, setLoadedEditRouteId] = useState<string | null>(null);
+  const isLoadingEdit = Boolean(editRouteId) && loadedEditRouteId !== editRouteId;
 
   useEffect(() => {
     if (!editRouteId) {
-      setIsLoadingEdit(false);
       return;
     }
 
     let cancelled = false;
-    setIsLoadingEdit(true);
 
     void fetchRoute(editRouteId)
       .then((route) => {
@@ -86,7 +86,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
       })
       .finally(() => {
         if (!cancelled) {
-          setIsLoadingEdit(false);
+          setLoadedEditRouteId(editRouteId);
         }
       });
 
@@ -121,6 +121,18 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
     [bikes, draft.motorcycle.bikeId],
   );
 
+  const bikeRangeKm = useMemo(() => {
+    if (!selectedBike) return null;
+    return Math.round(selectedBike.baseConsumption * selectedBike.tankCapacity);
+  }, [selectedBike]);
+
+  const daySuggestions = useRouteDaySuggestions({
+    bikeRangeKm,
+    dayRoutePlans: directions.dayRoutePlans,
+    days: draft.days,
+    enabled: draft.step === 1,
+  });
+
   const costEstimate = useRouteCostEstimate({
     avoidTolls: draft.preferences.avoidTolls,
     baseConsumption: selectedBike?.baseConsumption ?? null,
@@ -146,6 +158,9 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   }, [draft.tripDate, draft.tripIntent, draft.tripTime]);
 
   const canContinue = canContinueWizardStep(draft.step, draft);
+  const wizardStep = draft.step;
+  const selectedBikeId = draft.motorcycle.bikeId;
+  const setSelectedBikeId = draft.setSelectedBikeId;
 
   useEffect(() => {
     setSuppressed(draft.sheetState === "full");
@@ -155,15 +170,15 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   }, [draft.sheetState, setSuppressed]);
 
   useEffect(() => {
-    if (draft.step !== 2 || draft.motorcycle.bikeId || bikes.length === 0) {
+    if (wizardStep !== 2 || selectedBikeId || bikes.length === 0) {
       return;
     }
 
     const mainBike = bikes.find((bike) => bike.isMainBike) ?? bikes[0];
     if (mainBike) {
-      draft.setSelectedBikeId(mainBike.id);
+      setSelectedBikeId(mainBike.id);
     }
-  }, [bikes, draft.motorcycle.bikeId, draft.setSelectedBikeId, draft.step]);
+  }, [bikes, selectedBikeId, setSelectedBikeId, wizardStep]);
 
   const handleBack = () => {
     if (draft.step > 1) {
@@ -257,15 +272,23 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         return;
       }
 
-      await createRoute(payload);
+      const createdRoute = await createRoute(payload);
       await draft.clearCache();
 
+      if (action === "start_now") {
+        Toast.show({
+          text1: "Passeio iniciado",
+          text2: "Abrindo navegação GPS.",
+          type: "success",
+        });
+
+        router.replace(`/routes/${createdRoute.id}/navigate` as Href);
+        return;
+      }
+
       Toast.show({
-        text1: action === "save_for_later" ? "Rota agendada" : "Passeio iniciado",
-        text2:
-          action === "save_for_later"
-            ? "Sua rota foi salva para o dia escolhido."
-            : "Sua rota está em andamento.",
+        text1: "Rota agendada",
+        text2: "Sua rota foi salva para o dia escolhido.",
         type: "success",
       });
 
@@ -396,14 +419,22 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
           <RouteCreateStep1
             activeDayId={draft.activeDayId}
             days={draft.days}
+            getDaySuggestions={daySuggestions.getSuggestionsForDay}
+            isLoadingMoreForDay={daySuggestions.isLoadingMoreForDay}
+            isLoadingSuggestions={daySuggestions.isLoading}
             onAddDay={draft.addDay}
             onAddStop={draft.addStopToDay}
+            onAddSuggestedStop={draft.addSuggestedStopToDay}
+            onLoadMoreSuggestions={(dayId) => {
+              void daySuggestions.loadMoreForDay(dayId);
+            }}
             onChangeDayDestination={draft.setDayDestination}
             onChangeDayOrigin={draft.setDayOrigin}
             onChangeStop={draft.setStopPlace}
             onRemoveDay={draft.removeDay}
             onRemoveStop={draft.removeStopFromDay}
             onSelectDay={draft.setActiveDayId}
+            onToggleDayOvernight={draft.toggleDayOvernight}
           />
         ) : null}
 
