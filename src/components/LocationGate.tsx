@@ -6,7 +6,7 @@ import { Button } from "@/components/Button";
 import type { GeolocationStatus } from "@/lib/location";
 import { colors } from "@/theme/colors";
 
-type LocationGatePurpose = "events" | "routes";
+type LocationGatePurpose = "events" | "routes" | "services";
 
 type LocationGateProps = {
   canAskAgain: boolean;
@@ -28,6 +28,11 @@ const PURPOSE_COPY: Record<
     deniedDescription:
       "Para ver rotas perto de você, o Confraria precisa acessar sua localização enquanto usa o app.",
     loadingDescription: "Estamos identificando sua cidade para mostrar rotas na região.",
+  },
+  services: {
+    deniedDescription:
+      "Para mostrar serviços e locais perto de você, o Confraria precisa acessar sua localização enquanto usa o app.",
+    loadingDescription: "Estamos identificando sua localização para mostrar locais na região.",
   },
 };
 

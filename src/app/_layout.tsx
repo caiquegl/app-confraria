@@ -19,6 +19,16 @@ import { addSentryBreadcrumb } from "@/lib/sentry";
 import { useConfigureVideoCache } from "@/lib/video-cache";
 import { colors } from "@/theme/colors";
 
+if (__DEV__) {
+  // Deixei esses imports com a verificação desativado para não dar erro no dev para que o reactotron seja carregado apenas em desenvolvimento
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("@/lib/reactotron");
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("@/lib/reactotron-axios").setupReactotronAxios();
+}
+
 export default function RootLayout() {
   const pathname = usePathname();
   useConfigureVideoCache();

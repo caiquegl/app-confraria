@@ -1,17 +1,29 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const TOKEN_KEY = "@confraria/auth_token";
+import { getApiEnvironment } from "./api-environment";
+
+const TOKEN_KEY_PREFIX = "@confraria/auth_token";
+
+/**
+ * O token é isolado por ambiente (production/homolog) para que trocar de
+ * ambiente não reaproveite a sessão do outro — em homolog você cai no login,
+ * e em produção sua sessão continua ativa.
+ */
+async function getTokenKey(): Promise<string> {
+  const environment = await getApiEnvironment();
+  return `${TOKEN_KEY_PREFIX}:${environment}`;
+}
 
 export async function saveToken(token: string): Promise<void> {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
+  await AsyncStorage.setItem(await getTokenKey(), token);
 }
 
 export async function getToken(): Promise<string | null> {
-  return AsyncStorage.getItem(TOKEN_KEY);
+  return AsyncStorage.getItem(await getTokenKey());
 }
 
 export async function removeToken(): Promise<void> {
-  await AsyncStorage.removeItem(TOKEN_KEY);
+  await AsyncStorage.removeItem(await getTokenKey());
 }
 
 export async function getCurrentUserId(): Promise<string | null> {

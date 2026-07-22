@@ -1,11 +1,27 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
 export type ApiEnvironment = "production" | "homolog";
 
-export const API_ENVIRONMENTS: Record<ApiEnvironment, { label: string; url: string }> = {
+/**
+ * URL do backend local visto de dentro do app:
+ * - Android emulador: a máquina host é acessível via 10.0.2.2 (não localhost)
+ * - iOS simulador: localhost aponta para a própria máquina
+ * - Dispositivo físico: troque HOMOLOG_HOST pelo IP da sua máquina na rede
+ *   local (ex.: "192.168.0.10") e conecte o aparelho no mesmo Wi-Fi.
+ */
+const HOMOLOG_HOST = Platform.select({
+  android: "172.17.144.1",
+  default: "localhost",
+});
+
+export const API_ENVIRONMENTS: Record<
+  ApiEnvironment,
+  { label: string; url: string }
+> = {
   homolog: {
     label: "Homolog",
-    url: "http://192.168.0.9:8080",
+    url: `http://${HOMOLOG_HOST}:8080`,
   },
   production: {
     label: "Produção",
@@ -14,7 +30,8 @@ export const API_ENVIRONMENTS: Record<ApiEnvironment, { label: string; url: stri
 };
 
 const API_ENVIRONMENT_KEY = "@confraria/api_environment";
-const DEFAULT_ENVIRONMENT: ApiEnvironment = "production";
+// const DEFAULT_ENVIRONMENT: ApiEnvironment = "production";
+const DEFAULT_ENVIRONMENT: ApiEnvironment = "homolog";
 
 const listeners = new Set<(environment: ApiEnvironment) => void>();
 
@@ -32,7 +49,9 @@ export async function getApiBaseUrl(): Promise<string> {
   return API_ENVIRONMENTS[environment].url;
 }
 
-export async function setApiEnvironment(environment: ApiEnvironment): Promise<void> {
+export async function setApiEnvironment(
+  environment: ApiEnvironment,
+): Promise<void> {
   await AsyncStorage.setItem(API_ENVIRONMENT_KEY, environment);
   listeners.forEach((listener) => listener(environment));
 }
