@@ -16,6 +16,7 @@ import { colors } from "@/theme/colors";
 
 import { ReviewComposer } from "../components/ReviewComposer";
 import { ReviewItem } from "../components/ReviewItem";
+import { ServicePlaceInfo } from "../components/ServicePlaceInfo";
 import { StarRating } from "../components/StarRating";
 import { useServiceDetail } from "../business/useServiceDetail";
 
@@ -29,6 +30,7 @@ export function ServiceDetailView({ serviceId }: ServiceDetailViewProps) {
     error,
     isLoading,
     isSubmitting,
+    liveInfo,
     myReview,
     reload,
     removeReview,
@@ -64,6 +66,7 @@ export function ServiceDetailView({ serviceId }: ServiceDetailViewProps) {
   }
 
   const handleCall = () => {
+    if (!service.phone) return;
     const digits = service.phone.replace(/[^\d+]/g, "");
     if (digits) {
       Linking.openURL(`tel:${digits}`).catch(() => undefined);
@@ -138,15 +141,19 @@ export function ServiceDetailView({ serviceId }: ServiceDetailViewProps) {
             </Text>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            style={styles.callButton}
-            onPress={handleCall}
-          >
-            <Ionicons color={colors.brandDark} name="call" size={16} />
-            <Text style={styles.callText}>{service.phone}</Text>
-          </Pressable>
+          {service.phone ? (
+            <Pressable
+              accessibilityRole="button"
+              style={styles.callButton}
+              onPress={handleCall}
+            >
+              <Ionicons color={colors.brandDark} name="call" size={16} />
+              <Text style={styles.callText}>{service.phone}</Text>
+            </Pressable>
+          ) : null}
         </View>
+
+        <ServicePlaceInfo liveInfo={liveInfo} service={service} />
 
         <ReviewComposer
           isSubmitting={isSubmitting}

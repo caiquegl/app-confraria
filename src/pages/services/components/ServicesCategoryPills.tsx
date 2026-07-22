@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
@@ -6,6 +7,7 @@ import type { ServiceCategory } from "../types/services.types";
 
 const CATEGORIES: ServiceCategory[] = [
   "Tudo",
+  "Próximos",
   "Acessórios",
   "Mecânicas",
   "Moto escolas",
@@ -30,15 +32,27 @@ export function ServicesCategoryPills({
         keyExtractor={(item) => item}
         renderItem={({ item }) => {
           const active = item === selectedCategory;
+          const isNearby = item === "Próximos";
           return (
             <Pressable
               accessibilityRole="button"
               style={[styles.pill, active && styles.pillActive]}
               onPress={() => onChange(item)}
             >
-              <Text style={[styles.pillText, active && styles.pillTextActive]}>
-                {item}
-              </Text>
+              <View style={styles.pillInner}>
+                {isNearby ? (
+                  <Ionicons
+                    color={colors.brandDark}
+                    name="location"
+                    size={13}
+                  />
+                ) : null}
+                <Text
+                  style={[styles.pillText, active && styles.pillTextActive]}
+                >
+                  {item}
+                </Text>
+              </View>
             </Pressable>
           );
         }}
@@ -61,6 +75,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 7,
+  },
+  pillInner: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
   },
   pillActive: {
     backgroundColor: colors.brandGreen,

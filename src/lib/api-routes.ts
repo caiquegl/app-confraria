@@ -97,43 +97,14 @@ export const apiRoutes = {
     details: (placeId: string) => `/places/details?placeId=${encodeURIComponent(placeId)}`,
     directions: "/places/directions",
     estimateFuel: "/places/estimate-fuel",
-    photoMedia: (photoName: string) =>
-      `/places/photos/media?name=${encodeURIComponent(photoName)}`,
-    routeSuggestions: "/places/route-suggestions",
+    nearby: "/places/nearby",
+    import: "/places/import",
+    live: (googlePlaceId: string) =>
+      `/places/live/${encodeURIComponent(googlePlaceId)}`,
   },
   routes: {
     create: "/routes",
     mine: "/routes/me",
-    minePublished: (options?: { cursor?: string; limit?: number; q?: string }) => {
-      const params = new URLSearchParams();
-      if (options?.cursor) params.set("cursor", options.cursor);
-      if (options?.limit != null) params.set("limit", String(options.limit));
-      if (options?.q?.trim()) params.set("q", options.q.trim());
-      const query = params.toString();
-      return `/routes/me/published${query ? `?${query}` : ""}`;
-    },
-    nearYou: (options: {
-      city: string;
-      cursor?: string;
-      limit?: number;
-      q?: string;
-      region?: string;
-    }) => {
-      const params = new URLSearchParams({ city: options.city });
-      if (options.cursor) params.set("cursor", options.cursor);
-      if (options.limit != null) params.set("limit", String(options.limit));
-      if (options.q?.trim()) params.set("q", options.q.trim());
-      if (options.region?.trim()) params.set("region", options.region.trim());
-      return `/routes/discover/near-you?${params.toString()}`;
-    },
-    friends: (options?: { cursor?: string; limit?: number; q?: string }) => {
-      const params = new URLSearchParams();
-      if (options?.cursor) params.set("cursor", options.cursor);
-      if (options?.limit != null) params.set("limit", String(options.limit));
-      if (options?.q?.trim()) params.set("q", options.q.trim());
-      const query = params.toString();
-      return `/routes/discover/friends${query ? `?${query}` : ""}`;
-    },
     detail: (routeId: string) => `/routes/${routeId}`,
     update: (routeId: string) => `/routes/${routeId}`,
     updateStatus: (routeId: string) => `/routes/${routeId}/status`,
@@ -141,9 +112,6 @@ export const apiRoutes = {
     addStop: (dayId: string) => `/routes/days/${dayId}/stops`,
     removeStop: (dayId: string, placeId: string) =>
       `/routes/days/${dayId}/stops/${placeId}`,
-    respondInvitation: (routeId: string) => `/routes/${routeId}/invitations/respond`,
-    updateLocation: (routeId: string) => `/routes/${routeId}/location`,
-    updatePublish: (routeId: string) => `/routes/${routeId}/publish`,
   },
   quickRides: {
     list: (options?: { city?: string; region?: string; state?: string }) => {

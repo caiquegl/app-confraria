@@ -7,7 +7,9 @@ import {
   toggleServiceFavorite,
   upsertServiceReview,
 } from "@/pages/services/services/services.service";
+import { fetchPlaceLiveInfo } from "@/pages/services/services/nearby.service";
 import type {
+  PlaceLiveInfo,
   Service,
   ServiceReview,
   UpsertReviewPayload,
@@ -16,6 +18,7 @@ import type {
 export function useServiceDetail(serviceId: string) {
   const [service, setService] = useState<Service | null>(null);
   const [reviews, setReviews] = useState<ServiceReview[]>([]);
+  const [liveInfo, setLiveInfo] = useState<PlaceLiveInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +26,7 @@ export function useServiceDetail(serviceId: string) {
   const load = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setLiveInfo(null);
 
     try {
       const [detail, reviewList] = await Promise.all([
@@ -31,6 +35,13 @@ export function useServiceDetail(serviceId: string) {
       ]);
       setService(detail);
       setReviews(reviewList);
+
+      if (detail.googlePlaceId) {
+        // Info ao vivo do Google (aberto/fechado, horários) — best-effort.
+        fetchPlaceLiveInfo(detail.googlePlaceId)
+          .then(setLiveInfo)
+          .catch(() => setLiveInfo(null));
+      }
     } catch {
       setError("Não foi possível carregar o serviço.");
     } finally {
@@ -117,6 +128,7 @@ export function useServiceDetail(serviceId: string) {
     error,
     isLoading,
     isSubmitting,
+    liveInfo,
     myReview,
     reload: load,
     removeReview,
