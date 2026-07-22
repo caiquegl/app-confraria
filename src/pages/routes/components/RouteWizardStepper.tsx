@@ -13,16 +13,23 @@ const STEPS: { label: string; step: WizardStep }[] = [
 
 type RouteWizardStepperProps = {
   currentStep: WizardStep;
+  maxReachableStep?: WizardStep;
   onStepPress?: (step: WizardStep) => void;
 };
 
-export function RouteWizardStepper({ currentStep, onStepPress }: RouteWizardStepperProps) {
+export function RouteWizardStepper({
+  currentStep,
+  maxReachableStep = currentStep,
+  onStepPress,
+}: RouteWizardStepperProps) {
   return (
     <View style={styles.container}>
       {STEPS.map((item, index) => {
         const isActive = item.step === currentStep;
         const isCompleted = item.step < currentStep;
-        const isNavigable = isCompleted && onStepPress != null;
+        const isUnlocked = item.step <= maxReachableStep;
+        const isNavigable =
+          !isActive && isUnlocked && onStepPress != null;
 
         const stepContent = (
           <>
@@ -31,6 +38,7 @@ export function RouteWizardStepper({ currentStep, onStepPress }: RouteWizardStep
                 styles.bubble,
                 isActive && styles.bubbleActive,
                 isCompleted && styles.bubbleCompleted,
+                isUnlocked && !isActive && !isCompleted && styles.bubbleUnlocked,
                 isNavigable && styles.bubbleNavigable,
               ]}
             >
@@ -39,6 +47,7 @@ export function RouteWizardStepper({ currentStep, onStepPress }: RouteWizardStep
                   styles.bubbleText,
                   isActive && styles.bubbleTextActive,
                   isCompleted && styles.bubbleTextCompleted,
+                  isUnlocked && !isActive && !isCompleted && styles.bubbleTextUnlocked,
                 ]}
               >
                 {item.step}
@@ -49,6 +58,7 @@ export function RouteWizardStepper({ currentStep, onStepPress }: RouteWizardStep
                 styles.label,
                 isActive && styles.labelActive,
                 isCompleted && styles.labelCompleted,
+                isUnlocked && !isActive && !isCompleted && styles.labelUnlocked,
               ]}
             >
               {item.label}
@@ -59,11 +69,20 @@ export function RouteWizardStepper({ currentStep, onStepPress }: RouteWizardStep
         return (
           <View key={item.step} style={styles.itemWrap}>
             {index > 0 ? (
-              <View style={[styles.connector, item.step <= currentStep && styles.connectorActive]} />
+              <View
+                style={[
+                  styles.connector,
+                  item.step <= maxReachableStep && styles.connectorActive,
+                ]}
+              />
             ) : null}
             {isNavigable ? (
               <Pressable
-                accessibilityLabel={`Voltar para ${item.label}`}
+                accessibilityLabel={
+                  item.step < currentStep
+                    ? `Voltar para ${item.label}`
+                    : `Ir para ${item.label}`
+                }
                 accessibilityRole="button"
                 hitSlop={8}
                 style={({ pressed }) => [styles.stepBlock, pressed && styles.stepBlockPressed]}
@@ -111,6 +130,12 @@ const styles = StyleSheet.create({
   bubbleTextCompleted: {
     color: "#728F21",
   },
+  bubbleTextUnlocked: {
+    color: "#728F21",
+  },
+  bubbleUnlocked: {
+    backgroundColor: "rgba(200, 247, 99, 0.12)",
+  },
   connector: {
     backgroundColor: "#E5E7EB",
     height: 1,
@@ -140,6 +165,9 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
   },
   labelCompleted: {
+    color: "#728F21",
+  },
+  labelUnlocked: {
     color: "#728F21",
   },
   stepBlock: {

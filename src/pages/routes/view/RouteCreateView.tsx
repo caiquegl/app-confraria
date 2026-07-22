@@ -55,6 +55,26 @@ function canContinueWizardStep(
   return false;
 }
 
+function getMaxReachableWizardStep(
+  currentStep: WizardStep,
+  draft: ReturnType<typeof useRouteCreateDraft>,
+  isRecalculating: boolean,
+): WizardStep {
+  let maxReachable: WizardStep = 1;
+
+  if (draft.canContinueStep1 && !isRecalculating) {
+    maxReachable = 2;
+  }
+  if (maxReachable >= 2 && draft.canContinueStep2) {
+    maxReachable = 3;
+  }
+  if (maxReachable >= 3 && draft.canContinueStep3) {
+    maxReachable = 4;
+  }
+
+  return Math.max(maxReachable, currentStep) as WizardStep;
+}
+
 function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardProps) {
   const insets = useSafeAreaInsets();
   const [editSnapshot, setEditSnapshot] = useState(
@@ -157,6 +177,11 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   }, [draft.tripDate, draft.tripIntent, draft.tripTime]);
 
   const canContinue = canContinueWizardStep(draft.step, draft);
+  const maxReachableStep = getMaxReachableWizardStep(
+    draft.step,
+    draft,
+    isRecalculating,
+  );
   const wizardStep = draft.step;
   const selectedBikeId = draft.motorcycle.bikeId;
   const setSelectedBikeId = draft.setSelectedBikeId;
@@ -189,7 +214,8 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   };
 
   const handleStepPress = (step: WizardStep) => {
-    if (step >= draft.step) return;
+    if (step === draft.step) return;
+    if (step > maxReachableStep) return;
     draft.setStep(step);
   };
 
@@ -408,6 +434,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         stepper={
           <RouteWizardStepper
             currentStep={draft.step}
+            maxReachableStep={maxReachableStep}
             onStepPress={handleStepPress}
           />
         }
