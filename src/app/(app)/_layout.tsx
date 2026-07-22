@@ -1,4 +1,4 @@
-import { Redirect, Stack, usePathname } from "expo-router";
+import { Redirect, Stack, usePathname, router, type Href } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -14,7 +14,14 @@ import {
   addNotificationResponseListener,
   registerForPushNotificationsAsync,
 } from "@/lib/push-notifications";
+import { getRouteBackgroundTrackingSession } from "@/lib/route-background-tracking";
 import { fetchPublicProfile } from "@/pages/public-profile/services/public-profile.service";
+import { ActiveRouteFAB } from "@/pages/routes/components/ActiveRouteFAB";
+import {
+  getActiveNavigationRouteId,
+  setActiveNavigationRouteId,
+  subscribeActiveNavigation,
+} from "@/pages/routes/stores/active-navigation-store";
 import { colors } from "@/theme/colors";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
@@ -25,6 +32,10 @@ export default function AppLayout() {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [profileAvatar, setProfileAvatar] = useState<string | null>(storedProfile.avatar);
   const [profileName, setProfileName] = useState<string | null>(storedProfile.name);
+  const [activeNavigationRouteId, setActiveNavigationRouteIdState] = useState<string | null>(
+    getActiveNavigationRouteId(),
+  );
+  const isOnNavigationScreen = /\/routes\/[^/]+\/navigate/.test(pathname);
   const shouldHideBottomNav =
     pathname.startsWith("/event/") ||
     pathname.startsWith("/events/discover") ||
@@ -33,8 +44,12 @@ export default function AppLayout() {
     pathname.startsWith("/profile/settings") ||
     pathname.startsWith("/quick-rides/") ||
     pathname.startsWith("/routes/create") ||
-    /\/routes\/[^/]+\/navigate/.test(pathname) ||
+    isOnNavigationScreen ||
     (pathname.startsWith("/users/") && pathname.includes("/events"));
+  const showActiveRouteFab =
+    authState === "authenticated" &&
+    activeNavigationRouteId != null &&
+    !isOnNavigationScreen;
 
   useEffect(() => {
     if (authState !== "authenticated") return;
@@ -48,6 +63,26 @@ export default function AppLayout() {
       setProfileName(profile.name);
     });
   }, []);
+
+  useEffect(() => {
+    return subscribeActiveNavigation(setActiveNavigationRouteIdState);
+  }, []);
+
+  useEffect(() => {
+    if (authState !== "authenticated") return;
+
+    let mounted = true;
+
+    void getRouteBackgroundTrackingSession().then((session) => {
+      if (!mounted || !session?.routeId) return;
+      if (getActiveNavigationRouteId()) return;
+      setActiveNavigationRouteId(session.routeId);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [authState]);
 
   useEffect(() => {
     let mounted = true;
@@ -77,6 +112,7 @@ export default function AppLayout() {
           });
       } else {
         setStoredCurrentProfile({ avatar: null, name: null });
+        setActiveNavigationRouteId(null);
       }
     });
 
@@ -110,6 +146,14 @@ export default function AppLayout() {
           }}
         />
       </View>
+      {showActiveRouteFab ? (
+        <ActiveRouteFAB
+          bottomOffset={shouldHideBottomNav ? 24 : 86}
+          onPress={() => {
+            router.push(`/routes/${activeNavigationRouteId}/navigate` as Href);
+          }}
+        />
+      ) : null}
       {!shouldHideBottomNav && <BottomNav userAvatar={profileAvatar} userName={profileName} />}
     </View>
   );

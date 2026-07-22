@@ -195,10 +195,6 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
 
   useEffect(() => {
     void loadNavigation();
-
-    return () => {
-      setActiveNavigationRouteId(null);
-    };
   }, [loadNavigation]);
 
   const updateNavigationFromPosition = useCallback((position: Coordinate, heading: number) => {

@@ -1,8 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -12,11 +14,11 @@ import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
 import { getCurrentUserId } from "@/lib/auth";
+import { getApiErrorMessage } from "@/lib/password-reset";
 import {
   ensureRouteBackgroundTracking,
   stopRouteBackgroundTracking,
 } from "@/lib/route-background-tracking";
-import { getApiErrorMessage } from "@/lib/password-reset";
 import { colors } from "@/theme/colors";
 
 import { RouteCompletedView } from "../components/RouteCompletedView";
@@ -221,6 +223,23 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
         <RouteNavigationControls onRecenter={navigation.recenter} />
       </View>
 
+      <View
+        pointerEvents="box-none"
+        style={[styles.minimizeWrap, { bottom: insets.bottom + 148 }]}
+      >
+        <Pressable
+          accessibilityLabel="Minimizar mapa e continuar navegando"
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.minimizeButton, pressed && styles.minimizeButtonPressed]}
+          onPress={() => {
+            router.replace("/routes" as Href);
+          }}
+        >
+          <Ionicons color="#FFFFFF" name="remove-outline" size={14} />
+          <Text style={styles.minimizeText}>Minimizar mapa</Text>
+        </Pressable>
+      </View>
+
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <RouteNavigationStatsCard canFinish={isOwner} state={navigation.state} onStop={openStopConfirm} />
       </View>
@@ -270,6 +289,34 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#6B7280",
     fontSize: 14,
+  },
+  minimizeButton: {
+    alignItems: "center",
+    backgroundColor: colors.brandDark,
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    shadowColor: "#000000",
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  minimizeButtonPressed: {
+    opacity: 0.85,
+  },
+  minimizeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  minimizeWrap: {
+    alignItems: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
   },
   overlay: {
     left: 16,
