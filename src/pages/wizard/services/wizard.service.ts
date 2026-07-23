@@ -17,6 +17,11 @@ export async function checkEmailExists(email: string): Promise<boolean> {
   return data.exists;
 }
 
+export async function checkCpfExists(cpf: string): Promise<boolean> {
+  const { data } = await api.get<{ exists: boolean }>(apiRoutes.users.checkCpf(cpf));
+  return data.exists;
+}
+
 export async function fetchBikeCategories(): Promise<BikeCategory[]> {
   const { data } = await api.get<BikeCategory[]>(apiRoutes.admin.bikeCategories);
   return data;
@@ -46,6 +51,7 @@ export async function registerUser(payload: RegisterPayload): Promise<RegisterRe
   const { data } = await api.post<RegisterResponse>(apiRoutes.users.register, {
     firstName: payload.firstName,
     email: payload.email,
+    cpf: payload.cpf,
     password: payload.password,
     hasLicense: payload.hasLicense,
     isAdult: payload.isAdult,

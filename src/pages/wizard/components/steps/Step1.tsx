@@ -5,13 +5,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
 import { InputField } from "@/components/InputField";
+import { formatCpf, onlyDigits } from "@/lib/cpf";
 
 import { WizardLayout } from "../WizardLayout";
-import { checkEmailExists } from "../../services/wizard.service";
+import { checkCpfExists, checkEmailExists } from "../../services/wizard.service";
 import { step1Schema, type Step1Data, type StepProps } from "../../types/wizard.types";
 
 export function Step1({ defaultValues, onBack, onNext }: StepProps) {
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   const {
     control,
@@ -20,6 +21,7 @@ export function Step1({ defaultValues, onBack, onNext }: StepProps) {
     formState: { errors },
   } = useForm<Step1Data>({
     defaultValues: {
+      cpf: defaultValues.cpf ?? "",
       email: defaultValues.email ?? "",
       firstName: defaultValues.firstName ?? "",
     },
@@ -27,18 +29,28 @@ export function Step1({ defaultValues, onBack, onNext }: StepProps) {
   });
 
   const handleNext = async (data: Step1Data) => {
-    setIsCheckingEmail(true);
+    setIsChecking(true);
     try {
-      const emailInUse = await checkEmailExists(data.email);
+      const [emailInUse, cpfInUse] = await Promise.all([
+        checkEmailExists(data.email),
+        checkCpfExists(data.cpf),
+      ]);
+
       if (emailInUse) {
         setError("email", { message: "Este e-mail já está em uso" });
+      }
+      if (cpfInUse) {
+        setError("cpf", { message: "Este CPF já está em uso" });
+      }
+      if (emailInUse || cpfInUse) {
         return;
       }
+
       onNext(data);
     } catch {
-      setError("email", { message: "Não foi possível verificar o e-mail. Tente novamente." });
+      setError("email", { message: "Não foi possível verificar os dados. Tente novamente." });
     } finally {
-      setIsCheckingEmail(false);
+      setIsChecking(false);
     }
   };
 
@@ -76,11 +88,31 @@ export function Step1({ defaultValues, onBack, onNext }: StepProps) {
                 error={errors.email?.message}
                 keyboardType="email-address"
                 autoComplete="email"
-                returnKeyType="done"
+                returnKeyType="next"
               />
             )}
           />
           <Text style={styles.hint}>Esse e-mail será para cadastro</Text>
+        </View>
+
+        <View>
+          <Controller
+            control={control}
+            name="cpf"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <InputField
+                label="Seu CPF"
+                value={formatCpf(value)}
+                onChangeText={(text) => onChange(onlyDigits(text).slice(0, 11))}
+                onBlur={onBlur}
+                onClear={() => onChange("")}
+                error={errors.cpf?.message}
+                keyboardType="number-pad"
+                returnKeyType="done"
+              />
+            )}
+          />
+          <Text style={styles.hint}>Necessário para assinatura e pagamentos</Text>
         </View>
       </View>
 
@@ -88,16 +120,16 @@ export function Step1({ defaultValues, onBack, onNext }: StepProps) {
         <Button
           size="lg"
           style={styles.fullWidth}
-          disabled={isCheckingEmail}
+          disabled={isChecking}
           onPress={handleSubmit(handleNext)}
         >
-          {isCheckingEmail ? "Verificando..." : "Avançar"}
+          {isChecking ? "Verificando..." : "Avançar"}
         </Button>
         <Button
           variant="secondary"
           size="lg"
           style={styles.fullWidth}
-          disabled={isCheckingEmail}
+          disabled={isChecking}
           onPress={onBack}
         >
           Voltar

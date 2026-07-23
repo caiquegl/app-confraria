@@ -158,6 +158,7 @@ export const apiRoutes = {
   },
   users: {
     checkEmail: (email: string) => `/users/check-email/${encodeURIComponent(email)}`,
+    checkCpf: (cpf: string) => `/users/check-cpf/${encodeURIComponent(cpf)}`,
     follow: (userId: string) => `/users/${userId}/follow`,
     followRequests: "/users/me/follow-requests",
     followRequestAccept: (requestId: string) =>

@@ -1,10 +1,17 @@
 import { z } from "zod";
 
+import { isValidCpf, onlyDigits } from "@/lib/cpf";
+
 // ─── Schemas por step ────────────────────────────────────────────────────────
 
 export const step1Schema = z.object({
   email: z.string().email("E-mail inválido"),
   firstName: z.string().min(2, "Nome deve ter ao menos 2 caracteres"),
+  cpf: z
+    .string()
+    .transform((value) => onlyDigits(value))
+    .refine((value) => value.length === 11, "CPF deve ter 11 dígitos")
+    .refine((value) => isValidCpf(value), "CPF inválido"),
 });
 
 const step2BaseSchema = z.object({
