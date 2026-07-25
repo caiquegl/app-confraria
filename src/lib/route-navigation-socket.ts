@@ -24,6 +24,18 @@ type RouteErrorPayload = {
   message: string;
 };
 
+export type RoutePhotoCreatedPayload = {
+  createdAt: string;
+  id: string;
+  latitude: number;
+  longitude: number;
+  routeId: string;
+  url: string;
+  userAvatarUrl: string | null;
+  userId: string;
+  userName: string;
+};
+
 type Listener<T> = (payload: T) => void;
 
 let socket: Socket | null = null;
@@ -36,6 +48,7 @@ const locationListeners = new Set<Listener<RouteLocationUpdatePayload>>();
 const leftListeners = new Set<Listener<{ userId: string }>>();
 const errorListeners = new Set<Listener<RouteErrorPayload>>();
 const finishedListeners = new Set<Listener<{ routeId: string }>>();
+const photoCreatedListeners = new Set<Listener<RoutePhotoCreatedPayload>>();
 
 function notify<T>(listeners: Set<Listener<T>>, payload: T) {
   listeners.forEach((listener) => listener(payload));
@@ -60,6 +73,10 @@ function attachSocketListeners(nextSocket: Socket) {
 
   nextSocket.on("route:finished", (payload: { routeId: string }) => {
     notify(finishedListeners, payload);
+  });
+
+  nextSocket.on("route:photo:created", (payload: RoutePhotoCreatedPayload) => {
+    notify(photoCreatedListeners, payload);
   });
 
   nextSocket.on("connect", () => {
@@ -221,4 +238,9 @@ export function subscribeRouteNavigationError(listener: Listener<RouteErrorPaylo
 export function subscribeRouteFinished(listener: Listener<{ routeId: string }>) {
   finishedListeners.add(listener);
   return () => finishedListeners.delete(listener);
+}
+
+export function subscribeRoutePhotoCreated(listener: Listener<RoutePhotoCreatedPayload>) {
+  photoCreatedListeners.add(listener);
+  return () => photoCreatedListeners.delete(listener);
 }

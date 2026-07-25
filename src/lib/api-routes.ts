@@ -109,6 +109,7 @@ export const apiRoutes = {
     update: (routeId: string) => `/routes/${routeId}`,
     updateStatus: (routeId: string) => `/routes/${routeId}/status`,
     delete: (routeId: string) => `/routes/${routeId}`,
+    photos: (routeId: string) => `/routes/${routeId}/photos`,
     addStop: (dayId: string) => `/routes/days/${dayId}/stops`,
     removeStop: (dayId: string, placeId: string) =>
       `/routes/days/${dayId}/stops/${placeId}`,

@@ -1,14 +1,34 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { colors } from "@/theme/colors";
+
 type RouteNavigationControlsProps = {
+  onOpenMedia: () => void;
   onRecenter: () => void;
 };
 
-export function RouteNavigationControls({ onRecenter }: RouteNavigationControlsProps) {
+export function RouteNavigationControls({
+  onOpenMedia,
+  onRecenter,
+}: RouteNavigationControlsProps) {
   return (
     <View style={styles.wrap}>
-      <Pressable accessibilityRole="button" style={styles.button} onPress={onRecenter}>
+      <Pressable
+        accessibilityLabel="Tirar foto ou registrar momento"
+        accessibilityRole="button"
+        style={styles.photoButton}
+        onPress={onOpenMedia}
+      >
+        <Ionicons color={colors.brandDark} name="camera" size={18} />
+      </Pressable>
+
+      <Pressable
+        accessibilityLabel="Centralizar no mapa"
+        accessibilityRole="button"
+        style={styles.button}
+        onPress={onRecenter}
+      >
         <Ionicons color="#374151" name="locate-outline" size={18} />
       </Pressable>
     </View>
@@ -30,7 +50,22 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     width: 40,
   },
+  photoButton: {
+    alignItems: "center",
+    backgroundColor: colors.brandGreen,
+    borderColor: "#FFFFFF",
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 44,
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    width: 44,
+  },
   wrap: {
+    alignItems: "center",
     gap: 12,
   },
 });

@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useKeepAwake } from "expo-keep-awake";
 import { router, type Href } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -19,19 +20,37 @@ import {
   ensureRouteBackgroundTracking,
   stopRouteBackgroundTracking,
 } from "@/lib/route-background-tracking";
+import { NewPostCamera } from "@/pages/home/components/NewPostCamera";
+import { NewPostComposer } from "@/pages/home/components/NewPostComposer";
+import { PostSuccessModal } from "@/pages/home/components/PostSuccessModal";
+import { NewStoryCamera } from "@/pages/stories/components/NewStoryCamera";
+import { StorySuccessModal } from "@/pages/stories/components/StorySuccessModal";
 import { colors } from "@/theme/colors";
 
 import { RouteCompletedView } from "../components/RouteCompletedView";
+import { RouteMapPhotosCarouselModal } from "../components/RouteMapPhotosCarouselModal";
+import { RouteMapPinCamera } from "../components/RouteMapPinCamera";
 import { RouteNavigationControls } from "../components/RouteNavigationControls";
 import { RouteNavigationInstructionCard } from "../components/RouteNavigationInstructionCard";
 import { RouteNavigationMap } from "../components/RouteNavigationMap";
+import {
+  RouteNavigationMediaSheet,
+  type RouteNavigationMediaAction,
+} from "../components/RouteNavigationMediaSheet";
 import { RouteNavigationStatsCard } from "../components/RouteNavigationStatsCard";
 import { RouteNavigationStopConfirmSheet } from "../components/RouteNavigationStopConfirmSheet";
 import { useRouteLiveLocations } from "../hooks/useRouteLiveLocations";
+import { useRouteMapPhotos } from "../hooks/useRouteMapPhotos";
 import { useRouteNavigation } from "../hooks/useRouteNavigation";
+import { useRouteNavigationMedia } from "../hooks/useRouteNavigationMedia";
 import { updateRouteStatus } from "../services/routes.service";
 import { setActiveNavigationRouteId } from "../stores/active-navigation-store";
 import { getRouteTripDurationSeconds } from "../utils/route-trip-time.utils";
+
+function NavigationKeepAwake() {
+  useKeepAwake("route-navigation");
+  return null;
+}
 
 type RouteNavigationViewProps = {
   onBack: () => void;
@@ -50,12 +69,36 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const navigation = useRouteNavigation({ routeId });
+  const mapPhotos = useRouteMapPhotos({
+    enabled: phase === "navigating" && !navigation.state.isLoading && !navigation.state.error,
+    routeId,
+  });
+  const media = useRouteNavigationMedia({
+    getCurrentCoords: () => navigation.state.currentPosition,
+    onMapPhotoCreated: mapPhotos.upsertPhoto,
+    routeId,
+  });
   const liveLocations = useRouteLiveLocations({
     currentPosition: navigation.state.currentPosition,
     enabled: phase === "navigating" && !navigation.state.isLoading && !navigation.state.error,
     heading: navigation.state.heading,
     routeId,
   });
+
+  const handleMediaAction = useCallback(
+    (action: RouteNavigationMediaAction) => {
+      if (action === "story") {
+        media.openStoryCamera();
+        return;
+      }
+      if (action === "feed") {
+        media.openFeedCamera();
+        return;
+      }
+      media.openMapPinCamera();
+    },
+    [media.openFeedCamera, media.openMapPinCamera, media.openStoryCamera],
+  );
 
   const route = navigation.state.route;
   const isOwner =
@@ -203,14 +246,25 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     );
   }
 
+  const isAnyCameraOpen =
+    media.isMapPinCameraOpen || media.isStoryCameraOpen || media.isCameraOpen;
+
   return (
     <View style={styles.screen}>
-      <RouteNavigationMap
-        followUser={navigation.followUser}
-        partners={liveLocations.partners}
-        state={navigation.state}
-        onUserInteraction={() => navigation.toggleFollowUser(false)}
-      />
+      <NavigationKeepAwake />
+      {/* Desmonta o MapView com câmera aberta: no Android a surface do mapa deixa a câmera/previews pretos. */}
+      {!isAnyCameraOpen ? (
+        <RouteNavigationMap
+          followUser={navigation.followUser}
+          partners={liveLocations.partners}
+          photoClusters={mapPhotos.clusters}
+          state={navigation.state}
+          onPhotoClusterPress={mapPhotos.openCluster}
+          onUserInteraction={() => navigation.toggleFollowUser(false)}
+        />
+      ) : (
+        <View style={styles.cameraBackdrop} />
+      )}
 
       <View pointerEvents="box-none" style={[styles.overlay, { paddingTop: insets.top + 12 }]}>
         <RouteNavigationInstructionCard
@@ -220,7 +274,10 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
       </View>
 
       <View pointerEvents="box-none" style={[styles.controlsWrap, { bottom: insets.bottom + 132 }]}>
-        <RouteNavigationControls onRecenter={navigation.recenter} />
+        <RouteNavigationControls
+          onOpenMedia={media.openMediaSheet}
+          onRecenter={navigation.recenter}
+        />
       </View>
 
       <View
@@ -256,11 +313,83 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
           onConfirm={handleConfirmStop}
         />
       ) : null}
+
+      <RouteNavigationMediaSheet
+        visible={media.isMediaSheetVisible}
+        onClose={media.closeMediaSheet}
+        onSelect={handleMediaAction}
+      />
+
+      <NewStoryCamera
+        isPublishing={media.isStoryUploading}
+        selectedMedia={media.selectedStoryMedia}
+        uploadProgress={media.storyUploadProgress}
+        visible={media.isStoryCameraOpen}
+        onClose={media.closeStoryCamera}
+        onPublish={media.publishStory}
+        onSelectMedia={media.setSelectedStoryMedia}
+      />
+
+      <StorySuccessModal
+        visible={media.isStorySuccessVisible}
+        onContinue={media.closeStorySuccess}
+      />
+
+      <NewPostCamera
+        capturedMedia={media.cameraMedia}
+        visible={media.isCameraOpen}
+        onAddMedia={media.addCameraMedia}
+        onClose={media.closeNewPostCamera}
+        onDone={media.openComposerFromCamera}
+        onGallerySelected={media.openComposerFromGallery}
+      />
+
+      <NewPostComposer
+        activePhotoIndex={media.composeActivePhotoIndex}
+        audience={media.composeAudience}
+        caption={media.composeCaption}
+        media={media.composerMedia}
+        postUploadProgress={media.postUploadProgress}
+        publishing={media.isPublishingPost}
+        restrictToFollowers={media.isComposerRestrictedToFollowers}
+        visible={media.isComposerOpen}
+        onBack={media.closeComposer}
+        onChangeActivePhotoIndex={media.setComposeActivePhotoIndex}
+        onChangeAudience={media.setComposeAudience}
+        onChangeCaption={media.setComposeCaption}
+        onRemovePhoto={media.removeComposerPhoto}
+        onReorderPhotos={media.reorderComposerPhotos}
+        onPublish={media.publishPost}
+      />
+
+      <PostSuccessModal
+        visible={media.isPostSuccessVisible}
+        onContinue={media.closePostSuccess}
+      />
+
+      <RouteMapPinCamera
+        isUploading={media.isUploadingMapPin}
+        visible={media.isMapPinCameraOpen}
+        onClose={media.closeMapPinCamera}
+        onConfirm={(uri) => {
+          void media.confirmMapPinPhoto(uri);
+        }}
+      />
+
+      <RouteMapPhotosCarouselModal
+        photos={mapPhotos.selectedCluster?.photos ?? []}
+        visible={mapPhotos.selectedCluster != null}
+        onClose={mapPhotos.closeCluster}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  cameraBackdrop: {
+    backgroundColor: "#000000",
+    flex: 1,
+  },
   centered: {
     alignItems: "center",
     backgroundColor: colors.brandGray,

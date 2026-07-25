@@ -3,11 +3,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { decodeEncodedPolyline, fetchPlaceDirections } from "@/lib/places";
 import type { PlaceDirectionsStep } from "@/lib/places";
+import type { PlaceDirectionsRouteOption } from "@/lib/places/types";
+import { captureRouteError } from "@/lib/sentry";
 
 import { fetchRoute } from "../services/routes.service";
 import { setActiveNavigationRouteId } from "../stores/active-navigation-store";
 import type { RouteApiResponse } from "../types/saved-route.types";
-import { captureRouteError } from "@/lib/sentry";
 import { buildRouteWaypointsFromApiRoute } from "../utils/build-route-waypoints";
 import {
   bearingBetween,
@@ -44,6 +45,7 @@ export type RouteNavigationState = {
   isArrived: boolean;
   isLoading: boolean;
   isOffRoute: boolean;
+  isRerouting: boolean;
   maneuverCarousel: NavigationManeuverPreview[];
   maneuverIcon: ReturnType<typeof getManeuverIconName>;
   maneuverLabel: string;
@@ -60,6 +62,9 @@ export type RouteNavigationState = {
 const OFF_ROUTE_THRESHOLD_METERS = 80;
 const ARRIVAL_THRESHOLD_METERS = 100;
 const STEP_ADVANCE_THRESHOLD_METERS = 40;
+const WAYPOINT_PASS_THRESHOLD_METERS = 80;
+const OFF_ROUTE_CONFIRM_TICKS = 2;
+const REROUTE_COOLDOWN_MS = 15_000;
 
 const INITIAL_STATE: RouteNavigationState = {
   activeStep: null,
@@ -72,6 +77,7 @@ const INITIAL_STATE: RouteNavigationState = {
   isArrived: false,
   isLoading: true,
   isOffRoute: false,
+  isRerouting: false,
   maneuverCarousel: [],
   maneuverIcon: "navigate",
   maneuverLabel: "Preparando navegação...",
@@ -89,6 +95,25 @@ type UseRouteNavigationParams = {
   routeId: string;
 };
 
+function applySelectedDirectionsRoute(
+  selectedRoute: PlaceDirectionsRouteOption,
+  routePolyline: Coordinate[],
+) {
+  const steps = selectedRoute.steps ?? [];
+  const totalDurationSeconds =
+    selectedRoute.durationSeconds ??
+    steps.reduce((total, step) => total + (step.durationSeconds ?? 0), 0);
+  const totalDistanceMeters =
+    selectedRoute.distanceMeters ?? sumPolylineDistanceMeters(routePolyline);
+
+  return {
+    steps,
+    stepEndPolylineIndexes: buildStepEndPolylineIndexes(steps, routePolyline),
+    totalDistanceMeters,
+    totalDurationSeconds,
+  };
+}
+
 export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
   const [state, setState] = useState<RouteNavigationState>(INITIAL_STATE);
   const [followUser, setFollowUser] = useState(true);
@@ -101,6 +126,203 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
   const previousPositionRef = useRef<Coordinate | null>(null);
   const remainingDurationSecondsRef = useRef(0);
   const routePolylineRef = useRef<Coordinate[]>([]);
+  const waypointsRef = useRef<Coordinate[]>([]);
+  const nextWaypointIndexRef = useRef(1);
+  const avoidTollsRef = useRef(false);
+  const headingRef = useRef(0);
+  const isReroutingRef = useRef(false);
+  const lastRerouteAtRef = useRef(0);
+  const offRouteTicksRef = useRef(0);
+  const isArrivedRef = useRef(false);
+  const routeRef = useRef<RouteApiResponse | null>(null);
+
+  const advancePassedWaypoints = useCallback((position: Coordinate) => {
+    const waypoints = waypointsRef.current;
+    if (waypoints.length < 2) return;
+
+    let nextIndex = nextWaypointIndexRef.current;
+    while (nextIndex < waypoints.length - 1) {
+      const waypoint = waypoints[nextIndex];
+      if (!waypoint) break;
+      if (haversineDistanceMeters(position, waypoint) > WAYPOINT_PASS_THRESHOLD_METERS) {
+        break;
+      }
+      nextIndex += 1;
+    }
+    nextWaypointIndexRef.current = Math.min(nextIndex, waypoints.length - 1);
+  }, []);
+
+  const buildRerouteWaypoints = useCallback((position: Coordinate): Coordinate[] => {
+    const waypoints = waypointsRef.current;
+    if (waypoints.length < 2) return [];
+
+    advancePassedWaypoints(position);
+    const remaining = waypoints.slice(nextWaypointIndexRef.current);
+    if (remaining.length === 0) {
+      return [position, waypoints[waypoints.length - 1]!];
+    }
+
+    const firstRemaining = remaining[0]!;
+    if (haversineDistanceMeters(position, firstRemaining) < 15) {
+      const rest = remaining.slice(1);
+      return rest.length > 0 ? [position, ...rest] : [position, firstRemaining];
+    }
+
+    return [position, ...remaining];
+  }, [advancePassedWaypoints]);
+
+  const applyDirectionsToNavigation = useCallback(
+    (selectedRoute: PlaceDirectionsRouteOption, route: RouteApiResponse) => {
+      const routePolyline = decodeEncodedPolyline(selectedRoute.encodedPolyline);
+      const applied = applySelectedDirectionsRoute(selectedRoute, routePolyline);
+
+      stepsRef.current = applied.steps;
+      stepEndPolylineIndexesRef.current = applied.stepEndPolylineIndexes;
+      routePolylineRef.current = routePolyline;
+      totalDurationSecondsRef.current = applied.totalDurationSeconds;
+      totalDistanceMetersRef.current = applied.totalDistanceMeters;
+      activeStepIndexRef.current = 0;
+      remainingDurationSecondsRef.current = applied.totalDurationSeconds;
+      offRouteTicksRef.current = 0;
+
+      const initialStep = getNextManeuverStep(applied.steps, 0);
+      const initialCarousel = buildManeuverCarouselItems(applied.steps, 0, null, false, false);
+
+      setState((current) => ({
+        ...current,
+        activeStep: applied.steps[0] ?? null,
+        activeStepIndex: 0,
+        completedPolyline: [],
+        error: null,
+        isLoading: false,
+        isOffRoute: false,
+        isRerouting: false,
+        maneuverCarousel: initialCarousel,
+        maneuverIcon: getManeuverIconName(initialStep?.maneuver),
+        maneuverLabel: getManeuverLabel(initialStep?.instructions),
+        remainingDistanceLabel: formatNavigationDistance(applied.totalDistanceMeters),
+        remainingDistanceMeters: applied.totalDistanceMeters,
+        remainingDurationLabel: formatDurationFromSeconds(applied.totalDurationSeconds),
+        remainingPolyline: routePolyline,
+        route,
+        routePolyline,
+        totalDistanceMeters: applied.totalDistanceMeters,
+        traveledDistanceMeters: 0,
+        etaLabel: formatEtaFromSeconds(applied.totalDurationSeconds),
+      }));
+    },
+    [],
+  );
+
+  const rerouteFromPosition = useCallback(
+    async (position: Coordinate) => {
+      if (isReroutingRef.current || isArrivedRef.current) return;
+
+      const now = Date.now();
+      if (now - lastRerouteAtRef.current < REROUTE_COOLDOWN_MS) return;
+
+      const route = routeRef.current;
+      if (!route) return;
+
+      const rerouteWaypoints = buildRerouteWaypoints(position);
+      if (rerouteWaypoints.length < 2) return;
+
+      isReroutingRef.current = true;
+      lastRerouteAtRef.current = now;
+
+      setState((current) => ({
+        ...current,
+        isOffRoute: true,
+        isRerouting: true,
+        maneuverCarousel: buildManeuverCarouselItems(
+          stepsRef.current,
+          activeStepIndexRef.current,
+          position,
+          true,
+          true,
+        ),
+        maneuverIcon: "sync-outline",
+        maneuverLabel: "Recalculando rota a partir da sua posição",
+      }));
+
+      try {
+        const directions = await fetchPlaceDirections(rerouteWaypoints, {
+          avoidTolls: avoidTollsRef.current,
+          includeSteps: true,
+        });
+
+        const selectedRoute =
+          directions.routes.find((item) => item.isDefault) ?? directions.routes[0];
+
+        if (!selectedRoute) {
+          throw new Error("Não foi possível recalcular a rota");
+        }
+
+        applyDirectionsToNavigation(selectedRoute, route);
+
+        // Reaplica progresso imediato na nova polyline
+        const heading = headingRef.current;
+        const routePolyline = routePolylineRef.current;
+        if (routePolyline.length >= 2) {
+          const closest = findClosestPointOnPolyline(position, routePolyline);
+          const traveledDistanceMeters = sumPolylineDistanceMeters(
+            routePolyline,
+            closest.index,
+          );
+          const remainingDistanceMeters = Math.max(
+            0,
+            totalDistanceMetersRef.current - traveledDistanceMeters,
+          );
+          const remainingDurationSeconds = computeRemainingDurationSeconds({
+            activeStepIndex: 0,
+            position,
+            remainingDistanceMeters,
+            steps: stepsRef.current,
+            totalDistanceMeters: totalDistanceMetersRef.current,
+            totalDurationSeconds: totalDurationSecondsRef.current,
+          });
+          remainingDurationSecondsRef.current = remainingDurationSeconds;
+
+          setState((current) => ({
+            ...current,
+            completedPolyline: routePolyline.slice(0, closest.index + 1),
+            currentPosition: position,
+            etaLabel: formatEtaFromSeconds(remainingDurationSeconds),
+            heading,
+            isOffRoute: false,
+            isRerouting: false,
+            remainingDistanceLabel: formatNavigationDistance(remainingDistanceMeters),
+            remainingDistanceMeters,
+            remainingDurationLabel: formatDurationFromSeconds(remainingDurationSeconds),
+            remainingPolyline: routePolyline.slice(closest.index),
+            traveledDistanceMeters,
+          }));
+        }
+      } catch (error) {
+        captureRouteError(error, {
+          routeId,
+          screen: "RouteNavigation",
+          source: "rerouteFromPosition",
+        });
+        setState((current) => ({
+          ...current,
+          isRerouting: false,
+          maneuverCarousel: buildManeuverCarouselItems(
+            stepsRef.current,
+            activeStepIndexRef.current,
+            position,
+            true,
+            false,
+          ),
+          maneuverIcon: "warning-outline",
+          maneuverLabel: "Falha ao recalcular. Tentaremos novamente.",
+        }));
+      } finally {
+        isReroutingRef.current = false;
+      }
+    },
+    [applyDirectionsToNavigation, buildRerouteWaypoints, routeId],
+  );
 
   const loadNavigation = useCallback(async () => {
     if (!routeId) {
@@ -132,6 +354,11 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
         throw new Error("Rota sem coordenadas suficientes para navegação");
       }
 
+      waypointsRef.current = waypoints;
+      nextWaypointIndexRef.current = 1;
+      avoidTollsRef.current = route.avoidTolls;
+      isArrivedRef.current = false;
+
       const directions = await fetchPlaceDirections(waypoints, {
         avoidTolls: route.avoidTolls,
         includeSteps: true,
@@ -144,38 +371,9 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
         throw new Error("Não foi possível calcular a rota");
       }
 
-      const routePolyline = decodeEncodedPolyline(selectedRoute.encodedPolyline);
-      const steps = selectedRoute.steps ?? [];
-
-      stepsRef.current = steps;
-      stepEndPolylineIndexesRef.current = buildStepEndPolylineIndexes(steps, routePolyline);
-      routePolylineRef.current = routePolyline;
-      totalDurationSecondsRef.current =
-        selectedRoute.durationSeconds ??
-        steps.reduce((total, step) => total + (step.durationSeconds ?? 0), 0);
-      totalDistanceMetersRef.current =
-        selectedRoute.distanceMeters ?? sumPolylineDistanceMeters(routePolyline);
-      activeStepIndexRef.current = 0;
-
+      routeRef.current = route;
       setActiveNavigationRouteId(route.id);
-
-      const initialStep = getNextManeuverStep(steps, 0);
-      const initialCarousel = buildManeuverCarouselItems(steps, 0, null, false);
-
-      setState((current) => ({
-        ...current,
-        activeStep: steps[0] ?? null,
-        activeStepIndex: 0,
-        error: null,
-        isLoading: false,
-        maneuverCarousel: initialCarousel,
-        maneuverIcon: getManeuverIconName(initialStep?.maneuver),
-        maneuverLabel: getManeuverLabel(initialStep?.instructions),
-        remainingPolyline: routePolyline,
-        route,
-        routePolyline,
-        totalDistanceMeters: totalDistanceMetersRef.current,
-      }));
+      applyDirectionsToNavigation(selectedRoute, route);
     } catch (error) {
       captureRouteError(error, {
         routeId,
@@ -191,85 +389,115 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
         isLoading: false,
       }));
     }
-  }, [routeId]);
+  }, [applyDirectionsToNavigation, routeId]);
 
   useEffect(() => {
     void loadNavigation();
   }, [loadNavigation]);
 
-  const updateNavigationFromPosition = useCallback((position: Coordinate, heading: number) => {
-    const routePolyline = routePolylineRef.current;
-    if (routePolyline.length < 2) return;
+  const updateNavigationFromPosition = useCallback(
+    (position: Coordinate, heading: number) => {
+      const routePolyline = routePolylineRef.current;
+      if (routePolyline.length < 2) return;
 
-    const closest = findClosestPointOnPolyline(position, routePolyline);
-    const isOffRoute = closest.distanceMeters > OFF_ROUTE_THRESHOLD_METERS;
-    const traveledDistanceMeters = sumPolylineDistanceMeters(
-      routePolyline,
-      closest.index,
-    );
-    const remainingDistanceMeters = Math.max(
-      0,
-      totalDistanceMetersRef.current - traveledDistanceMeters,
-    );
+      headingRef.current = heading;
+      advancePassedWaypoints(position);
 
-    const steps = stepsRef.current;
-    const activeStepIndex = resolveActiveStepIndex(
-      closest.index,
-      stepEndPolylineIndexesRef.current,
-      position,
-      steps,
-      STEP_ADVANCE_THRESHOLD_METERS,
-    );
+      const closest = findClosestPointOnPolyline(position, routePolyline);
+      const isOffRoute = closest.distanceMeters > OFF_ROUTE_THRESHOLD_METERS;
 
-    activeStepIndexRef.current = activeStepIndex;
-    const activeStep = steps[activeStepIndex] ?? null;
-    const displayStep = getNextManeuverStep(steps, activeStepIndex);
+      if (isOffRoute) {
+        offRouteTicksRef.current += 1;
+      } else {
+        offRouteTicksRef.current = 0;
+      }
 
-    const remainingDurationSeconds = computeRemainingDurationSeconds({
-      activeStepIndex,
-      position,
-      remainingDistanceMeters,
-      steps,
-      totalDistanceMeters: totalDistanceMetersRef.current,
-      totalDurationSeconds: totalDurationSecondsRef.current,
-    });
+      const traveledDistanceMeters = sumPolylineDistanceMeters(
+        routePolyline,
+        closest.index,
+      );
+      const remainingDistanceMeters = Math.max(
+        0,
+        totalDistanceMetersRef.current - traveledDistanceMeters,
+      );
 
-    const destination = routePolyline[routePolyline.length - 1];
-    const distanceToDestination = haversineDistanceMeters(position, destination);
-    const isArrived = distanceToDestination <= ARRIVAL_THRESHOLD_METERS;
+      const steps = stepsRef.current;
+      const activeStepIndex = resolveActiveStepIndex(
+        closest.index,
+        stepEndPolylineIndexesRef.current,
+        position,
+        steps,
+        STEP_ADVANCE_THRESHOLD_METERS,
+      );
 
-    const maneuverCarousel = buildManeuverCarouselItems(
-      steps,
-      activeStepIndex,
-      position,
-      isOffRoute,
-    );
+      activeStepIndexRef.current = activeStepIndex;
+      const activeStep = steps[activeStepIndex] ?? null;
+      const displayStep = getNextManeuverStep(steps, activeStepIndex);
 
-    const completedPolyline = routePolyline.slice(0, closest.index + 1);
-    const remainingPolyline = routePolyline.slice(closest.index);
+      const remainingDurationSeconds = computeRemainingDurationSeconds({
+        activeStepIndex,
+        position,
+        remainingDistanceMeters,
+        steps,
+        totalDistanceMeters: totalDistanceMetersRef.current,
+        totalDurationSeconds: totalDurationSecondsRef.current,
+      });
 
-    remainingDurationSecondsRef.current = remainingDurationSeconds;
+      const destination = routePolyline[routePolyline.length - 1];
+      const distanceToDestination = haversineDistanceMeters(position, destination);
+      const isArrived = distanceToDestination <= ARRIVAL_THRESHOLD_METERS;
+      isArrivedRef.current = isArrived;
 
-    setState((current) => ({
-      ...current,
-      activeStep,
-      activeStepIndex,
-      completedPolyline,
-      currentPosition: position,
-      etaLabel: formatEtaFromSeconds(remainingDurationSeconds),
-      heading,
-      isArrived,
-      isOffRoute,
-      maneuverCarousel,
-      maneuverIcon: getManeuverIconName(displayStep?.maneuver),
-      maneuverLabel: getManeuverLabel(displayStep?.instructions),
-      remainingDistanceLabel: formatNavigationDistance(remainingDistanceMeters),
-      remainingDistanceMeters,
-      remainingDurationLabel: formatDurationFromSeconds(remainingDurationSeconds),
-      remainingPolyline,
-      traveledDistanceMeters,
-    }));
-  }, []);
+      const isRerouting = isReroutingRef.current;
+      const maneuverCarousel = buildManeuverCarouselItems(
+        steps,
+        activeStepIndex,
+        position,
+        isOffRoute || isRerouting,
+        isRerouting,
+      );
+
+      const completedPolyline = routePolyline.slice(0, closest.index + 1);
+      const remainingPolyline = routePolyline.slice(closest.index);
+
+      remainingDurationSecondsRef.current = remainingDurationSeconds;
+
+      setState((current) => ({
+        ...current,
+        activeStep,
+        activeStepIndex,
+        completedPolyline,
+        currentPosition: position,
+        etaLabel: formatEtaFromSeconds(remainingDurationSeconds),
+        heading,
+        isArrived,
+        isOffRoute: isOffRoute || isRerouting,
+        isRerouting,
+        maneuverCarousel,
+        maneuverIcon: isRerouting
+          ? "sync-outline"
+          : getManeuverIconName(displayStep?.maneuver),
+        maneuverLabel: isRerouting
+          ? "Recalculando rota a partir da sua posição"
+          : getManeuverLabel(displayStep?.instructions),
+        remainingDistanceLabel: formatNavigationDistance(remainingDistanceMeters),
+        remainingDistanceMeters,
+        remainingDurationLabel: formatDurationFromSeconds(remainingDurationSeconds),
+        remainingPolyline,
+        traveledDistanceMeters,
+      }));
+
+      if (
+        isOffRoute &&
+        !isArrived &&
+        !isRerouting &&
+        offRouteTicksRef.current >= OFF_ROUTE_CONFIRM_TICKS
+      ) {
+        void rerouteFromPosition(position);
+      }
+    },
+    [advancePassedWaypoints, rerouteFromPosition],
+  );
 
   useEffect(() => {
     if (state.isLoading || state.error) return;
@@ -303,9 +531,10 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
               ? update.coords.heading
               : previousPositionRef.current
                 ? bearingBetween(previousPositionRef.current, position)
-                : state.heading;
+                : headingRef.current;
 
           previousPositionRef.current = position;
+          headingRef.current = heading;
           updateNavigationFromPosition(position, heading);
         },
       );
@@ -314,7 +543,7 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
     return () => {
       subscription?.remove();
     };
-  }, [state.error, state.isLoading, state.heading, updateNavigationFromPosition]);
+  }, [state.error, state.isLoading, updateNavigationFromPosition]);
 
   useEffect(() => {
     if (state.isLoading || state.error) return;

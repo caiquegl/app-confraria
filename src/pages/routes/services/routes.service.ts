@@ -1,6 +1,10 @@
 import { api } from "@/lib/api";
+import { getApiBaseUrl } from "@/lib/api-environment";
 import { apiRoutes } from "@/lib/api-routes";
+import { getToken } from "@/lib/auth";
+import { optimizeImageForUpload } from "@/lib/media-optimization";
 
+import type { RoutePhoto } from "../types/route-photo.types";
 import type {
   CreateRoutePayload,
   PublishedRoutesPageResponse,
@@ -143,6 +147,63 @@ export async function removeRouteStop(
     apiRoutes.routes.removeStop(dayId, placeId),
   );
   return data;
+}
+
+export async function fetchRoutePhotos(routeId: string): Promise<RoutePhoto[]> {
+  const { data } = await api.get<RoutePhoto[]>(apiRoutes.routes.photos(routeId));
+  return data;
+}
+
+export async function createRoutePhoto(params: {
+  imageUri: string;
+  latitude: number;
+  longitude: number;
+  routeId: string;
+}): Promise<RoutePhoto> {
+  const optimized = await optimizeImageForUpload(params.imageUri);
+  const formData = new FormData();
+  formData.append("latitude", String(params.latitude));
+  formData.append("longitude", String(params.longitude));
+  formData.append("file", {
+    name: `route-photo-${Date.now()}.${optimized.extension}`,
+    type: optimized.mimeType,
+    uri: optimized.uri,
+  } as unknown as Blob);
+
+  const baseURL = await getApiBaseUrl();
+  const token = await getToken();
+  const responseText = await new Promise<string>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${baseURL}${apiRoutes.routes.photos(params.routeId)}`);
+    xhr.timeout = 120000;
+    xhr.setRequestHeader("Accept", "application/json");
+    if (token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.responseText);
+        return;
+      }
+
+      let message = "Não foi possível marcar a foto no mapa.";
+      try {
+        const parsed = JSON.parse(xhr.responseText) as { message?: string | string[] };
+        if (typeof parsed.message === "string") message = parsed.message;
+        else if (Array.isArray(parsed.message)) message = parsed.message.join(", ");
+      } catch {
+        // ignore parse errors
+      }
+      reject(new Error(message));
+    };
+
+    xhr.onerror = () => reject(new Error("Falha de rede ao enviar a foto."));
+    xhr.ontimeout = () => reject(new Error("Tempo esgotado ao enviar a foto."));
+    xhr.send(formData);
+  });
+
+  return JSON.parse(responseText) as RoutePhoto;
 }
 
 export type { RoutePlaceResponse };

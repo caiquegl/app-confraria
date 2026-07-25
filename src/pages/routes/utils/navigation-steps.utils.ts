@@ -51,14 +51,17 @@ export function buildManeuverCarouselItems(
   activeStepIndex: number,
   position: Coordinate | null,
   isOffRoute: boolean,
+  isRerouting = false,
 ): NavigationManeuverPreview[] {
   const items: NavigationManeuverPreview[] = [];
 
-  if (isOffRoute) {
+  if (isOffRoute || isRerouting) {
     items.push({
-      distanceLabel: "Retorne ao trajeto",
-      icon: "warning-outline",
-      instruction: "Você saiu da rota planejada",
+      distanceLabel: isRerouting ? "Aguarde" : "Fora da rota",
+      icon: isRerouting ? "sync-outline" : "warning-outline",
+      instruction: isRerouting
+        ? "Recalculando rota a partir da sua posição"
+        : "Você saiu da rota — recalculando...",
       kind: "off_route",
       stepIndex: activeStepIndex,
     });

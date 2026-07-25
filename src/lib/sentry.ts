@@ -68,17 +68,6 @@ export function initSentry(): void {
     enableTombstone: true,
     tracesSampleRate: __DEV__ ? 1 : 0.2,
     attachStacktrace: true,
-    beforeBreadcrumb(breadcrumb) {
-      if (
-        breadcrumb.category === "console" &&
-        typeof breadcrumb.message === "string" &&
-        breadcrumb.message.includes("[RouteTracking]")
-      ) {
-        return null;
-      }
-
-      return breadcrumb;
-    },
     beforeSend(event) {
       if (event.request?.headers) {
         const headers = { ...event.request.headers };
