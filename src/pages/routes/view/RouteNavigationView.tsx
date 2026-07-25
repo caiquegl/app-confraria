@@ -133,6 +133,8 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   const finishRoute = useCallback(async () => {
     if (isFinishing || !isOwner) return;
 
+    // Para recalculo/GPS imediatamente para não travar a finalização fora da rota.
+    navigation.stopNavigationUpdates();
     setIsFinishing(true);
 
     const route = navigation.state.route;
@@ -159,8 +161,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   }, [
     isFinishing,
     isOwner,
-    navigation.state.route,
-    navigation.state.traveledDistanceMeters,
+    navigation,
     routeId,
   ]);
 
@@ -175,8 +176,9 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
 
   const closeStopConfirm = useCallback(() => {
     if (isFinishing) return;
+    navigation.resumeNavigationUpdates();
     setShowStopConfirm(false);
-  }, [isFinishing]);
+  }, [isFinishing, navigation]);
 
   const handleConfirmStop = useCallback(() => {
     void finishRoute();
@@ -298,7 +300,12 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
       </View>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-        <RouteNavigationStatsCard canFinish={isOwner} state={navigation.state} onStop={openStopConfirm} />
+        <RouteNavigationStatsCard
+          canFinish={isOwner}
+          isOffRoute={navigation.state.isOffRoute}
+          state={navigation.state}
+          onStop={openStopConfirm}
+        />
       </View>
 
       {isOwner ? (
@@ -410,10 +417,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     bottom: 0,
+    elevation: 30,
     left: 0,
     paddingHorizontal: 16,
     position: "absolute",
     right: 0,
+    zIndex: 30,
   },
   loadingText: {
     color: "#6B7280",

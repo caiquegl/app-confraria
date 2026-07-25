@@ -7,6 +7,7 @@ import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 
 type RouteNavigationStatsCardProps = {
   canFinish: boolean;
+  isOffRoute?: boolean;
   onStop: () => void;
   state: Pick<
     RouteNavigationState,
@@ -14,21 +15,34 @@ type RouteNavigationStatsCardProps = {
   >;
 };
 
-export function RouteNavigationStatsCard({ canFinish, onStop, state }: RouteNavigationStatsCardProps) {
+export function RouteNavigationStatsCard({
+  canFinish,
+  isOffRoute = false,
+  onStop,
+  state,
+}: RouteNavigationStatsCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.copy}>
         <Text style={styles.duration}>{state.remainingDurationLabel}</Text>
         <View style={styles.metaRow}>
-          <Text style={styles.meta}>{state.remainingDistanceLabel}</Text>
-          <Text style={styles.dot}>•</Text>
-          <Text style={styles.meta}>Chegada {state.etaLabel}</Text>
+          {isOffRoute ? (
+            <Text style={styles.offRouteMeta}>Fora da rota · finalize quando quiser</Text>
+          ) : (
+            <>
+              <Text style={styles.meta}>{state.remainingDistanceLabel}</Text>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.meta}>Chegada {state.etaLabel}</Text>
+            </>
+          )}
         </View>
       </View>
 
       <Pressable
+        accessibilityLabel={canFinish ? "Finalizar passeio" : "Sair da navegação"}
         accessibilityRole="button"
-        accessibilityState={{ disabled: !canFinish }}
+        accessibilityState={{ disabled: false }}
+        hitSlop={8}
         style={[styles.stopButton, !canFinish && styles.stopButtonDisabled]}
         onPress={onStop}
       >
@@ -74,8 +88,14 @@ const styles = StyleSheet.create({
   metaRow: {
     alignItems: "center",
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginTop: 4,
+  },
+  offRouteMeta: {
+    color: "#FBBF24",
+    fontSize: 12,
+    fontWeight: "700",
   },
   stopButton: {
     alignItems: "center",

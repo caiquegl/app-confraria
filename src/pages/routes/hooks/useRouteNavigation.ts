@@ -134,6 +134,7 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
   const lastRerouteAtRef = useRef(0);
   const offRouteTicksRef = useRef(0);
   const isArrivedRef = useRef(false);
+  const isStoppedRef = useRef(false);
   const routeRef = useRef<RouteApiResponse | null>(null);
 
   const advancePassedWaypoints = useCallback((position: Coordinate) => {
@@ -216,7 +217,7 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
 
   const rerouteFromPosition = useCallback(
     async (position: Coordinate) => {
-      if (isReroutingRef.current || isArrivedRef.current) return;
+      if (isReroutingRef.current || isArrivedRef.current || isStoppedRef.current) return;
 
       const now = Date.now();
       if (now - lastRerouteAtRef.current < REROUTE_COOLDOWN_MS) return;
@@ -397,6 +398,8 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
 
   const updateNavigationFromPosition = useCallback(
     (position: Coordinate, heading: number) => {
+      if (isStoppedRef.current) return;
+
       const routePolyline = routePolylineRef.current;
       if (routePolyline.length < 2) return;
 
@@ -571,11 +574,27 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
     setFollowUser(value);
   }, []);
 
+  const stopNavigationUpdates = useCallback(() => {
+    isStoppedRef.current = true;
+    isReroutingRef.current = false;
+    offRouteTicksRef.current = 0;
+    setState((current) => ({
+      ...current,
+      isRerouting: false,
+    }));
+  }, []);
+
+  const resumeNavigationUpdates = useCallback(() => {
+    isStoppedRef.current = false;
+  }, []);
+
   return {
     followUser,
     recenter,
     reload: loadNavigation,
+    resumeNavigationUpdates,
     state,
+    stopNavigationUpdates,
     toggleFollowUser,
   };
 }

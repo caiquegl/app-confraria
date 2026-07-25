@@ -3,9 +3,9 @@ import "@/tasks/route-location-tracking.task";
 
 import { Stack, usePathname } from "expo-router";
 import { useEffect } from "react";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { EnvironmentBanner, EnvironmentBannerProvider } from "@/components/EnvironmentBanner";
@@ -57,15 +57,15 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <EnvironmentBannerProvider>
           <SafeAreaView
             edges={["top", "left", "right"]}
-            style={{ flex: 1, backgroundColor: colors.brandGray }}
+            style={styles.safeArea}
           >
             <EnvironmentBanner />
-            <View style={{ flex: 1, overflow: "visible", zIndex: 200 }}>
+            <View style={styles.stackWrap}>
               <Stack
                 screenOptions={{
                   contentStyle: { backgroundColor: colors.brandGray },
@@ -73,10 +73,43 @@ export default function RootLayout() {
                 }}
               />
             </View>
-            <Toast />
           </SafeAreaView>
+          <AppToastHost />
         </EnvironmentBannerProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
+
+function AppToastHost() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View pointerEvents="box-none" style={styles.toastHost}>
+      <Toast position="top" topOffset={Math.max(insets.top, 12) + 8} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  safeArea: {
+    backgroundColor: colors.brandGray,
+    flex: 1,
+  },
+  stackWrap: {
+    flex: 1,
+    overflow: "visible",
+  },
+  // Só no topo: absoluteFill + elevation alto bloqueava toques no app inteiro (ex.: finalizar rota).
+  toastHost: {
+    elevation: 10000,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 10000,
+  },
+});
