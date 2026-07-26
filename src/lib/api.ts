@@ -17,6 +17,16 @@ api.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
+  // Evita POST/GET na raiz do host quando algum apiRoute vier undefined.
+  const requestUrl = typeof config.url === "string" ? config.url.trim() : "";
+  if (!requestUrl || requestUrl === "/") {
+    return Promise.reject(
+      new Error(
+        `Requisição API sem path válido (method=${config.method ?? "get"}). Verifique apiRoutes.`,
+      ),
+    );
+  }
+
   return config;
 });
 

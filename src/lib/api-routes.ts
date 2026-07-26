@@ -101,6 +101,9 @@ export const apiRoutes = {
     import: "/places/import",
     live: (googlePlaceId: string) =>
       `/places/live/${encodeURIComponent(googlePlaceId)}`,
+    photoMedia: (photoName: string) =>
+      `/places/photos/media?name=${encodeURIComponent(photoName)}`,
+    routeSuggestions: "/places/route-suggestions",
   },
   routes: {
     create: "/routes",

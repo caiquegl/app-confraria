@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text } from "react-native";
-import { NestableScrollContainer } from "react-native-draggable-flatlist";
+import { useCallback, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 import type {
   PlaceReference,
@@ -56,11 +56,25 @@ export function RouteCreateStep1({
   onSelectDay,
   onToggleDayOvernight,
 }: RouteCreateStep1Props) {
+  // Evita NestableScrollContainer + NestableDraggableFlatList (warning measureLayout no RN novo).
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+
+  const handleDragBegin = useCallback(() => {
+    setScrollEnabled(false);
+    onDragBegin?.();
+  }, [onDragBegin]);
+
+  const handleDragEnd = useCallback(() => {
+    setScrollEnabled(true);
+    onDragEnd?.();
+  }, [onDragEnd]);
+
   return (
-    <NestableScrollContainer
+    <ScrollView
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
+      scrollEnabled={scrollEnabled}
       showsVerticalScrollIndicator={false}
       style={styles.scroll}
     >
@@ -78,8 +92,8 @@ export function RouteCreateStep1({
         onChangeDayDestination={onChangeDayDestination}
         onChangeDayOrigin={onChangeDayOrigin}
         onChangeStop={onChangeStop}
-        onDragBegin={onDragBegin}
-        onDragEnd={onDragEnd}
+        onDragBegin={handleDragBegin}
+        onDragEnd={handleDragEnd}
         onRemoveDay={onRemoveDay}
         onRemoveStop={onRemoveStop}
         onReorderWaypoints={onReorderWaypoints}
@@ -91,7 +105,7 @@ export function RouteCreateStep1({
         <Ionicons color={colors.brandDark} name="add" size={18} />
         <Text style={styles.addDayText}>Adicionar novo dia ao roteiro</Text>
       </Pressable>
-    </NestableScrollContainer>
+    </ScrollView>
   );
 }
 

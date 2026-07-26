@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, useColorScheme, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
@@ -9,6 +9,7 @@ import type { RouteLiveLocation } from "@/lib/route-navigation-socket";
 
 import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 import type { RoutePhotoCluster } from "../types/route-photo.types";
+import type { RouteNavigationPlacePin } from "../utils/build-navigation-place-pins";
 import {
   ROUTE_NAVIGATION_MAP_STYLE_NIGHT,
   ROUTE_PLANNER_MAP_STYLE,
@@ -22,7 +23,11 @@ type RouteNavigationMapProps = {
   photoClusters?: RoutePhotoCluster[];
   state: Pick<
     RouteNavigationState,
-    "completedPolyline" | "currentPosition" | "heading" | "remainingPolyline"
+    | "completedPolyline"
+    | "currentPosition"
+    | "heading"
+    | "placePins"
+    | "remainingPolyline"
   >;
 };
 
@@ -42,6 +47,20 @@ export function RouteNavigationMap({
   const followUserRef = useRef(followUser);
   const colorScheme = useColorScheme();
   const isNightMode = colorScheme === "dark";
+  // Android congela o Marker cedo demais com tracksViewChanges=false e o ícone some.
+  const [tracksUserPin, setTracksUserPin] = useState(true);
+  const hasUserPosition = Boolean(state.currentPosition);
+
+  useEffect(() => {
+    if (!hasUserPosition) {
+      setTracksUserPin(true);
+      return;
+    }
+
+    setTracksUserPin(true);
+    const timer = setTimeout(() => setTracksUserPin(false), 750);
+    return () => clearTimeout(timer);
+  }, [hasUserPosition]);
 
   useEffect(() => {
     // Recenter: volta ao zoom padrão da navegação.
@@ -141,66 +160,156 @@ export function RouteNavigationMap({
           />
         ) : null}
 
-        {partners.map((partner) => (
-          <Marker
-            key={partner.userId}
-            anchor={{ x: 0.5, y: 0.5 }}
-            coordinate={{
-              latitude: partner.latitude,
-              longitude: partner.longitude,
-            }}
-            rotation={partner.heading}
-          >
-            <View style={styles.partnerPin}>
-              <View style={styles.partnerPinInner}>
-                <Ionicons color="#FFFFFF" name="person" size={14} />
+        {state.placePins
+          .filter(
+            (pin) =>
+              Number.isFinite(pin.latitude) && Number.isFinite(pin.longitude),
+          )
+          .map((pin) => (
+            <Marker
+              key={pin.id}
+              anchor={{ x: 0.5, y: 1 }}
+              coordinate={{
+                latitude: pin.latitude,
+                longitude: pin.longitude,
+              }}
+              tracksViewChanges={false}
+              zIndex={pin.kind === "destination" ? 4 : 3}
+            >
+              <View collapsable={false} style={styles.placePinHitbox}>
+                <NavigationPlacePin pin={pin} />
               </View>
-              <Text numberOfLines={1} style={styles.partnerLabel}>
-                {partner.name.split(" ")[0]}
-              </Text>
-            </View>
-          </Marker>
-        ))}
+            </Marker>
+          ))}
 
-        {photoClusters.map((cluster) => (
-          <Marker
-            key={cluster.id}
-            anchor={{ x: 0.5, y: 0.5 }}
-            coordinate={{
-              latitude: cluster.latitude,
-              longitude: cluster.longitude,
-            }}
-            onPress={() => onPhotoClusterPress?.(cluster)}
-          >
-            <View style={styles.cameraPin}>
-              <Ionicons color="#FFFFFF" name="camera" size={16} />
-              {cluster.photos.length > 1 ? (
-                <View style={styles.cameraPinBadge}>
-                  <Text style={styles.cameraPinBadgeText}>{cluster.photos.length}</Text>
+        {partners
+          .filter(
+            (partner) =>
+              Number.isFinite(partner.latitude) &&
+              Number.isFinite(partner.longitude),
+          )
+          .map((partner) => {
+            const partnerLabel =
+              partner.name?.trim().split(/\s+/)[0] || "Motociclista";
+
+            return (
+              <Marker
+                key={partner.userId}
+                anchor={{ x: 0.5, y: 0.5 }}
+                coordinate={{
+                  latitude: partner.latitude,
+                  longitude: partner.longitude,
+                }}
+                tracksViewChanges={false}
+                rotation={
+                  Number.isFinite(partner.heading) ? partner.heading : 0
+                }
+              >
+                <View collapsable={false} style={styles.partnerPin}>
+                  <View collapsable={false} style={styles.partnerPinInner}>
+                    <Ionicons color="#FFFFFF" name="person" size={14} />
+                  </View>
+                  <View collapsable={false} style={styles.partnerLabel}>
+                    <Text numberOfLines={1} style={styles.partnerLabelText}>
+                      {partnerLabel}
+                    </Text>
+                  </View>
                 </View>
-              ) : null}
-            </View>
-          </Marker>
-        ))}
+              </Marker>
+            );
+          })}
 
-        {state.currentPosition ? (
+        {photoClusters
+          .filter(
+            (cluster) =>
+              Number.isFinite(cluster.latitude) &&
+              Number.isFinite(cluster.longitude),
+          )
+          .map((cluster) => (
+            <Marker
+              key={cluster.id}
+              anchor={{ x: 0.5, y: 0.5 }}
+              coordinate={{
+                latitude: cluster.latitude,
+                longitude: cluster.longitude,
+              }}
+              tracksViewChanges={false}
+              onPress={() => onPhotoClusterPress?.(cluster)}
+            >
+              <View collapsable={false} style={styles.cameraPin}>
+                <Ionicons color="#FFFFFF" name="camera" size={16} />
+                {cluster.photos.length > 1 ? (
+                  <View style={styles.cameraPinBadge}>
+                    <Text style={styles.cameraPinBadgeText}>
+                      {cluster.photos.length}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </Marker>
+          ))}
+
+        {state.currentPosition &&
+        Number.isFinite(state.currentPosition.latitude) &&
+        Number.isFinite(state.currentPosition.longitude) ? (
           <Marker
             anchor={{ x: 0.5, y: 0.5 }}
             coordinate={state.currentPosition}
             flat
+            tracksViewChanges={tracksUserPin}
             rotation={followUser ? 0 : state.heading}
           >
-            <View style={styles.userPin}>
-              <MaterialCommunityIcons
-                color={colors.brandGreen}
-                name="motorbike"
-                size={22}
-                style={styles.userPinIcon}
-              />
+            <View collapsable={false} style={styles.userPinHitbox}>
+              <View collapsable={false} style={styles.userPin}>
+                <MaterialCommunityIcons
+                  color={colors.brandGreen}
+                  name="motorbike"
+                  size={22}
+                  style={styles.userPinIcon}
+                />
+              </View>
             </View>
           </Marker>
         ) : null}
       </MapView>
+    </View>
+  );
+}
+
+function NavigationPlacePin({ pin }: { pin: RouteNavigationPlacePin }) {
+  const isDestination = pin.kind === "destination";
+  const title = isDestination
+    ? pin.title || "Destino"
+    : pin.title || `Parada ${pin.pinLabel}`;
+
+  return (
+    <View collapsable={false} style={styles.placePinWrap}>
+      <View collapsable={false} style={styles.placePinTitle}>
+        <Text numberOfLines={1} style={styles.placePinTitleText}>
+          {title}
+        </Text>
+      </View>
+
+      <View
+        collapsable={false}
+        style={[
+          styles.placePin,
+          isDestination ? styles.placePinDestination : styles.placePinStop,
+        ]}
+      >
+        {isDestination ? (
+          <Ionicons color="#FFFFFF" name="flag" size={15} />
+        ) : (
+          <Text style={styles.placePinLabel}>{pin.pinLabel}</Text>
+        )}
+      </View>
+
+      <View
+        style={[
+          styles.placePinTip,
+          isDestination ? styles.placePinTipDestination : styles.placePinTipStop,
+        ]}
+      />
     </View>
   );
 }
@@ -212,6 +321,80 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFill,
   },
+  // Área fixa para o Android não cortar o bitmap do Marker customizado.
+  placePinHitbox: {
+    alignItems: "center",
+    height: 78,
+    justifyContent: "flex-end",
+    width: 120,
+  },
+  placePin: {
+    alignItems: "center",
+    borderColor: "#FFFFFF",
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
+  },
+  placePinDestination: {
+    backgroundColor: colors.brandDark,
+    height: 34,
+    width: 34,
+  },
+  placePinLabel: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "800",
+    includeFontPadding: false,
+    textAlign: "center",
+  },
+  placePinStop: {
+    backgroundColor: "#FFFFFF",
+    borderColor: colors.brandGreen,
+  },
+  placePinTip: {
+    backgroundColor: "transparent",
+    borderBottomWidth: 0,
+    borderLeftColor: "transparent",
+    borderLeftWidth: 6,
+    borderRightColor: "transparent",
+    borderRightWidth: 6,
+    borderStyle: "solid",
+    borderTopWidth: 8,
+    height: 0,
+    marginTop: -1,
+    width: 0,
+  },
+  placePinTipDestination: {
+    borderTopColor: colors.brandDark,
+  },
+  placePinTipStop: {
+    borderTopColor: colors.brandGreen,
+  },
+  placePinTitle: {
+    alignItems: "center",
+    backgroundColor: "rgba(28, 33, 38, 0.92)",
+    borderRadius: 8,
+    justifyContent: "center",
+    marginBottom: 4,
+    maxWidth: 112,
+    minHeight: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  placePinTitleText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    includeFontPadding: false,
+    textAlign: "center",
+  },
+  placePinWrap: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+    overflow: "visible",
+  },
   userPin: {
     alignItems: "center",
     backgroundColor: colors.brandDark,
@@ -222,25 +405,39 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 48,
   },
+  userPinHitbox: {
+    alignItems: "center",
+    height: 52,
+    justifyContent: "center",
+    width: 52,
+  },
   userPinIcon: {
     // motorbike aponta para a direita; -90° alinha o nariz com a direção da câmera/heading
     transform: [{ rotate: "-90deg" }],
   },
   partnerLabel: {
+    alignItems: "center",
     backgroundColor: colors.brandDark,
     borderRadius: 8,
+    justifyContent: "center",
+    marginTop: 4,
+    maxWidth: 72,
+    minHeight: 18,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  partnerLabelText: {
     color: "#FFFFFF",
     fontSize: 10,
     fontWeight: "700",
-    marginTop: 4,
-    maxWidth: 72,
-    overflow: "hidden",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    includeFontPadding: false,
     textAlign: "center",
   },
   partnerPin: {
     alignItems: "center",
+    height: 58,
+    justifyContent: "flex-start",
+    width: 80,
   },
   partnerPinInner: {
     alignItems: "center",
@@ -260,6 +457,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     height: 38,
     justifyContent: "center",
+    overflow: "visible",
     width: 38,
   },
   cameraPinBadge: {

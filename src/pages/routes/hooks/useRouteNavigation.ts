@@ -9,6 +9,10 @@ import { captureRouteError } from "@/lib/sentry";
 import { fetchRoute } from "../services/routes.service";
 import { setActiveNavigationRouteId } from "../stores/active-navigation-store";
 import type { RouteApiResponse } from "../types/saved-route.types";
+import {
+  buildNavigationPlacePins,
+  type RouteNavigationPlacePin,
+} from "../utils/build-navigation-place-pins";
 import { buildRouteWaypointsFromApiRoute } from "../utils/build-route-waypoints";
 import {
   bearingBetween,
@@ -49,6 +53,7 @@ export type RouteNavigationState = {
   maneuverCarousel: NavigationManeuverPreview[];
   maneuverIcon: ReturnType<typeof getManeuverIconName>;
   maneuverLabel: string;
+  placePins: RouteNavigationPlacePin[];
   remainingDistanceLabel: string;
   remainingDistanceMeters: number;
   remainingDurationLabel: string;
@@ -81,6 +86,7 @@ const INITIAL_STATE: RouteNavigationState = {
   maneuverCarousel: [],
   maneuverIcon: "navigate",
   maneuverLabel: "Preparando navegação...",
+  placePins: [],
   remainingDistanceLabel: "—",
   remainingDistanceMeters: 0,
   remainingDurationLabel: "—",
@@ -201,6 +207,7 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
         maneuverCarousel: initialCarousel,
         maneuverIcon: getManeuverIconName(initialStep?.maneuver),
         maneuverLabel: getManeuverLabel(initialStep?.instructions),
+        placePins: buildNavigationPlacePins(route),
         remainingDistanceLabel: formatNavigationDistance(applied.totalDistanceMeters),
         remainingDistanceMeters: applied.totalDistanceMeters,
         remainingDurationLabel: formatDurationFromSeconds(applied.totalDurationSeconds),

@@ -27,7 +27,7 @@ export function RouteNavigationStatsCard({
         <Text style={styles.duration}>{state.remainingDurationLabel}</Text>
         <View style={styles.metaRow}>
           {isOffRoute ? (
-            <Text style={styles.offRouteMeta}>Fora da rota · finalize quando quiser</Text>
+            <Text style={styles.offRouteMeta}></Text>
           ) : (
             <>
               <Text style={styles.meta}>{state.remainingDistanceLabel}</Text>

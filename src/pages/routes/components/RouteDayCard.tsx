@@ -1,11 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useMemo, useState } from "react";
 import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
-import {
-  NestableDraggableFlatList,
+import DraggableFlatList, {
   ScaleDecorator,
+  type RenderItemParams,
 } from "react-native-draggable-flatlist";
-import type { RenderItemParams } from "react-native-draggable-flatlist";
 
 import { PlaceAutocompleteField } from "@/components/PlaceAutocompleteField";
 import type {
@@ -252,26 +251,42 @@ export function RouteDayCard({
           </View>
         ) : null}
 
-        <NestableDraggableFlatList
-          activationDistance={8}
-          data={sortableData}
-          keyExtractor={(item) => item.id}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={false}
-          renderItem={renderWaypoint}
-          onDragBegin={() => {
-            Keyboard.dismiss();
-            setIsReordering(true);
-            onDragBegin?.();
-          }}
-          onDragEnd={({ data }) => {
-            setIsReordering(false);
-            onDragEnd?.();
-            onReorderWaypoints(
-              data.map((row) => ({ id: row.id, place: row.place })),
-            );
-          }}
-        />
+        {isActive ? (
+          <DraggableFlatList
+            activationDistance={8}
+            containerStyle={styles.waypointList}
+            data={sortableData}
+            keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={false}
+            renderItem={renderWaypoint}
+            onDragBegin={() => {
+              Keyboard.dismiss();
+              setIsReordering(true);
+              onDragBegin?.();
+            }}
+            onDragEnd={({ data }) => {
+              setIsReordering(false);
+              onDragEnd?.();
+              onReorderWaypoints(
+                data.map((row) => ({ id: row.id, place: row.place })),
+              );
+            }}
+          />
+        ) : (
+          <View style={styles.waypointList}>
+            {sortableData.map((item, index) => (
+              <View key={item.id}>
+                {renderWaypoint({
+                  drag: () => undefined,
+                  getIndex: () => index,
+                  isActive: false,
+                  item,
+                })}
+              </View>
+            ))}
+          </View>
+        )}
 
         <Pressable
           accessibilityRole="button"
@@ -350,6 +365,9 @@ const styles = StyleSheet.create({
     gap: 16,
     marginTop: 16,
     paddingTop: 16,
+  },
+  waypointList: {
+    flexGrow: 0,
   },
   card: {
     backgroundColor: "#FFFFFF",

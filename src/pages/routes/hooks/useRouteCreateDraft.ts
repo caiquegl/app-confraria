@@ -69,6 +69,8 @@ export function useRouteCreateDraft({
   const skipNextSaveRef = useRef(true);
   const latestSnapshotRef = useRef<RouteCreateCacheSnapshot | null>(null);
   const shouldPersistCacheRef = useRef(false);
+  /** Depois de iniciar/salvar, nunca mais regrava o rascunho desta sessão. */
+  const cacheDiscardedRef = useRef(false);
 
   const { activeDayId, days } = draft.itinerary;
 
@@ -84,12 +86,19 @@ export function useRouteCreateDraft({
   );
 
   useEffect(() => {
+    if (cacheDiscardedRef.current) {
+      latestSnapshotRef.current = null;
+      return;
+    }
     latestSnapshotRef.current = cacheSnapshot;
   }, [cacheSnapshot]);
 
   useEffect(() => {
     shouldPersistCacheRef.current =
-      isCacheReady && !initialSnapshot && !editRouteId;
+      isCacheReady &&
+      !initialSnapshot &&
+      !editRouteId &&
+      !cacheDiscardedRef.current;
   }, [editRouteId, initialSnapshot, isCacheReady]);
 
   useEffect(() => {
@@ -129,6 +138,7 @@ export function useRouteCreateDraft({
   // Debounced persist without JSON.stringify on the hot path (step clicks / typing).
   useEffect(() => {
     if (!isCacheReady || initialSnapshot || editRouteId) return;
+    if (!shouldPersistCacheRef.current) return;
 
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false;
@@ -136,6 +146,7 @@ export function useRouteCreateDraft({
     }
 
     const timer = setTimeout(() => {
+      if (!shouldPersistCacheRef.current) return;
       const snapshot = latestSnapshotRef.current;
       if (!snapshot) return;
       void saveRouteCreateCache(snapshot);
@@ -425,6 +436,11 @@ export function useRouteCreateDraft({
   }, []);
 
   const clearCache = useCallback(async () => {
+    // Impede debounce/unmount de regravar o rascunho depois de iniciar/salvar.
+    cacheDiscardedRef.current = true;
+    shouldPersistCacheRef.current = false;
+    skipNextSaveRef.current = true;
+    latestSnapshotRef.current = null;
     await clearRouteCreateCache();
   }, []);
 
