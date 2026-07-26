@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -397,7 +397,7 @@ export function PublicProfileView({
               </View>
               {profile.isVerified && (
                 <View style={styles.verifiedBadge}>
-                  <Ionicons color="#FFFFFF" name="checkmark" size={14} />
+                  <MaterialCommunityIcons color="#FFFFFF" name="motorbike" size={15} />
                 </View>
               )}
             </Pressable>

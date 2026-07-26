@@ -262,7 +262,7 @@ export default function ProfileSettingsScreen() {
       icon: "options-outline",
       label: "Minha assinatura",
       wide: true,
-      onPress: () => showComingSoon("Minha assinatura"),
+      onPress: () => router.push("/profile/subscription"),
     },
   ];
 

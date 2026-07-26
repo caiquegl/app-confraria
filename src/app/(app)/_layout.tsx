@@ -42,6 +42,8 @@ export default function AppLayout() {
     pathname.startsWith("/profile/bikes") ||
     pathname.startsWith("/profile/favorites") ||
     pathname.startsWith("/profile/settings") ||
+    pathname.startsWith("/profile/subscription") ||
+    pathname.startsWith("/subscription/") ||
     pathname.startsWith("/quick-rides/") ||
     pathname.startsWith("/routes/create") ||
     isOnNavigationScreen ||

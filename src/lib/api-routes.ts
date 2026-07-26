@@ -147,6 +147,12 @@ export const apiRoutes = {
     favorite: (serviceId: string) => `/services/${serviceId}/favorite`,
     reviews: (serviceId: string) => `/services/${serviceId}/reviews`,
   },
+  subscriptions: {
+    me: "/subscriptions/me",
+    checkout: "/subscriptions/checkout",
+    changePlan: "/subscriptions/change-plan",
+    cancel: "/subscriptions/cancel",
+  },
   stories: {
     create: "/stories",
     delete: (storyId: string) => `/stories/${storyId}`,

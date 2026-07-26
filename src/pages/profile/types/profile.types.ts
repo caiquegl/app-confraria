@@ -23,6 +23,8 @@ export type OwnProfile = {
   showPhone: boolean;
   isPublicProfile: boolean;
   isVerified: boolean;
+  isVip?: boolean;
+  vipUntil?: string | null;
   postsCount: number;
   followersCount: number;
   followingCount: number;
