@@ -34,8 +34,9 @@ type DayRoutePlan = {
 };
 
 const ROUTE_DEBOUNCE_MS = 500;
-const SELECTED_POLYLINE_MAX_POINTS = 160;
-const ALTERNATIVE_POLYLINE_MAX_POINTS = 64;
+/** Limite alto o bastante para rotas longas com paradas ainda seguirem as vias. */
+const SELECTED_POLYLINE_MAX_POINTS = 2000;
+const ALTERNATIVE_POLYLINE_MAX_POINTS = 400;
 
 function formatDistance(distanceMeters: number | null): string | null {
   if (distanceMeters == null) return null;
