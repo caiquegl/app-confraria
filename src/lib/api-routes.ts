@@ -108,9 +108,43 @@ export const apiRoutes = {
   routes: {
     create: "/routes",
     mine: "/routes/me",
+    minePublished: (options?: { cursor?: string; limit?: number; q?: string }) => {
+      const params = new URLSearchParams();
+      if (options?.cursor) params.set("cursor", options.cursor);
+      if (options?.limit != null) params.set("limit", String(options.limit));
+      if (options?.q?.trim()) params.set("q", options.q.trim());
+      const query = params.toString();
+      return `/routes/me/published${query ? `?${query}` : ""}`;
+    },
+    nearYou: (options: {
+      city: string;
+      cursor?: string;
+      limit?: number;
+      q?: string;
+      region?: string;
+    }) => {
+      const params = new URLSearchParams();
+      params.set("city", options.city);
+      if (options.cursor) params.set("cursor", options.cursor);
+      if (options.limit != null) params.set("limit", String(options.limit));
+      if (options.q?.trim()) params.set("q", options.q.trim());
+      if (options.region?.trim()) params.set("region", options.region.trim());
+      return `/routes/discover/near-you?${params.toString()}`;
+    },
+    friends: (options?: { cursor?: string; limit?: number; q?: string }) => {
+      const params = new URLSearchParams();
+      if (options?.cursor) params.set("cursor", options.cursor);
+      if (options?.limit != null) params.set("limit", String(options.limit));
+      if (options?.q?.trim()) params.set("q", options.q.trim());
+      const query = params.toString();
+      return `/routes/discover/friends${query ? `?${query}` : ""}`;
+    },
     detail: (routeId: string) => `/routes/${routeId}`,
     update: (routeId: string) => `/routes/${routeId}`,
+    updatePublish: (routeId: string) => `/routes/${routeId}/publish`,
     updateStatus: (routeId: string) => `/routes/${routeId}/status`,
+    updateLocation: (routeId: string) => `/routes/${routeId}/location`,
+    respondInvitation: (routeId: string) => `/routes/${routeId}/invitations/respond`,
     delete: (routeId: string) => `/routes/${routeId}`,
     photos: (routeId: string) => `/routes/${routeId}/photos`,
     addStop: (dayId: string) => `/routes/days/${dayId}/stops`,

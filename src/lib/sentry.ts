@@ -53,23 +53,45 @@ function sanitizeContext(context: Record<string, unknown>): Record<string, unkno
   const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(context)) {
-    const normalizedKey = key.toLowerCase();
-
-    if (
-      normalizedKey.includes("authorization") ||
-      normalizedKey.includes("password") ||
-      normalizedKey === "token" ||
-      normalizedKey === "accesstoken" ||
-      normalizedKey === "refreshtoken"
-    ) {
-      sanitized[key] = "[Redacted]";
-      continue;
-    }
-
-    sanitized[key] = truncateValue(value);
+    sanitized[key] = sanitizeValue(key, value);
   }
 
   return sanitized;
+}
+
+function sanitizeValue(key: string, value: unknown): unknown {
+  const normalizedKey = key.toLowerCase();
+
+  if (
+    normalizedKey.includes("authorization") ||
+    normalizedKey.includes("password") ||
+    normalizedKey.includes("secret") ||
+    normalizedKey === "token" ||
+    normalizedKey === "accesstoken" ||
+    normalizedKey === "refreshtoken" ||
+    normalizedKey === "apikey" ||
+    normalizedKey === "api_key"
+  ) {
+    return "[Redacted]";
+  }
+
+  if (value == null) return value;
+
+  if (Array.isArray(value)) {
+    return value.map((item, index) => sanitizeValue(String(index), item));
+  }
+
+  if (typeof value === "object") {
+    const nested: Record<string, unknown> = {};
+    for (const [nestedKey, nestedValue] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      nested[nestedKey] = sanitizeValue(nestedKey, nestedValue);
+    }
+    return truncateValue(nested);
+  }
+
+  return truncateValue(value);
 }
 
 function applyApiEnvironmentToSentry(environment: ApiEnvironment) {
@@ -146,9 +168,32 @@ export function captureApiError(
 
   Sentry.withScope((scope) => {
     scope.setTag("feature", "api");
+
+    const method =
+      typeof context?.method === "string" ? context.method.toUpperCase() : null;
+    const route = typeof context?.route === "string" ? context.route : null;
+    const status =
+      typeof context?.status === "number" ? String(context.status) : null;
+
+    if (method) scope.setTag("http.method", method);
+    if (route) scope.setTag("http.route", route);
+    if (status) scope.setTag("http.status_code", status);
+
+    // Agrupa erros por método + rota no Sentry.
+    if (method && route) {
+      scope.setFingerprint(["api-error", method, route, status ?? "network"]);
+    }
+
     if (context) {
       scope.setContext("api", sanitizeContext(context));
+      scope.setExtra("api_route", route);
+      scope.setExtra("api_params", sanitizeValue("params", context.params));
+      scope.setExtra(
+        "api_request_data",
+        sanitizeValue("requestData", context.requestData),
+      );
     }
+
     Sentry.captureException(error);
   });
 }
