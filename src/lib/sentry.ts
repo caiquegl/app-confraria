@@ -1,9 +1,33 @@
 import * as Sentry from "@sentry/react-native";
 import Constants from "expo-constants";
 
+import {
+  getApiEnvironment,
+  subscribeApiEnvironment,
+  type ApiEnvironment,
+} from "./api-environment";
+
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ?? "";
 
-export const isSentryEnabled = SENTRY_DSN.length > 0;
+export const isSentryConfigured = SENTRY_DSN.length > 0;
+
+/** Ambiente da API atual (produção/homolog). Hidratado após o boot. */
+let apiEnvironment: ApiEnvironment = "production";
+
+/**
+ * Sentry só envia eventos em build de produção batendo na API de produção.
+ * - `__DEV__` (Metro / desenvolvimento): desligado
+ * - API homolog: desligado
+ */
+export function shouldSendToSentry(): boolean {
+  if (__DEV__) return false;
+  if (!isSentryConfigured) return false;
+  if (apiEnvironment === "homolog") return false;
+  return true;
+}
+
+/** @deprecated use isSentryConfigured / shouldSendToSentry */
+export const isSentryEnabled = isSentryConfigured;
 
 export const expoRouterTracingIntegration = Sentry.expoRouterIntegration({
   enableTimeToInitialDisplay: !__DEV__,
@@ -48,27 +72,43 @@ function sanitizeContext(context: Record<string, unknown>): Record<string, unkno
   return sanitized;
 }
 
+function applyApiEnvironmentToSentry(environment: ApiEnvironment) {
+  apiEnvironment = environment;
+  Sentry.setTag("api_environment", environment);
+}
+
 export function initSentry(): void {
-  if (!isSentryEnabled) {
+  if (!isSentryConfigured) {
     if (__DEV__) {
-      console.warn("[sentry] EXPO_PUBLIC_SENTRY_DSN não configurado — monitoramento desativado.");
+      console.warn(
+        "[sentry] EXPO_PUBLIC_SENTRY_DSN não configurado — monitoramento desativado.",
+      );
     }
+    return;
+  }
+
+  if (__DEV__) {
+    console.warn("[sentry] Desativado em desenvolvimento (__DEV__).");
     return;
   }
 
   Sentry.init({
     dsn: SENTRY_DSN,
     debug: false,
-    environment: __DEV__ ? "development" : "production",
+    environment: "production",
     release: `${Constants.expoConfig?.slug ?? "app-confraria"}@${Constants.expoConfig?.version ?? "0.0.0"}`,
     integrations: [expoRouterTracingIntegration],
     enableNative: true,
     enableNativeCrashHandling: true,
     enableNdk: true,
     enableTombstone: true,
-    tracesSampleRate: __DEV__ ? 1 : 0.2,
+    tracesSampleRate: 0.2,
     attachStacktrace: true,
     beforeSend(event) {
+      if (!shouldSendToSentry()) {
+        return null;
+      }
+
       if (event.request?.headers) {
         const headers = { ...event.request.headers };
         for (const key of Object.keys(headers)) {
@@ -82,13 +122,27 @@ export function initSentry(): void {
       return event;
     },
   });
+
+  void getApiEnvironment().then((environment) => {
+    applyApiEnvironmentToSentry(environment);
+    if (environment === "homolog") {
+      console.warn("[sentry] Desativado enquanto a API estiver em homolog.");
+    }
+  });
+
+  subscribeApiEnvironment((environment) => {
+    applyApiEnvironmentToSentry(environment);
+    if (environment === "homolog") {
+      console.warn("[sentry] Desativado: ambiente da API = homolog.");
+    }
+  });
 }
 
 export function captureApiError(
   error: unknown,
   context?: Record<string, unknown>,
 ): void {
-  if (!isSentryEnabled) return;
+  if (!shouldSendToSentry()) return;
 
   Sentry.withScope((scope) => {
     scope.setTag("feature", "api");
@@ -103,7 +157,7 @@ export function captureRouteError(
   error: unknown,
   context?: Record<string, unknown>,
 ): void {
-  if (!isSentryEnabled) return;
+  if (!shouldSendToSentry()) return;
 
   Sentry.withScope((scope) => {
     scope.setTag("feature", "routes");
@@ -124,7 +178,7 @@ export function addSentryBreadcrumb(
   message: string,
   data?: Record<string, unknown>,
 ): void {
-  if (!isSentryEnabled) return;
+  if (!shouldSendToSentry()) return;
 
   Sentry.addBreadcrumb({
     category: "app",
