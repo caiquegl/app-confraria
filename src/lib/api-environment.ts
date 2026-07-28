@@ -39,6 +39,11 @@ function isApiEnvironment(value: string | null): value is ApiEnvironment {
 }
 
 export async function getApiEnvironment(): Promise<ApiEnvironment> {
+  // SSR web (eas update / static export) não tem window — AsyncStorage quebra.
+  if (Platform.OS === "web" && typeof window === "undefined") {
+    return DEFAULT_ENVIRONMENT;
+  }
+
   const stored = await AsyncStorage.getItem(API_ENVIRONMENT_KEY);
   return isApiEnvironment(stored) ? stored : DEFAULT_ENVIRONMENT;
 }

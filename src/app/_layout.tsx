@@ -1,9 +1,8 @@
 import "@/lib/sentry-init";
-import "@/tasks/route-location-tracking.task";
 
 import { Stack, usePathname } from "expo-router";
 import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -19,6 +18,12 @@ import { subscribeRouteFinished } from "@/lib/route-navigation-socket";
 import { addSentryBreadcrumb } from "@/lib/sentry";
 import { useConfigureVideoCache } from "@/lib/video-cache";
 import { colors } from "@/theme/colors";
+
+// Task de background + AsyncStorage/Sentry não rodam no SSR web do `eas update`.
+if (Platform.OS !== "web") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("@/tasks/route-location-tracking.task");
+}
 
 if (__DEV__) {
   // Deixei esses imports com a verificação desativado para não dar erro no dev para que o reactotron seja carregado apenas em desenvolvimento

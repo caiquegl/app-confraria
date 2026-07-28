@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react-native";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 import {
   getApiEnvironment,
@@ -14,6 +15,11 @@ export const isSentryConfigured = SENTRY_DSN.length > 0;
 /** Ambiente da API atual (produção/homolog). Hidratado após o boot. */
 let apiEnvironment: ApiEnvironment = "production";
 
+/** SSR do Expo Router (Node) não tem `window` — AsyncStorage/Sentry quebram. */
+function isServerSideRender(): boolean {
+  return Platform.OS === "web" && typeof window === "undefined";
+}
+
 /**
  * Sentry só envia eventos em build de produção batendo na API de produção.
  * - `__DEV__` (Metro / desenvolvimento): desligado
@@ -21,6 +27,7 @@ let apiEnvironment: ApiEnvironment = "production";
  */
 export function shouldSendToSentry(): boolean {
   if (__DEV__) return false;
+  if (isServerSideRender()) return false;
   if (!isSentryConfigured) return false;
   if (apiEnvironment === "homolog") return false;
   return true;
@@ -100,6 +107,10 @@ function applyApiEnvironmentToSentry(environment: ApiEnvironment) {
 }
 
 export function initSentry(): void {
+  if (isServerSideRender()) {
+    return;
+  }
+
   if (!isSentryConfigured) {
     if (__DEV__) {
       console.warn(
