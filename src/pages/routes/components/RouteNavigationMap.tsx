@@ -1,7 +1,8 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, useColorScheme, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import Svg, { Path } from "react-native-svg";
 
 import { colors } from "@/theme/colors";
 
@@ -31,8 +32,10 @@ type RouteNavigationMapProps = {
   >;
 };
 
-const NAVIGATION_PITCH = 58;
+/** Mapa sempre com norte para cima — o ponteiro não gira com a câmera. */
+const NAVIGATION_PITCH = 0;
 const NAVIGATION_ZOOM = 17.5;
+const MAP_NORTH_HEADING = 0;
 
 export function RouteNavigationMap({
   followUser,
@@ -45,6 +48,9 @@ export function RouteNavigationMap({
   const mapRef = useRef<MapView | null>(null);
   const zoomRef = useRef(NAVIGATION_ZOOM);
   const followUserRef = useRef(followUser);
+  /** Zoom no início do gesto — para distinguir pinch/zoom de pan puro. */
+  const zoomAtGestureStartRef = useRef(NAVIGATION_ZOOM);
+  const gestureActiveRef = useRef(false);
   const colorScheme = useColorScheme();
   const isNightMode = colorScheme === "dark";
   // Android congela o Marker cedo demais com tracksViewChanges=false e o ícone some.
@@ -58,7 +64,7 @@ export function RouteNavigationMap({
     }
 
     setTracksUserPin(true);
-    const timer = setTimeout(() => setTracksUserPin(false), 750);
+    const timer = setTimeout(() => setTracksUserPin(false), 1200);
     return () => clearTimeout(timer);
   }, [hasUserPosition]);
 
@@ -77,15 +83,24 @@ export function RouteNavigationMap({
     mapRef.current.animateCamera(
       {
         center: state.currentPosition,
-        heading: state.heading,
+        heading: MAP_NORTH_HEADING,
         pitch: NAVIGATION_PITCH,
         zoom: zoomRef.current,
       },
       { duration: 500 },
     );
-  }, [followUser, state.currentPosition, state.heading]);
+  }, [followUser, state.currentPosition]);
 
-  const persistCameraZoom = async () => {
+  const handlePanDrag = () => {
+    // No Android o pinch também dispara onPanDrag. Só marcamos o gesto;
+    // a decisão de sair do follow é no onRegionChangeComplete (zoom vs pan).
+    if (!gestureActiveRef.current) {
+      gestureActiveRef.current = true;
+      zoomAtGestureStartRef.current = zoomRef.current;
+    }
+  };
+
+  const handleRegionChangeComplete = async () => {
     if (!mapRef.current) return;
 
     try {
@@ -93,8 +108,22 @@ export function RouteNavigationMap({
       if (typeof camera.zoom === "number") {
         zoomRef.current = camera.zoom;
       }
+
+      if (!gestureActiveRef.current) return;
+
+      gestureActiveRef.current = false;
+      const zoomDelta = Math.abs(
+        (typeof camera.zoom === "number" ? camera.zoom : zoomRef.current) -
+          zoomAtGestureStartRef.current,
+      );
+
+      // Mudou o zoom → pinch/botões: mantém follow.
+      // Zoom estável → pan: sai do follow.
+      if (zoomDelta < 0.08) {
+        onUserInteraction();
+      }
     } catch {
-      // ignore camera read failures
+      gestureActiveRef.current = false;
     }
   };
 
@@ -134,10 +163,10 @@ export function RouteNavigationMap({
         toolbarEnabled={false}
         zoomControlEnabled
         zoomEnabled
-        // Só pan/arraste sai do follow. Pinch/zoom mantém o foco no usuário.
-        onPanDrag={onUserInteraction}
+        // Pan sai do follow; pinch/zoom mantém (ver handlePanDrag / handleRegionChangeComplete).
+        onPanDrag={handlePanDrag}
         onRegionChangeComplete={() => {
-          void persistCameraZoom();
+          void handleRegionChangeComplete();
         }}
       >
         {state.completedPolyline.length > 1 ? (
@@ -257,21 +286,33 @@ export function RouteNavigationMap({
             coordinate={state.currentPosition}
             flat
             tracksViewChanges={tracksUserPin}
-            rotation={followUser ? 0 : state.heading}
+            rotation={0}
           >
             <View collapsable={false} style={styles.userPinHitbox}>
               <View collapsable={false} style={styles.userPin}>
-                <MaterialCommunityIcons
-                  color={colors.brandGreen}
-                  name="motorbike"
-                  size={22}
-                  style={styles.userPinIcon}
-                />
+                <NorthNavArrow />
               </View>
             </View>
           </Marker>
         ) : null}
       </MapView>
+    </View>
+  );
+}
+
+function NorthNavArrow() {
+  // Só a seta (sem haste), ponta para cima = norte.
+  return (
+    <View collapsable={false} style={styles.pointerWrap}>
+      <Svg width={20} height={20} viewBox="0 0 28 28">
+        <Path
+          d="M14 3 L24 23 L14 18 L4 23 Z"
+          fill={colors.brandGreen}
+          stroke={colors.brandDark}
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+        />
+      </Svg>
     </View>
   );
 }
@@ -395,6 +436,12 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     overflow: "visible",
   },
+  pointerWrap: {
+    alignItems: "center",
+    height: 20,
+    justifyContent: "center",
+    width: 20,
+  },
   userPin: {
     alignItems: "center",
     backgroundColor: colors.brandDark,
@@ -410,10 +457,6 @@ const styles = StyleSheet.create({
     height: 52,
     justifyContent: "center",
     width: 52,
-  },
-  userPinIcon: {
-    // motorbike aponta para a direita; -90° alinha o nariz com a direção da câmera/heading
-    transform: [{ rotate: "-90deg" }],
   },
   partnerLabel: {
     alignItems: "center",
