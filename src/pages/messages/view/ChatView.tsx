@@ -388,10 +388,14 @@ function MessageReplySnippet({
 }
 
 function getMessagePreviewText(message: ChatMessage) {
+  if (message.sharedRoute) {
+    const { title, originLabel, destinationLabel } = message.sharedRoute;
+    const path = `${originLabel} → ${destinationLabel}`;
+    return title?.trim() ? `${title} · ${path}` : path;
+  }
   if (message.text.trim()) return message.text.trim();
   if (message.sharedEvent) return message.sharedEvent.title || "Evento compartilhado";
   if (message.sharedPost) return message.sharedPost.caption || "Post compartilhado";
-  if (message.sharedRoute) return message.sharedRoute.title || "Rota compartilhada";
   return "Mensagem";
 }
 
@@ -442,17 +446,28 @@ function SharedRouteCard({ message }: { message: ChatMessage }) {
     router.push(`/routes/${sharedRoute.routeId}` as Href);
   };
 
+  const title = sharedRoute.title?.trim() || "Rota compartilhada";
+
   return (
-    <Pressable style={styles.sharedCard} onPress={openRoute}>
-      <View style={styles.sharedImageFallback}>
-        <Ionicons color="#9CA3AF" name="map-outline" size={20} />
+    <Pressable style={styles.sharedRouteCard} onPress={openRoute}>
+      <View style={styles.sharedRouteIcon}>
+        <Ionicons color={colors.brandGreen} name="map-outline" size={22} />
       </View>
       <View style={styles.sharedInfo}>
-        <Text numberOfLines={1} style={styles.sharedLabel}>
-          Rota de {sharedRoute.creatorName}
+        <View style={styles.sharedRoutePathRow}>
+          <Text numberOfLines={1} style={styles.sharedRoutePath}>
+            {sharedRoute.originLabel}
+          </Text>
+          <Text style={styles.sharedRouteArrow}>→</Text>
+          <Text numberOfLines={1} style={styles.sharedRoutePath}>
+            {sharedRoute.destinationLabel}
+          </Text>
+        </View>
+        <Text numberOfLines={2} style={styles.sharedRouteTitle}>
+          {title}
         </Text>
-        <Text numberOfLines={2} style={styles.sharedCaption}>
-          {sharedRoute.originLabel} → {sharedRoute.destinationLabel}
+        <Text numberOfLines={1} style={styles.sharedRouteMeta}>
+          Rota de {sharedRoute.creatorName}
         </Text>
       </View>
       <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
@@ -850,6 +865,57 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 12,
     fontWeight: "900",
+  },
+  sharedRouteArrow: {
+    color: colors.brandDark,
+    flexShrink: 0,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  sharedRouteCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderColor: "rgba(28,33,38,0.1)",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    maxWidth: 280,
+    minWidth: 220,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  sharedRouteIcon: {
+    alignItems: "center",
+    backgroundColor: "#EEF3E2",
+    borderRadius: 14,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
+  },
+  sharedRouteMeta: {
+    color: "#9CA3AF",
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  sharedRoutePath: {
+    color: colors.brandDark,
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  sharedRoutePathRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  sharedRouteTitle: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 16,
+    marginTop: 2,
   },
   swipeReplyIcon: {
     alignItems: "center",

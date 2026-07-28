@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { VideoView, useVideoPlayer } from "expo-video";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dimensions,
   Pressable,
@@ -13,11 +12,6 @@ import {
 } from "react-native";
 
 import type { FeedPostMedia } from "../types/feed.types";
-import {
-  pauseVideoPlayer,
-  playVideoPlayer,
-  setVideoPlayerMuted,
-} from "../utils/video-player-controls";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = 32;
@@ -101,10 +95,9 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
               onPress={handleMediaPress}
             >
               {item.mediaType === "video" ? (
-                <FeedVideoSlide
-                  active={activeIndex === index}
+                <FeedVideoPoster
                   height={slideHeight}
-                  uri={item.url}
+                  thumbnailUrl={item.thumbnailUrl}
                 />
               ) : (
                 <Image
@@ -157,60 +150,29 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   );
 }
 
-function FeedVideoSlide({
-  active,
+function FeedVideoPoster({
   height,
-  uri,
+  thumbnailUrl,
 }: {
-  active: boolean;
   height: number;
-  uri: string;
+  thumbnailUrl?: string | null;
 }) {
-  const [isMuted, setIsMuted] = useState(true);
-  const player = useVideoPlayer({ uri, useCaching: true }, (instance) => {
-    instance.loop = true;
-    instance.muted = true;
-  });
-
-  useEffect(() => {
-    if (active) {
-      playVideoPlayer(player);
-      return;
-    }
-
-    pauseVideoPlayer(player);
-  }, [active, player]);
-
-  const toggleMute = () => {
-    const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-    setVideoPlayerMuted(player, nextMuted);
-  };
-
   return (
     <View style={[styles.videoContainer, { height }]}>
-      <VideoView
-        contentFit="contain"
-        nativeControls={false}
-        player={player}
-        style={[styles.video, { height }]}
-      />
-      <Pressable
-        accessibilityLabel={isMuted ? "Ativar áudio do vídeo" : "Mutar áudio do vídeo"}
-        accessibilityRole="button"
-        hitSlop={8}
-        style={styles.muteButton}
-        onPress={(event) => {
-          event.stopPropagation();
-          toggleMute();
-        }}
-      >
-        <Ionicons
-          name={isMuted ? "volume-mute" : "volume-high"}
-          size={18}
-          color="#FFFFFF"
+      {thumbnailUrl ? (
+        <Image
+          source={{ uri: thumbnailUrl }}
+          style={[styles.video, { height }]}
+          cachePolicy="memory-disk"
+          contentFit="contain"
+          recyclingKey={thumbnailUrl}
         />
-      </Pressable>
+      ) : (
+        <View style={[styles.video, styles.videoFallback, { height }]} />
+      )}
+      <View style={styles.playBadge} pointerEvents="none">
+        <Ionicons name="play" size={22} color="#FFFFFF" />
+      </View>
     </View>
   );
 }
@@ -258,18 +220,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
     width: CARD_WIDTH,
   },
-  muteButton: {
+  playBadge: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderColor: "rgba(255,255,255,0.22)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     borderRadius: 999,
-    borderWidth: 1,
-    bottom: 12,
-    height: 38,
+    height: 48,
     justifyContent: "center",
+    left: "50%",
+    marginLeft: -24,
+    marginTop: -24,
     position: "absolute",
-    right: 12,
-    width: 38,
+    top: "50%",
+    width: 48,
   },
   slide: {
     width: CARD_WIDTH,
@@ -282,6 +244,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
     justifyContent: "center",
     width: CARD_WIDTH,
+  },
+  videoFallback: {
+    backgroundColor: "#111827",
   },
   wrapper: {
     backgroundColor: "#E5E7EB",

@@ -3,6 +3,7 @@ import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "rea
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+import { getApiErrorMessage } from "@/lib/password-reset";
 import { ShareFriendItem } from "@/pages/home/components/ShareFriendItem";
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
@@ -62,11 +63,14 @@ export function RouteShareSheet({
       if (result) {
         onSent?.(result);
       }
-    } catch {
+    } catch (error) {
       Toast.show({
         type: "error",
         text1: "Erro ao compartilhar",
-        text2: "Não foi possível enviar essa rota por mensagem.",
+        text2: getApiErrorMessage(
+          error,
+          "Não foi possível enviar essa rota por mensagem.",
+        ),
       });
     }
   };

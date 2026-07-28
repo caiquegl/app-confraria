@@ -60,8 +60,8 @@ export function mapApiRouteToEditSnapshot(route: RouteApiResponse): RouteCreateC
       label: day.label,
       origin: origin ? mapPlace(origin) : null,
       overnight: day.overnight ?? false,
-      stops: stops.map((stop) => ({
-        id: stop.id,
+      stops: stops.map((stop, stopIndex) => ({
+        id: stop.id?.trim() || `${day.id}-stop-${stop.order ?? stopIndex}-${stop.placeId}`,
         place: mapPlace(stop),
       })),
     };

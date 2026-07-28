@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -242,7 +241,6 @@ export function StoryViewer({
     <Modal animationType="fade" visible={visible} statusBarTranslucent>
       <View style={styles.screen}>
         <StoryMedia
-          isPaused={isPlaybackPaused}
           story={story}
           onLoaded={() => setLoadedStoryId(story.id)}
         />
@@ -370,25 +368,12 @@ export function StoryViewer({
 }
 
 function StoryMedia({
-  isPaused,
   story,
   onLoaded,
 }: {
-  isPaused: boolean;
   story: StoryItem;
   onLoaded: () => void;
 }) {
-  if (story.mediaType === "video") {
-    return (
-      <StoryVideo
-        key={story.id}
-        isPaused={isPaused}
-        uri={story.image}
-        onLoaded={onLoaded}
-      />
-    );
-  }
-
   return (
     <View style={styles.image}>
       <Image
@@ -398,7 +383,13 @@ function StoryMedia({
         contentFit="cover"
         recyclingKey={story.image}
         onLoad={onLoaded}
+        onError={onLoaded}
       />
+      {story.mediaType === "video" ? (
+        <View style={styles.videoPlayBadge} pointerEvents="none">
+          <Ionicons name="play" size={28} color="#FFFFFF" />
+        </View>
+      ) : null}
       <StoryOverlays overlays={story.overlays ?? []} />
     </View>
   );
@@ -427,40 +418,6 @@ function StoryOverlays({ overlays }: { overlays: StoryItem["overlays"] }) {
         />
       ))}
     </View>
-  );
-}
-
-function StoryVideo({
-  isPaused,
-  uri,
-  onLoaded,
-}: {
-  isPaused: boolean;
-  uri: string;
-  onLoaded: () => void;
-}) {
-  const player = useVideoPlayer({ uri, useCaching: true }, (instance) => {
-    instance.loop = false;
-    instance.play();
-  });
-
-  useEffect(() => {
-    if (isPaused) {
-      player.pause();
-      return;
-    }
-
-    player.play();
-  }, [isPaused, player]);
-
-  return (
-    <VideoView
-      contentFit="cover"
-      nativeControls={false}
-      player={player}
-      style={styles.image}
-      onFirstFrameRender={onLoaded}
-    />
   );
 }
 
@@ -616,6 +573,20 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
+  },
+  videoPlayBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 999,
+    height: 56,
+    justifyContent: "center",
+    left: "50%",
+    marginLeft: -28,
+    marginTop: -28,
+    position: "absolute",
+    top: "50%",
+    width: 56,
+    zIndex: 1,
   },
   viewersButton: {
     alignItems: "center",

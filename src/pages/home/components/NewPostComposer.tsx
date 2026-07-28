@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { VideoView, useVideoPlayer } from "expo-video";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -345,7 +344,6 @@ function ComposerMediaPreview({ media }: { media: ComposeFeedMedia }) {
 }
 
 function ComposerVideoPreview({ uri }: { uri: string }) {
-  const [shouldLoadPreview, setShouldLoadPreview] = useState(false);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
 
   useEffect(() => {
@@ -371,48 +369,23 @@ function ComposerVideoPreview({ uri }: { uri: string }) {
     };
   }, [uri]);
 
-  if (!shouldLoadPreview) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        style={styles.videoPreviewPlaceholder}
-        onPress={() => setShouldLoadPreview(true)}
-      >
-        {thumbnailUri ? (
-          <Image
-            source={{ uri: thumbnailUri }}
-            style={styles.videoPreviewThumbnail}
-            cachePolicy="memory-disk"
-            contentFit="cover"
-            recyclingKey={thumbnailUri}
-          />
-        ) : null}
-        <View style={styles.videoPreviewScrim} />
-        <View style={styles.videoPreviewIcon}>
-          <Ionicons name="play" size={30} color="#FFFFFF" />
-        </View>
-        <Text style={styles.videoPreviewTitle}>Vídeo adicionado</Text>
-        <Text style={styles.videoPreviewText}>Toque para visualizar.</Text>
-      </Pressable>
-    );
-  }
-
-  return <ComposerVideoPlayer uri={uri} />;
-}
-
-function ComposerVideoPlayer({ uri }: { uri: string }) {
-  const player = useVideoPlayer({ uri }, (instance) => {
-    instance.loop = false;
-    instance.play();
-  });
-
   return (
-    <VideoView
-      contentFit="cover"
-      nativeControls={false}
-      player={player}
-      style={styles.previewImage}
-    />
+    <View style={styles.videoPreviewPlaceholder}>
+      {thumbnailUri ? (
+        <Image
+          source={{ uri: thumbnailUri }}
+          style={styles.videoPreviewThumbnail}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          recyclingKey={thumbnailUri}
+        />
+      ) : null}
+      <View style={styles.videoPreviewScrim} />
+      <View style={styles.videoPreviewIcon}>
+        <Ionicons name="play" size={30} color="#FFFFFF" />
+      </View>
+      <Text style={styles.videoPreviewTitle}>Vídeo adicionado</Text>
+    </View>
   );
 }
 

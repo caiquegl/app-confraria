@@ -112,9 +112,9 @@ export function RouteDetailMap({ markers, routeCoordinates }: RouteDetailMapProp
           />
         ) : null}
 
-        {markers.map((marker) => (
+        {markers.map((marker, index) => (
           <Marker
-            key={marker.id}
+            key={`${marker.id}-${index}`}
             accessibilityLabel={marker.title}
             anchor={{ x: 0.5, y: 0.5 }}
             centerOffset={{ x: 0, y: 0 }}

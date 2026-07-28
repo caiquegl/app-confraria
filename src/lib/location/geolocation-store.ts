@@ -27,6 +27,18 @@ function patchGeolocation(patch: Partial<GeolocationState>) {
   notify();
 }
 
+function hasUsablePosition(state: GeolocationState = geolocation): boolean {
+  return state.latitude != null && state.longitude != null;
+}
+
+function keepReadyFallback(canAskAgain: boolean) {
+  patchGeolocation({
+    canAskAgain,
+    cityLabel: geolocation.cityLabel ?? "Localização atual",
+    status: "ready",
+  });
+}
+
 export function getStoredGeolocation(): GeolocationState {
   return geolocation;
 }
@@ -96,7 +108,12 @@ async function resolveGeolocation(requestPermission: boolean) {
   }
 
   resolveInFlight = (async () => {
-    patchGeolocation({ status: "loading" });
+    const hadReadyCache = geolocation.status === "ready" && hasUsablePosition();
+
+    // Evita trocar a lista por LocationGate enquanto refresca uma posição já válida.
+    if (!hadReadyCache) {
+      patchGeolocation({ status: "loading" });
+    }
 
     try {
       let permission = await Location.getForegroundPermissionsAsync();
@@ -121,6 +138,11 @@ async function resolveGeolocation(requestPermission: boolean) {
 
       const servicesEnabled = await Location.hasServicesEnabledAsync();
       if (!servicesEnabled) {
+        if (hasUsablePosition()) {
+          keepReadyFallback(permission.canAskAgain);
+          return;
+        }
+
         geolocation = {
           canAskAgain: permission.canAskAgain,
           city: null,
@@ -139,12 +161,25 @@ async function resolveGeolocation(requestPermission: boolean) {
         await applyPosition(lastKnown, permission.canAskAgain);
       }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      await applyPosition(position, permission.canAskAgain);
+      try {
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        await applyPosition(position, permission.canAskAgain);
+      } catch {
+        // Soft-fail: lastKnown / cache já bastam para a lista de rotas.
+        if (hasUsablePosition()) {
+          keepReadyFallback(permission.canAskAgain);
+          return;
+        }
+        throw new Error("current-position-unavailable");
+      }
     } catch {
+      if (hasUsablePosition()) {
+        keepReadyFallback(geolocation.canAskAgain);
+        return;
+      }
+
       geolocation = {
         canAskAgain: geolocation.canAskAgain,
         city: null,

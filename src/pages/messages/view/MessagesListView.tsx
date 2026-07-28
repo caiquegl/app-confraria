@@ -115,6 +115,23 @@ function EmptyState({ text }: { text: string }) {
   );
 }
 
+function getConversationPreview(conversation: ChatConversation): string {
+  const message = conversation.lastMessage;
+  if (!message) return "Conversa iniciada";
+
+  if (message.sharedRoute) {
+    const title = message.sharedRoute.title?.trim();
+    const path = `${message.sharedRoute.originLabel} → ${message.sharedRoute.destinationLabel}`;
+    return title ? `${title} · ${path}` : path;
+  }
+
+  if (message.sharedEvent?.title) return message.sharedEvent.title;
+  if (message.sharedPost?.caption) return message.sharedPost.caption;
+  if (message.text.trim()) return message.text.trim();
+
+  return "Conversa iniciada";
+}
+
 function ConversationRow({
   conversation,
   onPress,
@@ -122,7 +139,7 @@ function ConversationRow({
   conversation: ChatConversation;
   onPress: () => void;
 }) {
-  const preview = conversation.lastMessage?.text ?? "Conversa iniciada";
+  const preview = getConversationPreview(conversation);
 
   return (
     <Pressable style={styles.row} onPress={onPress}>

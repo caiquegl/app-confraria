@@ -233,6 +233,7 @@ export function buildMapMarkersFromDraft(days: RouteDraftDay[]): MapMarkerPoint[
     const accentColor = getDayColor(dayIndex);
     const origin = getDayOrigin(days, dayIndex);
     const hasNextDay = dayIndex < days.length - 1;
+    const dayKey = day.id?.trim() || `day-${dayIndex}`;
 
     if (dayIndex === 0 && origin?.latitude != null && origin.longitude != null) {
       markers.push({
@@ -240,7 +241,7 @@ export function buildMapMarkersFromDraft(days: RouteDraftDay[]): MapMarkerPoint[
         coordinate: { latitude: origin.latitude, longitude: origin.longitude },
         dayIndex,
         dayLabel: day.label,
-        id: `${day.id}-start`,
+        id: `${dayKey}-start`,
         kind: "day-start",
         pinLabel: `${dayIndex + 1}`,
         subtitle: "Ponto de partida",
@@ -253,6 +254,8 @@ export function buildMapMarkersFromDraft(days: RouteDraftDay[]): MapMarkerPoint[
         return;
       }
 
+      const stopKey = stop.id?.trim() || stop.place.placeId || `idx-${stopIndex}`;
+
       markers.push({
         accentColor,
         coordinate: {
@@ -261,7 +264,7 @@ export function buildMapMarkersFromDraft(days: RouteDraftDay[]): MapMarkerPoint[
         },
         dayIndex,
         dayLabel: day.label,
-        id: `${day.id}-${stop.id}`,
+        id: `${dayKey}-stop-${stopIndex}-${stopKey}`,
         kind: "stop",
         pinLabel: `${stopIndex + 1}`,
         subtitle: day.label,
@@ -285,7 +288,7 @@ export function buildMapMarkersFromDraft(days: RouteDraftDay[]): MapMarkerPoint[
         coordinate: destinationCoordinate,
         dayIndex,
         dayLabel: day.label,
-        id: `${day.id}-transition`,
+        id: `${dayKey}-transition`,
         kind: "day-transition",
         pinLabel: `${dayIndex + 1}→${dayIndex + 2}`,
         subtitle: `Início ${nextDay.label}`,
@@ -299,7 +302,7 @@ export function buildMapMarkersFromDraft(days: RouteDraftDay[]): MapMarkerPoint[
       coordinate: destinationCoordinate,
       dayIndex,
       dayLabel: day.label,
-      id: `${day.id}-destination`,
+      id: `${dayKey}-destination`,
       kind: "day-destination",
       pinLabel: "●",
       subtitle: "Destino final",

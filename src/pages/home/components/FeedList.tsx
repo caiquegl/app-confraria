@@ -151,10 +151,10 @@ export function FeedList({
           </View>
         ) : null
       }
-      initialNumToRender={5}
-      maxToRenderPerBatch={6}
+      initialNumToRender={3}
+      maxToRenderPerBatch={3}
       refreshing={isRefreshing}
-      windowSize={7}
+      windowSize={5}
       removeClippedSubviews
       updateCellsBatchingPeriod={50}
       onEndReached={handleEndReached}

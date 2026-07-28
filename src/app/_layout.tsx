@@ -16,7 +16,6 @@ import {
 import { routeTrackingLog } from "@/lib/route-tracking-logger";
 import { subscribeRouteFinished } from "@/lib/route-navigation-socket";
 import { addSentryBreadcrumb } from "@/lib/sentry";
-import { useConfigureVideoCache } from "@/lib/video-cache";
 import { colors } from "@/theme/colors";
 
 // Task de background + AsyncStorage/Sentry não rodam no SSR web do `eas update`.
@@ -37,7 +36,6 @@ if (__DEV__) {
 
 export default function RootLayout() {
   const pathname = usePathname();
-  useConfigureVideoCache();
 
   useEffect(() => {
     if (!pathname) return;
