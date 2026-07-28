@@ -189,13 +189,7 @@ export function RouteDayCard({
                 <PlaceAutocompleteField
                   compact
                   editable={!isReordering}
-                  placeholder={
-                    isFirstDay && index === 0
-                      ? "Minha localização"
-                      : index === total - 1
-                        ? "Digite o destino..."
-                        : "Digite uma parada..."
-                  }
+                  placeholder=""
                   suppressSuggestions={isReordering}
                   value={toPlaceReference(item.place)}
                   onChange={(place) => handlePlaceChange(item, index, place)}
