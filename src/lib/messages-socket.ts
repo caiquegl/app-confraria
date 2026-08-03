@@ -4,6 +4,7 @@ import type {
   ChatConversation,
   ChatMessage,
   ChatReactionUpdatePayload,
+  ChatTypingPayload,
   ChatUnreadPayload,
   MessageReadPayload,
 } from "@/pages/messages/types/messages.types";
@@ -12,8 +13,18 @@ import { getApiBaseUrl, subscribeApiEnvironment } from "./api-environment";
 import { getToken } from "./auth";
 
 type ChatErrorPayload = {
+  clientMessageId?: string;
   message: string;
 };
+
+type MessageSendAck =
+  | ChatMessage
+  | {
+      error: {
+        clientMessageId?: string;
+        message: string;
+      };
+    };
 
 type MessageListener = (message: ChatMessage) => void;
 type ConversationListener = (conversation: ChatConversation) => void;
@@ -21,6 +32,9 @@ type ReactionListener = (payload: ChatReactionUpdatePayload) => void;
 type ReadListener = (payload: MessageReadPayload) => void;
 type UnreadListener = (payload: ChatUnreadPayload) => void;
 type ErrorListener = (payload: ChatErrorPayload) => void;
+type TypingListener = (payload: ChatTypingPayload) => void;
+
+const SEND_ACK_TIMEOUT_MS = 15_000;
 
 let socket: Socket | null = null;
 let unsubscribeEnvironment: (() => void) | null = null;
@@ -31,6 +45,7 @@ const reactionListeners = new Set<ReactionListener>();
 const readListeners = new Set<ReadListener>();
 const unreadListeners = new Set<UnreadListener>();
 const errorListeners = new Set<ErrorListener>();
+const typingListeners = new Set<TypingListener>();
 
 export async function connectMessagesSocket(): Promise<void> {
   if (socket?.connected) return;
@@ -54,13 +69,56 @@ export function joinChatConversation(conversationId: string): void {
 }
 
 export function sendSocketMessage(params: {
+  clientMessageId: string;
   conversationId?: string;
   recipientId?: string;
   replyToMessageId?: string;
   sharedPostId?: string;
   text: string;
+}): Promise<ChatMessage> {
+  return new Promise((resolve, reject) => {
+    if (!socket?.connected) {
+      reject(new Error("Chat desconectado"));
+      return;
+    }
+
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error("Tempo esgotado ao enviar mensagem"));
+    }, SEND_ACK_TIMEOUT_MS);
+
+    socket.emit("message:send", params, (ack: MessageSendAck) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+
+      if (!ack || typeof ack !== "object") {
+        reject(new Error("Resposta inválida do servidor"));
+        return;
+      }
+
+      if ("error" in ack && ack.error) {
+        reject(new Error(ack.error.message || "Não foi possível enviar a mensagem"));
+        return;
+      }
+
+      if (!("id" in ack) || typeof ack.id !== "string") {
+        reject(new Error("Resposta inválida do servidor"));
+        return;
+      }
+
+      resolve(ack);
+    });
+  });
+}
+
+export function emitSocketTyping(params: {
+  conversationId: string;
+  isTyping: boolean;
 }): void {
-  socket?.emit("message:send", params);
+  socket?.emit("conversation:typing", params);
 }
 
 export function sendSocketReaction(params: {
@@ -106,6 +164,11 @@ export function subscribeSocketError(listener: ErrorListener): () => void {
   return () => errorListeners.delete(listener);
 }
 
+export function subscribeSocketTyping(listener: TypingListener): () => void {
+  typingListeners.add(listener);
+  return () => typingListeners.delete(listener);
+}
+
 async function createSocket(): Promise<void> {
   await disconnectMessagesSocket();
 
@@ -138,6 +201,9 @@ async function createSocket(): Promise<void> {
   });
   socket.on("chat:error", (payload: ChatErrorPayload) => {
     errorListeners.forEach((listener) => listener(payload));
+  });
+  socket.on("conversation:typing", (payload: ChatTypingPayload) => {
+    typingListeners.forEach((listener) => listener(payload));
   });
 
   unsubscribeEnvironment = subscribeApiEnvironment(async () => {

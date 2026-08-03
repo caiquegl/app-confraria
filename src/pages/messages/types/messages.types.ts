@@ -42,14 +42,18 @@ export type ChatReactionSummary = {
   reactedByMe: boolean;
 };
 
+export type ChatMessageSendStatus = "sending" | "delivered" | "failed";
+
 export type ChatMessage = {
   id: string;
   conversationId: string;
+  clientMessageId?: string | null;
   senderId: string;
   text: string;
   createdAt: string;
   readAt: string | null;
   isMine: boolean;
+  sendStatus?: ChatMessageSendStatus;
   sharedPost: ChatSharedPost | null;
   sharedEvent: ChatSharedEvent | null;
   sharedRoute: ChatSharedRoute | null;
@@ -91,4 +95,10 @@ export type ChatReactionUpdatePayload = {
   messageId: string;
   reactions: ChatReactionSummary[];
   myReaction: string | null;
+};
+
+export type ChatTypingPayload = {
+  conversationId: string;
+  isTyping: boolean;
+  userId: string;
 };

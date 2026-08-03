@@ -28,6 +28,8 @@ import { useChatConversation } from "../business/useChatConversation";
 import type { ChatMessage } from "../types/messages.types";
 
 const CHAT_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+const TYPING_IDLE_MS = 2000;
+const TYPING_PULSE_MS = 1000;
 
 type ChatViewProps = {
   conversationId: string;
@@ -44,12 +46,24 @@ export function ChatView({
 }: ChatViewProps) {
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<ChatMessage> | null>(null);
+  const typingIdleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingPulseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef = useRef(false);
   const [draft, setDraft] = useState("");
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [reactionTarget, setReactionTarget] = useState<ChatMessage | null>(null);
   const [replyingToMessage, setReplyingToMessage] = useState<ChatMessage | null>(null);
-  const { error, isLoading, messages, reactToMessage, refresh, sendMessage } =
-    useChatConversation(conversationId);
+  const {
+    error,
+    isLoading,
+    isPeerTyping,
+    messages,
+    notifyTyping,
+    reactToMessage,
+    refresh,
+    retryFailedMessage,
+    sendMessage,
+  } = useChatConversation(conversationId);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -68,11 +82,85 @@ export function ChatView({
     };
   }, [insets.bottom]);
 
+  useEffect(() => {
+    return () => {
+      if (typingIdleTimeoutRef.current) clearTimeout(typingIdleTimeoutRef.current);
+      if (typingPulseTimeoutRef.current) clearTimeout(typingPulseTimeoutRef.current);
+      if (isTypingRef.current) {
+        notifyTyping(false);
+        isTypingRef.current = false;
+      }
+    };
+  }, [notifyTyping]);
+
+  const stopTyping = () => {
+    if (typingIdleTimeoutRef.current) {
+      clearTimeout(typingIdleTimeoutRef.current);
+      typingIdleTimeoutRef.current = null;
+    }
+    if (typingPulseTimeoutRef.current) {
+      clearTimeout(typingPulseTimeoutRef.current);
+      typingPulseTimeoutRef.current = null;
+    }
+    if (isTypingRef.current) {
+      notifyTyping(false);
+      isTypingRef.current = false;
+    }
+  };
+
+  const handleDraftChange = (value: string) => {
+    setDraft(value);
+
+    if (!value.trim()) {
+      stopTyping();
+      return;
+    }
+
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      notifyTyping(true);
+    } else if (!typingPulseTimeoutRef.current) {
+      typingPulseTimeoutRef.current = setTimeout(() => {
+        typingPulseTimeoutRef.current = null;
+        if (isTypingRef.current) {
+          notifyTyping(true);
+        }
+      }, TYPING_PULSE_MS);
+    }
+
+    if (typingIdleTimeoutRef.current) {
+      clearTimeout(typingIdleTimeoutRef.current);
+    }
+    typingIdleTimeoutRef.current = setTimeout(() => {
+      stopTyping();
+    }, TYPING_IDLE_MS);
+  };
+
   const handleSend = () => {
     const text = draft.trim();
     if (!text) return;
 
-    sendMessage(text, { replyToMessageId: replyingToMessage?.id });
+    stopTyping();
+    sendMessage(text, {
+      replyToMessage: replyingToMessage
+        ? {
+            id: replyingToMessage.id,
+            senderId: replyingToMessage.senderId,
+            senderName: replyingToMessage.isMine ? "Você" : participantName,
+            sharedType: replyingToMessage.sharedEvent
+              ? "event"
+              : replyingToMessage.sharedPost
+                ? "post"
+                : replyingToMessage.sharedRoute
+                  ? "route"
+                  : null,
+            text: replyingToMessage.text,
+          }
+        : null,
+      replyToMessageId: replyingToMessage?.id.startsWith("local:")
+        ? undefined
+        : replyingToMessage?.id,
+    });
     setDraft("");
     setReplyingToMessage(null);
   };
@@ -92,7 +180,9 @@ export function ChatView({
           <Text numberOfLines={1} style={styles.headerName}>
             {participantName}
           </Text>
-          <Text style={styles.headerStatus}>Conversa em tempo real</Text>
+          <Text style={styles.headerStatus}>
+            {isPeerTyping ? `${participantName} está digitando…` : "Conversa em tempo real"}
+          </Text>
         </View>
       </View>
 
@@ -120,6 +210,7 @@ export function ChatView({
               onOpenReactions={setReactionTarget}
               onReact={reactToMessage}
               onReply={setReplyingToMessage}
+              onRetry={retryFailedMessage}
             />
           )}
           ListEmptyComponent={
@@ -140,6 +231,11 @@ export function ChatView({
           },
         ]}
       >
+        {isPeerTyping ? (
+          <Text style={styles.typingIndicator}>
+            {participantName} está digitando…
+          </Text>
+        ) : null}
         {replyingToMessage ? (
           <ReplyComposerPreview
             message={replyingToMessage}
@@ -154,7 +250,8 @@ export function ChatView({
             placeholderTextColor="#9CA3AF"
             style={styles.input}
             value={draft}
-            onChangeText={setDraft}
+            onBlur={stopTyping}
+            onChangeText={handleDraftChange}
           />
           <Pressable
             accessibilityLabel="Enviar mensagem"
@@ -184,29 +281,40 @@ export function ChatView({
   );
 }
 
+function getOwnMessageMeta(message: ChatMessage): string {
+  if (message.sendStatus === "sending") return "Enviando…";
+  if (message.sendStatus === "failed") return "Falha no envio · Toque para reenviar";
+  if (message.readAt) return `Visualizada ${formatRelativeTime(message.readAt)}`;
+  return "Entregue";
+}
+
 function MessageBubble({
   message,
   onOpenReactions,
   onReact,
   onReply,
+  onRetry,
 }: {
   message: ChatMessage;
   onOpenReactions: (message: ChatMessage) => void;
   onReact: (messageId: string, emoji: string) => void;
   onReply: (message: ChatMessage) => void;
+  onRetry: (messageId: string) => void;
 }) {
   const [translateX] = useState(() => new Animated.Value(0));
+  const canReply = message.sendStatus !== "sending" && message.sendStatus !== "failed";
   const panResponder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) =>
+          canReply &&
           gestureState.dx > 12 &&
           Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
         onPanResponderMove: (_, gestureState) => {
           translateX.setValue(Math.min(72, Math.max(0, gestureState.dx)));
         },
         onPanResponderRelease: (_, gestureState) => {
-          if (gestureState.dx > 56) {
+          if (canReply && gestureState.dx > 56) {
             onReply(message);
           }
 
@@ -222,7 +330,7 @@ function MessageBubble({
           }).start();
         },
       }),
-    [message, onReply, translateX],
+    [canReply, message, onReply, translateX],
   );
 
   return (
@@ -238,8 +346,20 @@ function MessageBubble({
           <Pressable
             accessibilityRole="button"
             delayLongPress={260}
-            style={[styles.bubble, message.isMine ? styles.bubbleMine : styles.bubbleOther]}
-            onLongPress={() => onOpenReactions(message)}
+            style={[
+              styles.bubble,
+              message.isMine ? styles.bubbleMine : styles.bubbleOther,
+              message.sendStatus === "failed" && styles.bubbleFailed,
+            ]}
+            onLongPress={() => {
+              if (message.sendStatus === "failed") return;
+              onOpenReactions(message);
+            }}
+            onPress={() => {
+              if (message.sendStatus === "failed") {
+                onRetry(message.clientMessageId ?? message.id);
+              }
+            }}
           >
             {message.replyToMessage ? (
               <MessageReplySnippet
@@ -258,11 +378,15 @@ function MessageBubble({
                 {message.text}
               </Text>
             )}
-            <Text style={[styles.messageMeta, message.isMine && styles.messageMetaMine]}>
+            <Text
+              style={[
+                styles.messageMeta,
+                message.isMine && styles.messageMetaMine,
+                message.sendStatus === "failed" && styles.messageMetaFailed,
+              ]}
+            >
               {message.isMine
-                ? message.readAt
-                  ? `Visualizada ${formatRelativeTime(message.readAt)}`
-                  : "Não visualizada"
+                ? getOwnMessageMeta(message)
                 : formatRelativeTime(message.createdAt)}
             </Text>
             <ReactionBadgeGroup message={message} onReact={onReact} />
@@ -530,6 +654,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  bubbleFailed: {
+    opacity: 0.85,
+  },
   bubbleMine: {
     backgroundColor: colors.brandGreen,
   },
@@ -555,6 +682,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: 14,
     paddingTop: 10,
+  },
+  typingIndicator: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontStyle: "italic",
+    marginBottom: 8,
   },
   emptyState: {
     alignItems: "center",
@@ -614,6 +747,10 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 11,
     marginTop: 4,
+  },
+  messageMetaFailed: {
+    color: "#B91C1C",
+    fontWeight: "700",
   },
   messageMetaMine: {
     color: "rgba(28,33,38,0.64)",
