@@ -39,6 +39,7 @@ export function mapApiRouteToSavedRoute(route: import("../types/saved-route.type
     fuelCost: route.fuelCost,
     hasOvernight: route.days.some((day) => day.overnight),
     id: route.id,
+    myReview: route.myReview ?? null,
     optimizeFuel: route.optimizeFuel,
     originLabel: route.originLabel,
     startsAt: route.startsAt,

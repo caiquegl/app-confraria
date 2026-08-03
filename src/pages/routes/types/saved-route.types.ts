@@ -52,6 +52,12 @@ export type SavedRouteCreator = {
   name: string;
 };
 
+export type RouteMyReview = {
+  comment: string | null;
+  createdAt: string;
+  rating: number;
+};
+
 export type SavedRoute = {
   avoidTolls: boolean;
   bikeId: string;
@@ -67,6 +73,7 @@ export type SavedRoute = {
   fuelCost: number | null;
   hasOvernight: boolean;
   id: string;
+  myReview: RouteMyReview | null;
   optimizeFuel: boolean;
   originLabel: string;
   startsAt: string;
@@ -184,11 +191,14 @@ export type RouteApiResponse = {
   isOwner: boolean;
   isParticipant: boolean;
   isPublished: boolean;
+  myReview: RouteMyReview | null;
   optimizeFuel: boolean;
   originLabel: string;
   participants: RouteParticipantResponse[];
   pendingInvites: RoutePendingInviteResponse[];
   publishedAt: string | null;
+  rating: number | null;
+  reviewCount: number;
   startedAt: string | null;
   startsAt: string;
   status: RouteStatus;
@@ -197,6 +207,25 @@ export type RouteApiResponse = {
   tripNote: string | null;
   updatedAt: string;
   userBikeId: string;
+};
+
+export type UpsertRouteReviewPayload = {
+  comment?: string;
+  rating: number;
+};
+
+export type UpsertRouteReviewResponse = {
+  review: {
+    comment: string | null;
+    createdAt: string;
+    id: string;
+    isMine: boolean;
+    rating: number;
+    userAvatarUrl: string | null;
+    userId: string;
+    userName: string;
+  };
+  route: RouteApiResponse;
 };
 
 export type UpdateRoutePayload = Omit<CreateRoutePayload, "action">;

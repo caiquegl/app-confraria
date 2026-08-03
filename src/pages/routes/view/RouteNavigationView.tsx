@@ -43,8 +43,9 @@ import { useRouteLiveLocations } from "../hooks/useRouteLiveLocations";
 import { useRouteMapPhotos } from "../hooks/useRouteMapPhotos";
 import { useRouteNavigation } from "../hooks/useRouteNavigation";
 import { useRouteNavigationMedia } from "../hooks/useRouteNavigationMedia";
-import { updateRouteStatus } from "../services/routes.service";
+import { updateRouteStatus, upsertRouteReview } from "../services/routes.service";
 import { setActiveNavigationRouteId } from "../stores/active-navigation-store";
+import { setRouteRatingUiOpen } from "../stores/route-rating-ui-store";
 import { getRouteTripDurationSeconds } from "../utils/route-trip-time.utils";
 
 function NavigationKeepAwake() {
@@ -213,16 +214,29 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     return () => subscription.remove();
   }, [openStopConfirm]);
 
+  useEffect(() => {
+    if (phase !== "completed") return;
+    setRouteRatingUiOpen(true);
+    return () => setRouteRatingUiOpen(false);
+  }, [phase]);
+
   const handleCloseCompleted = useCallback(() => {
+    setRouteRatingUiOpen(false);
     router.replace({
       params: { tab: "mine" },
       pathname: "/routes",
     } as Href);
   }, []);
 
-  const handleSubmitRating = useCallback(async (_rating: number, _comment: string) => {
-    await Promise.resolve();
-  }, []);
+  const handleSubmitRating = useCallback(
+    async (rating: number, comment: string) => {
+      await upsertRouteReview(routeId, {
+        comment,
+        rating,
+      });
+    },
+    [routeId],
+  );
 
   if (navigation.state.isLoading) {
     return (

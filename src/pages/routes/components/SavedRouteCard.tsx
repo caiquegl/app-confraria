@@ -136,6 +136,11 @@ export function SavedRouteCard({
 
       <View style={styles.tagsRow}>
         <StatusTag route={route} />
+        {isRouteCompleted(route) && route.myReview ? (
+          <View style={[styles.tag, styles.tagRating]}>
+            <Text style={styles.tagRatingText}>★ {route.myReview.rating}</Text>
+          </View>
+        ) : null}
       </View>
 
       {showAuthor && route.creator ? (
@@ -283,6 +288,15 @@ const styles = StyleSheet.create({
     borderColor: "#728F21",
   },
   tagOngoingText: {
+    color: "#728F21",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  tagRating: {
+    backgroundColor: "rgba(114, 143, 33, 0.08)",
+    borderColor: "#728F21",
+  },
+  tagRatingText: {
     color: "#728F21",
     fontSize: 10,
     fontWeight: "800",

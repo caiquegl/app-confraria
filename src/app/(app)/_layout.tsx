@@ -17,6 +17,7 @@ import {
 import { getRouteBackgroundTrackingSession } from "@/lib/route-background-tracking";
 import { fetchPublicProfile } from "@/pages/public-profile/services/public-profile.service";
 import { ActiveRouteFAB } from "@/pages/routes/components/ActiveRouteFAB";
+import { PendingRouteReviewGate } from "@/pages/routes/components/PendingRouteReviewGate";
 import {
   getActiveNavigationRouteId,
   setActiveNavigationRouteId,
@@ -157,6 +158,7 @@ export default function AppLayout() {
         />
       ) : null}
       {!shouldHideBottomNav && <BottomNav userAvatar={profileAvatar} userName={profileName} />}
+      <PendingRouteReviewGate enabled={authState === "authenticated"} />
     </View>
   );
 }

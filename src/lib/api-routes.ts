@@ -108,6 +108,7 @@ export const apiRoutes = {
   routes: {
     create: "/routes",
     mine: "/routes/me",
+    pendingReview: "/routes/me/pending-review",
     minePublished: (options?: { cursor?: string; limit?: number; q?: string }) => {
       const params = new URLSearchParams();
       if (options?.cursor) params.set("cursor", options.cursor);
@@ -140,6 +141,7 @@ export const apiRoutes = {
       return `/routes/discover/friends${query ? `?${query}` : ""}`;
     },
     detail: (routeId: string) => `/routes/${routeId}`,
+    reviews: (routeId: string) => `/routes/${routeId}/reviews`,
     update: (routeId: string) => `/routes/${routeId}`,
     updatePublish: (routeId: string) => `/routes/${routeId}/publish`,
     updateStatus: (routeId: string) => `/routes/${routeId}/status`,

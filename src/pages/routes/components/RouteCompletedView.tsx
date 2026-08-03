@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
+import { getApiErrorMessage } from "@/lib/password-reset";
 import { colors } from "@/theme/colors";
 
 import { formatRouteDistance } from "../utils/route-format.utils";
@@ -40,15 +41,16 @@ export function RouteCompletedView({
 
     setIsSubmitting(true);
     try {
-      await onSubmitRating(rating, comment);
+      await onSubmitRating(rating, comment.trim());
       setIsSubmitted(true);
       Toast.show({
         text1: "Avaliação registrada",
         type: "success",
       });
-    } catch {
+    } catch (error) {
       Toast.show({
         text1: "Não foi possível salvar a avaliação",
+        text2: getApiErrorMessage(error, "Verifique a conexão e tente novamente."),
         type: "error",
       });
     } finally {
@@ -121,29 +123,19 @@ export function RouteCompletedView({
         </View>
       </View>
 
-      <View style={styles.actions}>
-        <Button
-          disabled={rating === 0 || isSubmitting}
-          size="lg"
-          style={styles.primaryButton}
-          onPress={() => void handleSubmit()}
-        >
-          {isSubmitting ? "Salvando..." : "Avaliar e salvar"}
-        </Button>
-        <Pressable onPress={onClose}>
-          <Text style={styles.secondaryAction}>Voltar para início</Text>
-        </Pressable>
-      </View>
+      <Button
+        disabled={rating === 0 || isSubmitting}
+        size="lg"
+        style={styles.primaryButton}
+        onPress={() => void handleSubmit()}
+      >
+        {isSubmitting ? "Salvando..." : "Avaliar e salvar"}
+      </Button>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  actions: {
-    gap: 16,
-    marginTop: 24,
-    width: "100%",
-  },
   commentInput: {
     backgroundColor: "rgba(255,255,255,0.08)",
     borderColor: "rgba(255,255,255,0.12)",
@@ -175,11 +167,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandDark,
     flex: 1,
     paddingHorizontal: 24,
-  },
-  secondaryAction: {
-    color: "#9CA3AF",
-    fontSize: 14,
-    textAlign: "center",
   },
   starsRow: {
     flexDirection: "row",

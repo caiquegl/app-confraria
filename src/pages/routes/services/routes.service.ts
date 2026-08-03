@@ -10,6 +10,8 @@ import type {
   PublishedRoutesPageResponse,
   RouteApiResponse,
   UpdateRoutePayload,
+  UpsertRouteReviewPayload,
+  UpsertRouteReviewResponse,
 } from "../types/saved-route.types";
 import type { RoutePlaceResponse } from "../types/saved-route.types";
 
@@ -62,6 +64,27 @@ export async function fetchFriendsRoutes(options?: {
 
 export async function fetchRoute(routeId: string): Promise<RouteApiResponse> {
   const { data } = await api.get<RouteApiResponse>(apiRoutes.routes.detail(routeId));
+  return data;
+}
+
+export async function fetchPendingRouteReview(): Promise<RouteApiResponse | null> {
+  const { data } = await api.get<{ route: RouteApiResponse | null }>(
+    apiRoutes.routes.pendingReview,
+  );
+  return data.route ?? null;
+}
+
+export async function upsertRouteReview(
+  routeId: string,
+  payload: UpsertRouteReviewPayload,
+): Promise<UpsertRouteReviewResponse> {
+  const { data } = await api.put<UpsertRouteReviewResponse>(
+    apiRoutes.routes.reviews(routeId),
+    {
+      comment: payload.comment?.trim() || undefined,
+      rating: payload.rating,
+    },
+  );
   return data;
 }
 

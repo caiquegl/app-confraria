@@ -28,6 +28,7 @@ import { getCurrentUserId } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import { colors } from "@/theme/colors";
 
+import { RouteCompletedView } from "../components/RouteCompletedView";
 import { RouteDetailMap } from "../components/RouteDetailMap";
 import { RouteGuestsSection } from "../components/RouteGuestsSection";
 import { RoutePublishNoticeModal } from "../components/RoutePublishNoticeModal";
@@ -40,7 +41,9 @@ import {
   respondToRouteInvitation,
   updateRoutePublish,
   updateRouteStatus,
+  upsertRouteReview,
 } from "../services/routes.service";
+import { setRouteRatingUiOpen } from "../stores/route-rating-ui-store";
 import type { RouteApiResponse, RouteDayApiResponse, RoutePlaceResponse } from "../types/saved-route.types";
 import { mapApiRouteToEditSnapshot } from "../utils/map-api-route-to-edit";
 import { formatRouteDistance, formatRouteDuration } from "../utils/route-format.utils";
@@ -191,6 +194,13 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     "published" | "unpublished" | null
   >(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showRatingAfterFinish, setShowRatingAfterFinish] = useState(false);
+
+  useEffect(() => {
+    if (!showRatingAfterFinish) return;
+    setRouteRatingUiOpen(true);
+    return () => setRouteRatingUiOpen(false);
+  }, [showRatingAfterFinish]);
 
   const dayCarouselWidth = Math.min(340, screenWidth - 48);
   const canModifyStops = route?.status === "scheduled";
@@ -469,10 +479,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
       const updated = await updateRouteStatus(route.id, "finished");
       setRoute(updated);
       await stopRouteBackgroundTracking();
-      Toast.show({
-        text1: "Rota finalizada",
-        type: "success",
-      });
+      setShowRatingAfterFinish(true);
     } catch (error) {
       Toast.show({
         text1: "Não foi possível atualizar a rota",
@@ -589,6 +596,22 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     );
   }
 
+  if (showRatingAfterFinish) {
+    return (
+      <RouteCompletedView
+        distanceMeters={route.distanceMeters ?? 0}
+        durationSeconds={getRouteTripDurationSeconds(route)}
+        onClose={() => {
+          setRouteRatingUiOpen(false);
+          setShowRatingAfterFinish(false);
+        }}
+        onSubmitRating={async (rating, comment) => {
+          const result = await upsertRouteReview(route.id, { comment, rating });
+          setRoute(result.route);
+        }}
+      />
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -745,6 +768,25 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
               </View>
             ) : null}
           </View>
+
+          {route.myReview ? (
+            <View style={styles.reviewCard}>
+              <Text style={styles.reviewLabel}>Sua avaliação</Text>
+              <View style={styles.reviewStarsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Ionicons
+                    key={star}
+                    color={route.myReview && route.myReview.rating >= star ? colors.brandGreen : "#D1D5DB"}
+                    name={route.myReview && route.myReview.rating >= star ? "star" : "star-outline"}
+                    size={22}
+                  />
+                ))}
+              </View>
+              {route.myReview.comment ? (
+                <Text style={styles.reviewComment}>{route.myReview.comment}</Text>
+              ) : null}
+            </View>
+          ) : null}
 
           {route.days.length > 0 ? (
             <View style={styles.section}>
@@ -1234,6 +1276,30 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 12,
     fontWeight: "700",
+  },
+  reviewCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 10,
+    padding: 16,
+  },
+  reviewComment: {
+    color: colors.brandDark,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  reviewLabel: {
+    color: "#9CA3AF",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  reviewStarsRow: {
+    flexDirection: "row",
+    gap: 4,
   },
   optionsBackdrop: {
     ...StyleSheet.absoluteFill,
