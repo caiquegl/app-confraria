@@ -98,6 +98,7 @@ const INITIAL_STATE: RouteNavigationState = {
 };
 
 type UseRouteNavigationParams = {
+  onArrived?: () => void;
   routeId: string;
 };
 
@@ -120,7 +121,7 @@ function applySelectedDirectionsRoute(
   };
 }
 
-export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
+export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationParams) {
   const [state, setState] = useState<RouteNavigationState>(INITIAL_STATE);
   const [followUser, setFollowUser] = useState(true);
 
@@ -142,6 +143,11 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
   const isArrivedRef = useRef(false);
   const isStoppedRef = useRef(false);
   const routeRef = useRef<RouteApiResponse | null>(null);
+  const onArrivedRef = useRef(onArrived);
+
+  useEffect(() => {
+    onArrivedRef.current = onArrived;
+  }, [onArrived]);
 
   const advancePassedWaypoints = useCallback((position: Coordinate) => {
     const waypoints = waypointsRef.current;
@@ -456,6 +462,7 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
       const destination = routePolyline[routePolyline.length - 1];
       const distanceToDestination = haversineDistanceMeters(position, destination);
       const isArrived = distanceToDestination <= ARRIVAL_THRESHOLD_METERS;
+      const justArrived = isArrived && !isArrivedRef.current;
       isArrivedRef.current = isArrived;
 
       const isRerouting = isReroutingRef.current;
@@ -504,6 +511,10 @@ export function useRouteNavigation({ routeId }: UseRouteNavigationParams) {
         offRouteTicksRef.current >= OFF_ROUTE_CONFIRM_TICKS
       ) {
         void rerouteFromPosition(position);
+      }
+
+      if (justArrived) {
+        onArrivedRef.current?.();
       }
     },
     [advancePassedWaypoints, rerouteFromPosition],

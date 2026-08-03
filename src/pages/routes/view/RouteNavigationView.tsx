@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useKeepAwake } from "expo-keep-awake";
 import { router, type Href } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
@@ -68,7 +68,19 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   const [tripDistanceMeters, setTripDistanceMeters] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const navigation = useRouteNavigation({ routeId });
+  const phaseRef = useRef(phase);
+  const isOwnerRef = useRef(false);
+  const finishRouteRef = useRef<() => void>(() => {});
+
+  const handleArrived = useCallback(() => {
+    if (phaseRef.current !== "navigating" || !isOwnerRef.current) return;
+    finishRouteRef.current();
+  }, []);
+
+  const navigation = useRouteNavigation({
+    onArrived: handleArrived,
+    routeId,
+  });
   const mapPhotos = useRouteMapPhotos({
     enabled: phase === "navigating" && !navigation.state.isLoading && !navigation.state.error,
     routeId,
@@ -165,6 +177,14 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     routeId,
   ]);
 
+  useEffect(() => {
+    phaseRef.current = phase;
+    isOwnerRef.current = isOwner;
+    finishRouteRef.current = () => {
+      void finishRoute();
+    };
+  }, [finishRoute, isOwner, phase]);
+
   const openStopConfirm = useCallback(() => {
     if (!isOwner) {
       navigateToDetail();
@@ -183,11 +203,6 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   const handleConfirmStop = useCallback(() => {
     void finishRoute();
   }, [finishRoute]);
-
-  useEffect(() => {
-    if (!navigation.state.isArrived || phase !== "navigating" || !isOwner) return;
-    void finishRoute();
-  }, [finishRoute, isOwner, navigation.state.isArrived, phase]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {

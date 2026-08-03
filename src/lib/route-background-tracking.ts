@@ -13,10 +13,34 @@ const TOKEN_KEY = "@confraria/auth_token";
 const API_ENVIRONMENT_KEY = "@confraria/api_environment";
 export const ROUTE_BACKGROUND_TRACKING_KEY = "@confraria/route_background_tracking";
 export const ROUTE_LOCATION_TASK_NAME = "route-location-tracking";
+const PENDING_LOCATION_KEY = "@confraria/route_background_pending_location";
+
+const NETWORK_ERROR_PATTERNS = [
+  /network request failed/i,
+  /network error/i,
+  /failed to fetch/i,
+  /fetch failed/i,
+  /unknownhostexception/i,
+  /unable to resolve host/i,
+  /no address associated with hostname/i,
+  /timed?\s*out/i,
+  /econnaborted/i,
+  /econnreset/i,
+  /enotfound/i,
+  /socket hang up/i,
+];
 
 export type RouteBackgroundTrackingSession = {
   routeId: string;
   routeTitle: string;
+};
+
+type PendingRouteLocation = {
+  heading: number;
+  latitude: number;
+  longitude: number;
+  routeId: string;
+  updatedAt: string;
 };
 
 function isApiEnvironment(value: string | null): value is ApiEnvironment {
@@ -166,57 +190,172 @@ async function readTrackingSession(): Promise<RouteBackgroundTrackingSession | n
   }
 }
 
+function isNetworkError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (!message.trim()) return false;
+  return NETWORK_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
+
+function toPendingLocation(
+  session: RouteBackgroundTrackingSession,
+  location: LocationObject,
+): PendingRouteLocation {
+  return {
+    heading: location.coords.heading ?? 0,
+    latitude: location.coords.latitude,
+    longitude: location.coords.longitude,
+    routeId: session.routeId,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function readPendingLocation(
+  routeId: string,
+): Promise<PendingRouteLocation | null> {
+  const raw = await AsyncStorage.getItem(PENDING_LOCATION_KEY);
+  if (!raw) return null;
+
+  try {
+    const pending = JSON.parse(raw) as PendingRouteLocation;
+    if (pending.routeId !== routeId) {
+      await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
+      return null;
+    }
+    if (
+      typeof pending.latitude !== "number" ||
+      typeof pending.longitude !== "number"
+    ) {
+      await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
+      return null;
+    }
+    return pending;
+  } catch {
+    await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
+    return null;
+  }
+}
+
+async function savePendingLocation(pending: PendingRouteLocation): Promise<void> {
+  await AsyncStorage.setItem(PENDING_LOCATION_KEY, JSON.stringify(pending));
+}
+
+async function clearPendingLocation(): Promise<void> {
+  await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
+}
+
+async function patchLocationToApi(
+  session: RouteBackgroundTrackingSession,
+  payload: {
+    heading: number;
+    latitude: number;
+    longitude: number;
+  },
+): Promise<"ok" | "stop" | "retry"> {
+  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    routeTrackingLog.warn("sendLocationToApi:missing-token", { routeId: session.routeId });
+    return "stop";
+  }
+
+  try {
+    const baseUrl = await getApiBaseUrlForTask();
+    const response = await fetch(`${baseUrl}/routes/${session.routeId}/location`, {
+      body: JSON.stringify(payload),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      method: "PATCH",
+    });
+
+    routeTrackingLog.info("sendLocationToApi:response", {
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      routeId: session.routeId,
+      status: response.status,
+    });
+
+    if (response.ok) {
+      return "ok";
+    }
+
+    if ([400, 403, 404].includes(response.status)) {
+      const responseBody = await response.text().catch(() => "");
+      captureRouteError(
+        new Error(`Falha ao enviar localização em background (${response.status})`),
+        {
+          latitude: payload.latitude,
+          longitude: payload.longitude,
+          responseBody: responseBody.slice(0, 500),
+          routeId: session.routeId,
+          source: "sendLocationToApi",
+          status: response.status,
+        },
+      );
+      return "stop";
+    }
+
+    // 5xx / outros: tenta de novo no próximo tick, sem spam no Sentry.
+    return "retry";
+  } catch (error) {
+    if (isNetworkError(error)) {
+      routeTrackingLog.warn("sendLocationToApi:network-retry", {
+        message: error instanceof Error ? error.message : String(error),
+        routeId: session.routeId,
+      });
+      return "retry";
+    }
+
+    captureRouteError(error, {
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+      routeId: session.routeId,
+      source: "sendLocationToApi",
+    });
+    return "retry";
+  }
+}
+
 async function sendLocationToApi(
   session: RouteBackgroundTrackingSession,
   location: LocationObject,
 ): Promise<boolean> {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
-  if (!token) {
-    routeTrackingLog.warn("sendLocationToApi:missing-token", { routeId: session.routeId });
-    return false;
-  }
+  const pending = toPendingLocation(session, location);
+  const result = await patchLocationToApi(session, pending);
 
-  const baseUrl = await getApiBaseUrlForTask();
-  const response = await fetch(`${baseUrl}/routes/${session.routeId}/location`, {
-    body: JSON.stringify({
-      heading: location.coords.heading ?? 0,
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    }),
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    method: "PATCH",
-  });
-
-  routeTrackingLog.info("sendLocationToApi:response", {
-    latitude: location.coords.latitude,
-    longitude: location.coords.longitude,
-    routeId: session.routeId,
-    status: response.status,
-  });
-
-  if (response.ok) {
+  if (result === "ok") {
+    await clearPendingLocation();
     return true;
   }
 
-  const responseBody = await response.text().catch(() => "");
-
-  captureRouteError(new Error(`Falha ao enviar localização em background (${response.status})`), {
-    latitude: location.coords.latitude,
-    longitude: location.coords.longitude,
-    responseBody: responseBody.slice(0, 500),
-    routeId: session.routeId,
-    source: "sendLocationToApi",
-    status: response.status,
-  });
-
-  if ([400, 403, 404].includes(response.status)) {
+  if (result === "stop") {
+    await clearPendingLocation();
     return false;
   }
 
+  await savePendingLocation(pending);
   return true;
+}
+
+async function flushPendingLocationIfNeeded(
+  session: RouteBackgroundTrackingSession,
+): Promise<void> {
+  const pending = await readPendingLocation(session.routeId);
+  if (!pending) return;
+
+  const result = await patchLocationToApi(session, pending);
+  if (result === "ok") {
+    await clearPendingLocation();
+    routeTrackingLog.info("flushPendingLocation:sent", {
+      routeId: session.routeId,
+      updatedAt: pending.updatedAt,
+    });
+    return;
+  }
+
+  if (result === "stop") {
+    await clearPendingLocation();
+  }
 }
 
 export async function processBackgroundLocationTask({
@@ -225,39 +364,68 @@ export async function processBackgroundLocationTask({
 }: TaskManagerTaskBody<{
   locations?: LocationObject[];
 }>): Promise<void> {
-  if (error) {
-    routeTrackingLog.error("processBackgroundLocationTask:task-error", error);
-    captureRouteError(error, {
-      source: "processBackgroundLocationTask",
+  try {
+    if (error) {
+      if (isNetworkError(error) || isBenignLocationTaskError(error)) {
+        routeTrackingLog.warn("processBackgroundLocationTask:task-error-ignored", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+        return;
+      }
+
+      routeTrackingLog.error("processBackgroundLocationTask:task-error", error);
+      captureRouteError(error, {
+        source: "processBackgroundLocationTask",
+      });
+      return;
+    }
+
+    const session = await readTrackingSession();
+    if (!session) {
+      routeTrackingLog.warn("processBackgroundLocationTask:no-session");
+      await clearPendingLocation();
+      await safeStopLocationUpdates();
+      return;
+    }
+
+    const locations = data?.locations ?? [];
+    const latestLocation = locations[locations.length - 1];
+    if (!latestLocation) {
+      // Sem ponto novo: ainda tenta reenviar o pendente se a rede voltou.
+      await flushPendingLocationIfNeeded(session);
+      routeTrackingLog.warn("processBackgroundLocationTask:no-locations", {
+        routeId: session.routeId,
+      });
+      return;
+    }
+
+    routeTrackingLog.info("processBackgroundLocationTask:location-received", {
+      count: locations.length,
+      latitude: latestLocation.coords.latitude,
+      longitude: latestLocation.coords.longitude,
+      routeId: session.routeId,
     });
-    return;
-  }
 
-  const session = await readTrackingSession();
-  if (!session) {
-    routeTrackingLog.warn("processBackgroundLocationTask:no-session");
-    await safeStopLocationUpdates();
-    return;
-  }
+    const shouldContinue = await sendLocationToApi(session, latestLocation);
+    if (!shouldContinue) {
+      routeTrackingLog.warn("processBackgroundLocationTask:stopping", {
+        routeId: session.routeId,
+      });
+      await stopRouteBackgroundTracking();
+    }
+  } catch (error) {
+    // Nunca deixar a task estourar (TaskManager spam / Sentry).
+    if (isNetworkError(error)) {
+      routeTrackingLog.warn("processBackgroundLocationTask:network-swallowed", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return;
+    }
 
-  const locations = data?.locations ?? [];
-  const latestLocation = locations[locations.length - 1];
-  if (!latestLocation) {
-    routeTrackingLog.warn("processBackgroundLocationTask:no-locations", { routeId: session.routeId });
-    return;
-  }
-
-  routeTrackingLog.info("processBackgroundLocationTask:location-received", {
-    count: locations.length,
-    latitude: latestLocation.coords.latitude,
-    longitude: latestLocation.coords.longitude,
-    routeId: session.routeId,
-  });
-
-  const shouldContinue = await sendLocationToApi(session, latestLocation);
-  if (!shouldContinue) {
-    routeTrackingLog.warn("processBackgroundLocationTask:stopping", { routeId: session.routeId });
-    await stopRouteBackgroundTracking();
+    routeTrackingLog.error("processBackgroundLocationTask:unhandled", error);
+    captureRouteError(error, {
+      source: "processBackgroundLocationTask:unhandled",
+    });
   }
 }
 
@@ -431,7 +599,10 @@ export async function startRouteBackgroundTracking(
 
 export async function stopRouteBackgroundTracking(): Promise<void> {
   routeTrackingLog.info("stopRouteBackgroundTracking:start");
-  await AsyncStorage.removeItem(ROUTE_BACKGROUND_TRACKING_KEY);
+  await AsyncStorage.multiRemove([
+    ROUTE_BACKGROUND_TRACKING_KEY,
+    PENDING_LOCATION_KEY,
+  ]);
   await safeStopLocationUpdates();
   routeTrackingLog.info("stopRouteBackgroundTracking:done");
 }
@@ -493,10 +664,20 @@ export async function resumeRouteBackgroundTrackingIfNeeded(): Promise<void> {
       routeId: session.routeId,
     });
 
+    await flushPendingLocationIfNeeded(session);
+
     if (!isRunning || Platform.OS === "android") {
       await ensureRouteBackgroundTracking(session.routeId, session.routeTitle);
     }
   } catch (error) {
+    if (isNetworkError(error)) {
+      routeTrackingLog.warn("resumeRouteBackgroundTrackingIfNeeded:network", {
+        message: error instanceof Error ? error.message : String(error),
+        routeId: session.routeId,
+      });
+      return;
+    }
+
     routeTrackingLog.error("resumeRouteBackgroundTrackingIfNeeded:failed", error, {
       routeId: session.routeId,
     });
