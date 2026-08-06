@@ -25,7 +25,7 @@ export function EventAnalyticsHeader({
   const closeMenu = () => setMenuVisible(false);
 
   return (
-    <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+    <View style={styles.header}>
       <Pressable accessibilityRole="button" style={styles.iconButton} onPress={onBack}>
         <Ionicons color={colors.brandDark} name="chevron-back" size={24} />
       </Pressable>
@@ -43,7 +43,7 @@ export function EventAnalyticsHeader({
 
       <Modal animationType="fade" transparent statusBarTranslucent visible={menuVisible}>
         <Pressable style={styles.menuBackdrop} onPress={closeMenu} />
-        <View style={[styles.menu, { top: topInset + 64 }]}>
+        <View style={[styles.menu, { top: topInset + 60 }]}>
           <Pressable
             accessibilityRole="button"
             style={styles.menuItem}
@@ -89,6 +89,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingBottom: 8,
     paddingHorizontal: 24,
+    paddingTop: 12,
   },
   iconButton: {
     alignItems: "center",
