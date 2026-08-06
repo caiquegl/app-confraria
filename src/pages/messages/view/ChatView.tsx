@@ -30,6 +30,8 @@ import type { ChatMessage } from "../types/messages.types";
 const CHAT_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 const TYPING_IDLE_MS = 2000;
 const TYPING_PULSE_MS = 1000;
+/** Folga extra entre o composer e o topo do teclado */
+const KEYBOARD_INPUT_GAP = 20;
 
 type ChatViewProps = {
   conversationId: string;
@@ -113,7 +115,8 @@ export function ChatView({
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const showSubscription = Keyboard.addListener(showEvent, (event) => {
-      setKeyboardOffset(Math.max(0, event.endCoordinates.height - insets.bottom));
+      // Altura cheia do teclado + folga para o teclado não cobrir o input.
+      setKeyboardOffset(Math.max(0, event.endCoordinates.height) + KEYBOARD_INPUT_GAP);
       requestAnimationFrame(() => {
         listRef.current?.scrollToEnd({ animated: true });
       });
@@ -126,7 +129,7 @@ export function ChatView({
       showSubscription.remove();
       hideSubscription.remove();
     };
-  }, [insets.bottom]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -214,8 +217,8 @@ export function ChatView({
   const composerBottomPad = keyboardOffset > 0 ? 12 : Math.max(insets.bottom, 12);
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.header}>
+    <View style={[styles.screen, { paddingBottom: keyboardOffset }]}>
+      <View style={[styles.header]}>
         <Pressable accessibilityLabel="Voltar" style={styles.backButton} onPress={onBack}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
         </Pressable>
@@ -244,6 +247,7 @@ export function ChatView({
       ) : (
         <FlatList
           ref={listRef}
+          style={styles.messagesList}
           data={messages}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesContent}
@@ -272,7 +276,6 @@ export function ChatView({
         style={[
           styles.composerWrap,
           {
-            marginBottom: keyboardOffset,
             paddingBottom: composerBottomPad,
           },
         ]}
@@ -760,7 +763,9 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 12,
     paddingHorizontal: 14,
-    paddingTop: 20,
+  },
+  messagesList: {
+    flex: 1,
   },
   headerInfo: {
     flex: 1,
