@@ -146,9 +146,16 @@ function handleNotificationResponse(response: NotificationResponse): void {
   const conversationId = getStringDataValue(data.conversationId);
 
   if (type === "chat_message" && conversationId) {
+    const participantName = getStringDataValue(data.senderName);
+    const participantAvatar = getStringDataValue(data.senderAvatar);
+
     navigateFromNotification(() => {
       router.push({
-        params: { conversationId },
+        params: {
+          conversationId,
+          ...(participantName ? { participantName } : {}),
+          ...(participantAvatar ? { participantAvatar } : {}),
+        },
         pathname: "/messages/[conversationId]",
       });
     });

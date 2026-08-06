@@ -24,6 +24,7 @@ import { formatRelativeTime } from "@/pages/home/services/feed.service";
 import { colors } from "@/theme/colors";
 
 import { useChatConversation } from "../business/useChatConversation";
+import { fetchChatConversations } from "../services/messages.service";
 import type { ChatMessage } from "../types/messages.types";
 
 const CHAT_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
@@ -40,7 +41,7 @@ type ChatViewProps = {
 export function ChatView({
   conversationId,
   participantAvatar,
-  participantName = "Conversa",
+  participantName,
   onBack,
 }: ChatViewProps) {
   const insets = useSafeAreaInsets();
@@ -52,6 +53,12 @@ export function ChatView({
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [reactionTarget, setReactionTarget] = useState<ChatMessage | null>(null);
   const [replyingToMessage, setReplyingToMessage] = useState<ChatMessage | null>(null);
+  const [headerName, setHeaderName] = useState(
+    participantName?.trim() || "Conversa",
+  );
+  const [headerAvatar, setHeaderAvatar] = useState<string | null>(
+    participantAvatar?.trim() ? participantAvatar : null,
+  );
   const {
     error,
     isLoading,
@@ -63,6 +70,43 @@ export function ChatView({
     retryFailedMessage,
     sendMessage,
   } = useChatConversation(conversationId);
+
+  useEffect(() => {
+    const nextName = participantName?.trim();
+    if (nextName) setHeaderName(nextName);
+
+    const nextAvatar = participantAvatar?.trim();
+    if (nextAvatar) setHeaderAvatar(nextAvatar);
+  }, [participantAvatar, participantName]);
+
+  useEffect(() => {
+    const hasName = Boolean(participantName?.trim());
+    const hasAvatar = Boolean(participantAvatar?.trim());
+    if (hasName && hasAvatar) return;
+
+    let cancelled = false;
+
+    void fetchChatConversations()
+      .then((data) => {
+        if (cancelled) return;
+        const conversation = data.conversations.find(
+          (item) => item.id === conversationId,
+        );
+        if (!conversation) return;
+
+        if (!hasName) {
+          setHeaderName(conversation.participant.userName);
+        }
+        if (!hasAvatar) {
+          setHeaderAvatar(conversation.participant.userAvatar);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, participantAvatar, participantName]);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -148,7 +192,7 @@ export function ChatView({
         ? {
             id: replyingToMessage.id,
             senderId: replyingToMessage.senderId,
-            senderName: replyingToMessage.isMine ? "Você" : participantName,
+            senderName: replyingToMessage.isMine ? "Você" : headerName,
             sharedType: replyingToMessage.sharedEvent
               ? "event"
               : replyingToMessage.sharedPost
@@ -175,13 +219,13 @@ export function ChatView({
         <Pressable accessibilityLabel="Voltar" style={styles.backButton} onPress={onBack}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
         </Pressable>
-        <UserAvatar avatarUrl={participantAvatar ?? null} name={participantName} size={44} />
+        <UserAvatar avatarUrl={headerAvatar} name={headerName} size={44} />
         <View style={styles.headerInfo}>
           <Text numberOfLines={1} style={styles.headerName}>
-            {participantName}
+            {headerName}
           </Text>
           <Text style={styles.headerStatus}>
-            {isPeerTyping ? `${participantName} está digitando…` : "Conversa em tempo real"}
+            {isPeerTyping ? `${headerName} está digitando…` : "Conversa em tempo real"}
           </Text>
         </View>
       </View>
@@ -235,13 +279,13 @@ export function ChatView({
       >
         {isPeerTyping ? (
           <Text style={styles.typingIndicator}>
-            {participantName} está digitando…
+            {headerName} está digitando…
           </Text>
         ) : null}
         {replyingToMessage ? (
           <ReplyComposerPreview
             message={replyingToMessage}
-            participantName={participantName}
+            participantName={headerName}
             onCancel={() => setReplyingToMessage(null)}
           />
         ) : null}
