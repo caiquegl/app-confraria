@@ -33,12 +33,23 @@ export function shouldSendToSentry(): boolean {
   return true;
 }
 
-/** @deprecated use isSentryConfigured / shouldSendToSentry */
 export const isSentryEnabled = isSentryConfigured;
 
-export const expoRouterTracingIntegration = Sentry.expoRouterIntegration({
-  enableTimeToInitialDisplay: !__DEV__,
-});
+function createExpoRouterTracingIntegration() {
+  try {
+    if (typeof Sentry.expoRouterIntegration !== "function") {
+      return undefined;
+    }
+
+    return Sentry.expoRouterIntegration({
+      enableTimeToInitialDisplay: !__DEV__,
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+export const expoRouterTracingIntegration = createExpoRouterTracingIntegration();
 
 function truncateValue(value: unknown, maxLength = 2_000): unknown {
   if (value == null) return value;
@@ -130,7 +141,9 @@ export function initSentry(): void {
     debug: false,
     environment: "production",
     release: `${Constants.expoConfig?.slug ?? "app-confraria"}@${Constants.expoConfig?.version ?? "0.0.0"}`,
-    integrations: [expoRouterTracingIntegration],
+    integrations: expoRouterTracingIntegration
+      ? [expoRouterTracingIntegration]
+      : undefined,
     enableNative: true,
     enableNativeCrashHandling: true,
     enableNdk: true,

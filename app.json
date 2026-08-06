@@ -11,10 +11,10 @@
       "associatedDomains": [
         "applinks:confraria-web.vercel.app"
       ],
-      "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.caiquegl22.appconfraria",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "LSRequiresIPhoneOS": true,
         "NSLocationAlwaysAndWhenInUseUsageDescription": "O Confraria rastreia sua posição durante passeios em andamento, inclusive com o app em segundo plano, para que seus parceiros vejam onde você está.",
         "UIBackgroundModes": [
           "location"
