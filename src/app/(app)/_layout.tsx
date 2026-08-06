@@ -40,6 +40,7 @@ export default function AppLayout() {
   const shouldHideBottomNav =
     pathname.startsWith("/event/") ||
     pathname.startsWith("/events/discover") ||
+    pathname.startsWith("/messages/") ||
     pathname.startsWith("/profile/bikes") ||
     pathname.startsWith("/profile/favorites") ||
     pathname.startsWith("/profile/settings") ||

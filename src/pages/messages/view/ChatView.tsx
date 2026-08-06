@@ -7,7 +7,6 @@ import {
   Animated,
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
   Modal,
   PanResponder,
   Platform,
@@ -71,6 +70,9 @@ export function ChatView({
 
     const showSubscription = Keyboard.addListener(showEvent, (event) => {
       setKeyboardOffset(Math.max(0, event.endCoordinates.height - insets.bottom));
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToEnd({ animated: true });
+      });
     });
     const hideSubscription = Keyboard.addListener(hideEvent, () => {
       setKeyboardOffset(0);
@@ -165,12 +167,10 @@ export function ChatView({
     setReplyingToMessage(null);
   };
 
+  const composerBottomPad = keyboardOffset > 0 ? 12 : Math.max(insets.bottom, 12);
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={0}
-      style={styles.screen}
-    >
+    <View style={styles.screen}>
       <View style={styles.header}>
         <Pressable accessibilityLabel="Voltar" style={styles.backButton} onPress={onBack}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
@@ -203,6 +203,8 @@ export function ChatView({
           data={messages}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesContent}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item }) => (
             <MessageBubble
@@ -226,8 +228,8 @@ export function ChatView({
         style={[
           styles.composerWrap,
           {
-            marginBottom: Platform.OS === "android" ? keyboardOffset : 0,
-            paddingBottom: 12,
+            marginBottom: keyboardOffset,
+            paddingBottom: composerBottomPad,
           },
         ]}
       >
@@ -277,7 +279,7 @@ export function ChatView({
           setReactionTarget(null);
         }}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
