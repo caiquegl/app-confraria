@@ -11,6 +11,8 @@ npx expo start
 
 > Updates OTA **não rodam** em `__DEV__` (Expo Go / dev client). Para testar OTA, use build de produção/preview.
 
+ADB REVERSE adb reverse tcp:8081 tcp:8081
+
 ---
 
 ## EAS Update (OTA) — guia completo

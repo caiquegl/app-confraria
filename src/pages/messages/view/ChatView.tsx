@@ -16,6 +16,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import {
+  KeyboardStickyView,
+  useKeyboardState,
+} from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserAvatar } from "@/components/UserAvatar";
@@ -30,8 +34,6 @@ import type { ChatMessage } from "../types/messages.types";
 const CHAT_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 const TYPING_IDLE_MS = 2000;
 const TYPING_PULSE_MS = 1000;
-/** Folga extra entre o composer e o topo do teclado */
-const KEYBOARD_INPUT_GAP = 20;
 
 type ChatViewProps = {
   conversationId: string;
@@ -47,12 +49,13 @@ export function ChatView({
   onBack,
 }: ChatViewProps) {
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardState((state) => state.height);
   const listRef = useRef<FlatList<ChatMessage> | null>(null);
   const typingIdleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingPulseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
   const [draft, setDraft] = useState("");
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [reactionTarget, setReactionTarget] = useState<ChatMessage | null>(null);
   const [replyingToMessage, setReplyingToMessage] = useState<ChatMessage | null>(null);
   const [headerName, setHeaderName] = useState(
@@ -114,15 +117,14 @@ export function ChatView({
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const showSubscription = Keyboard.addListener(showEvent, (event) => {
-      // Altura cheia do teclado + folga para o teclado não cobrir o input.
-      setKeyboardOffset(Math.max(0, event.endCoordinates.height) + KEYBOARD_INPUT_GAP);
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setIsKeyboardOpen(true);
       requestAnimationFrame(() => {
         listRef.current?.scrollToEnd({ animated: true });
       });
     });
     const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setKeyboardOffset(0);
+      setIsKeyboardOpen(false);
     });
 
     return () => {
@@ -214,11 +216,12 @@ export function ChatView({
     setReplyingToMessage(null);
   };
 
-  const composerBottomPad = keyboardOffset > 0 ? 12 : Math.max(insets.bottom, 12);
+  // Com teclado aberto o safe-area inferior some (fica atrás do teclado).
+  const composerBottomPad = isKeyboardOpen ? 8 : Math.max(insets.bottom, 12);
 
   return (
-    <View style={[styles.screen, { paddingBottom: keyboardOffset }]}>
-      <View style={[styles.header]}>
+    <View style={styles.screen}>
+      <View style={styles.header}>
         <Pressable accessibilityLabel="Voltar" style={styles.backButton} onPress={onBack}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
         </Pressable>
@@ -250,7 +253,10 @@ export function ChatView({
           style={styles.messagesList}
           data={messages}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesContent}
+          contentContainerStyle={[
+            styles.messagesContent,
+            keyboardHeight > 0 ? { paddingBottom: 14 + keyboardHeight } : null,
+          ]}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
@@ -272,50 +278,45 @@ export function ChatView({
         />
       )}
 
-      <View
-        style={[
-          styles.composerWrap,
-          {
-            paddingBottom: composerBottomPad,
-          },
-        ]}
-      >
-        {isPeerTyping ? (
-          <Text style={styles.typingIndicator}>
-            {headerName} está digitando…
-          </Text>
-        ) : null}
-        {replyingToMessage ? (
-          <ReplyComposerPreview
-            message={replyingToMessage}
-            participantName={headerName}
-            onCancel={() => setReplyingToMessage(null)}
-          />
-        ) : null}
-        <View style={styles.composerRow}>
-          <TextInput
-            multiline
-            placeholder="Escreva uma mensagem..."
-            placeholderTextColor="#9CA3AF"
-            style={styles.input}
-            value={draft}
-            onBlur={stopTyping}
-            onChangeText={handleDraftChange}
-          />
-          <Pressable
-            accessibilityLabel="Enviar mensagem"
-            disabled={!draft.trim()}
-            style={[styles.sendButton, !draft.trim() && styles.sendButtonDisabled]}
-            onPress={handleSend}
-          >
-            <Ionicons
-              color={draft.trim() ? colors.brandDark : "#9CA3AF"}
-              name="send"
-              size={18}
+      <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
+        <View style={[styles.composerWrap, { paddingBottom: composerBottomPad }]}>
+          {isPeerTyping ? (
+            <Text style={styles.typingIndicator}>
+              {headerName} está digitando…
+            </Text>
+          ) : null}
+          {replyingToMessage ? (
+            <ReplyComposerPreview
+              message={replyingToMessage}
+              participantName={headerName}
+              onCancel={() => setReplyingToMessage(null)}
             />
-          </Pressable>
+          ) : null}
+          <View style={styles.composerRow}>
+            <TextInput
+              multiline
+              placeholder="Escreva uma mensagem..."
+              placeholderTextColor="#9CA3AF"
+              style={styles.input}
+              value={draft}
+              onBlur={stopTyping}
+              onChangeText={handleDraftChange}
+            />
+            <Pressable
+              accessibilityLabel="Enviar mensagem"
+              disabled={!draft.trim()}
+              style={[styles.sendButton, !draft.trim() && styles.sendButtonDisabled]}
+              onPress={handleSend}
+            >
+              <Ionicons
+                color={draft.trim() ? colors.brandDark : "#9CA3AF"}
+                name="send"
+                size={18}
+              />
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </KeyboardStickyView>
 
       <ReactionPicker
         message={reactionTarget}
@@ -763,6 +764,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 12,
     paddingHorizontal: 14,
+    paddingTop: 12,
   },
   messagesList: {
     flex: 1,

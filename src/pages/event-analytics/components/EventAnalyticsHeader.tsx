@@ -43,7 +43,7 @@ export function EventAnalyticsHeader({
 
       <Modal animationType="fade" transparent statusBarTranslucent visible={menuVisible}>
         <Pressable style={styles.menuBackdrop} onPress={closeMenu} />
-        <View style={[styles.menu, { top: topInset + 60 }]}>
+        <View style={[styles.menu, { top: 60 }]}>
           <Pressable
             accessibilityRole="button"
             style={styles.menuItem}

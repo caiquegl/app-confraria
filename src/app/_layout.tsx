@@ -1,9 +1,10 @@
 import "@/lib/sentry-init";
 
 import { Stack, usePathname } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -62,26 +63,36 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <EnvironmentBannerProvider>
-          <SafeAreaView
-            edges={["top", "left", "right"]}
-            style={styles.safeArea}
-          >
-            <EnvironmentBanner />
-            <View style={styles.stackWrap}>
-              <Stack
-                screenOptions={{
-                  contentStyle: { backgroundColor: colors.brandGray },
-                  headerShown: false,
-                }}
-              />
-            </View>
-          </SafeAreaView>
-          <AppToastHost />
-        </EnvironmentBannerProvider>
+        <AppKeyboardProvider>
+          <EnvironmentBannerProvider>
+            <SafeAreaView
+              edges={["top", "left", "right"]}
+              style={styles.safeArea}
+            >
+              <EnvironmentBanner />
+              <View style={styles.stackWrap}>
+                <Stack
+                  screenOptions={{
+                    contentStyle: { backgroundColor: colors.brandGray },
+                    headerShown: false,
+                  }}
+                />
+              </View>
+            </SafeAreaView>
+            <AppToastHost />
+          </EnvironmentBannerProvider>
+        </AppKeyboardProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+}
+
+function AppKeyboardProvider({ children }: { children: ReactNode }) {
+  if (Platform.OS === "web") {
+    return children;
+  }
+
+  return <KeyboardProvider>{children}</KeyboardProvider>;
 }
 
 function AppToastHost() {

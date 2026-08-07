@@ -10,7 +10,7 @@ type EventDetailHeaderProps = {
 
 export function EventDetailHeader({ onBack, topInset }: EventDetailHeaderProps) {
   return (
-    <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+    <View style={[styles.header]}>
       <Pressable accessibilityRole="button" style={styles.backButton} onPress={onBack}>
         <Ionicons color={colors.brandDark} name="chevron-back" size={24} />
       </Pressable>
