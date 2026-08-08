@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
+import { NAV_CONTROL_BUTTON_SIZE } from "./route-navigation-controls.constants";
+
 import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 
 type RouteNavigationStatsCardProps = {
@@ -101,13 +103,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#EF4444",
     borderRadius: 18,
-    height: 52,
+    height: NAV_CONTROL_BUTTON_SIZE,
     justifyContent: "center",
     shadowColor: "#EF4444",
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
-    width: 52,
+    width: NAV_CONTROL_BUTTON_SIZE,
   },
   stopButtonDisabled: {
     backgroundColor: "#6B7280",

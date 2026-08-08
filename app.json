@@ -12,6 +12,7 @@
         "applinks:confraria-web.vercel.app"
       ],
       "bundleIdentifier": "com.caiquegl22.appconfraria",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "LSRequiresIPhoneOS": true,
@@ -110,7 +111,8 @@
           "locationAlwaysAndWhenInUsePermission": "O Confraria rastreia sua posição durante passeios em andamento, inclusive com o app em segundo plano, para que seus parceiros vejam onde você está.",
           "locationWhenInUsePermission": "O Confraria usa sua localização para navegação e passeios em grupo."
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -36,6 +36,22 @@ export type RoutePhotoCreatedPayload = {
   userName: string;
 };
 
+export type RouteLiveReport = {
+  avatarUrl: string | null;
+  createdAt: string;
+  id: string;
+  latitude: number;
+  longitude: number;
+  name: string;
+  type: string;
+  userId: string;
+};
+
+type RouteReportsSnapshotPayload = {
+  reports: RouteLiveReport[];
+  routeId: string;
+};
+
 type Listener<T> = (payload: T) => void;
 
 let socket: Socket | null = null;
@@ -49,6 +65,8 @@ const leftListeners = new Set<Listener<{ userId: string }>>();
 const errorListeners = new Set<Listener<RouteErrorPayload>>();
 const finishedListeners = new Set<Listener<{ routeId: string }>>();
 const photoCreatedListeners = new Set<Listener<RoutePhotoCreatedPayload>>();
+const reportSnapshotListeners = new Set<Listener<RouteReportsSnapshotPayload>>();
+const reportCreatedListeners = new Set<Listener<RouteLiveReport>>();
 
 function notify<T>(listeners: Set<Listener<T>>, payload: T) {
   listeners.forEach((listener) => listener(payload));
@@ -77,6 +95,14 @@ function attachSocketListeners(nextSocket: Socket) {
 
   nextSocket.on("route:photo:created", (payload: RoutePhotoCreatedPayload) => {
     notify(photoCreatedListeners, payload);
+  });
+
+    nextSocket.on("route:reports:snapshot", (payload: RouteReportsSnapshotPayload) => {
+    notify(reportSnapshotListeners, payload);
+  });
+
+  nextSocket.on("route:report:created", (payload: RouteLiveReport) => {
+    notify(reportCreatedListeners, payload);
   });
 
   nextSocket.on("connect", () => {
@@ -243,4 +269,26 @@ export function subscribeRouteFinished(listener: Listener<{ routeId: string }>) 
 export function subscribeRoutePhotoCreated(listener: Listener<RoutePhotoCreatedPayload>) {
   photoCreatedListeners.add(listener);
   return () => photoCreatedListeners.delete(listener);
+}
+
+export async function emitRouteReport(params: {
+  latitude: number;
+  longitude: number;
+  routeId: string;
+  type: string;
+}): Promise<void> {
+  const activeSocket = await connectRouteNavigationSocket();
+  activeSocket?.emit("route:report", params);
+}
+
+export function subscribeRouteReportsSnapshot(
+  listener: Listener<RouteReportsSnapshotPayload>,
+) {
+  reportSnapshotListeners.add(listener);
+  return () => reportSnapshotListeners.delete(listener);
+}
+
+export function subscribeRouteReportCreated(listener: Listener<RouteLiveReport>) {
+  reportCreatedListeners.add(listener);
+  return () => reportCreatedListeners.delete(listener);
 }
