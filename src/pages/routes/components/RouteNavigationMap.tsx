@@ -6,11 +6,12 @@ import Svg, { Path } from "react-native-svg";
 
 import { colors } from "@/theme/colors";
 
-import type { RouteLiveLocation } from "@/lib/route-navigation-socket";
+import type { RouteLiveLocation, RouteLiveReport } from "@/lib/route-navigation-socket";
 
 import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 import type { RoutePhotoCluster } from "../types/route-photo.types";
 import type { RouteNavigationPlacePin } from "../utils/build-navigation-place-pins";
+import { ROUTE_REPORT_TYPE_BY_KEY } from "../utils/route-report-types";
 import {
   ROUTE_NAVIGATION_MAP_STYLE_NIGHT,
   ROUTE_PLANNER_MAP_STYLE,
@@ -21,6 +22,7 @@ type RouteNavigationMapProps = {
   onPhotoClusterPress?: (cluster: RoutePhotoCluster) => void;
   onUserInteraction: () => void;
   partners?: RouteLiveLocation[];
+  reports?: RouteLiveReport[];
   photoClusters?: RoutePhotoCluster[];
   state: Pick<
     RouteNavigationState,
@@ -42,6 +44,7 @@ export function RouteNavigationMap({
   onPhotoClusterPress,
   onUserInteraction,
   partners = [],
+  reports = [],
   photoClusters = [],
   state,
 }: RouteNavigationMapProps) {
@@ -278,6 +281,44 @@ export function RouteNavigationMap({
             </Marker>
           ))}
 
+        {reports
+          .filter(
+            (report) =>
+              Number.isFinite(report.latitude) &&
+              Number.isFinite(report.longitude),
+          )
+          .map((report) => {
+            const config =
+              ROUTE_REPORT_TYPE_BY_KEY[
+                report.type as keyof typeof ROUTE_REPORT_TYPE_BY_KEY
+              ];
+            return (
+              <Marker
+                key={report.id}
+                anchor={{ x: 0.5, y: 1 }}
+                coordinate={{
+                  latitude: report.latitude,
+                  longitude: report.longitude,
+                }}
+                tracksViewChanges={false}
+              >
+                <View
+                  collapsable={false}
+                  style={[
+                    styles.reportPin,
+                    { backgroundColor: config?.color ?? "#EF4444" },
+                  ]}
+                >
+                  <Ionicons
+                    color="#FFFFFF"
+                    name={config?.icon ?? "alert-circle"}
+                    size={16}
+                  />
+                </View>
+              </Marker>
+            );
+          })}
+
         {state.currentPosition &&
         Number.isFinite(state.currentPosition.latitude) &&
         Number.isFinite(state.currentPosition.longitude) ? (
@@ -492,7 +533,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 34,
   },
-  cameraPin: {
+reportPin: {
+    alignItems: "center",
+    borderColor: "#FFFFFF",
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 34,
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    width: 34,
+  },
+    cameraPin: {
     alignItems: "center",
     backgroundColor: colors.brandDark,
     borderColor: colors.brandGreen,
