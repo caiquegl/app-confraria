@@ -38,11 +38,13 @@ import {
   type RouteNavigationMediaAction,
 } from "../components/RouteNavigationMediaSheet";
 import { RouteNavigationStatsCard } from "../components/RouteNavigationStatsCard";
+import { RouteNavigationReportSheet } from "../components/RouteNavigationReportSheet";
 import { RouteNavigationStopConfirmSheet } from "../components/RouteNavigationStopConfirmSheet";
 import { useRouteLiveLocations } from "../hooks/useRouteLiveLocations";
 import { useRouteMapPhotos } from "../hooks/useRouteMapPhotos";
 import { useRouteNavigation } from "../hooks/useRouteNavigation";
 import { useRouteNavigationMedia } from "../hooks/useRouteNavigationMedia";
+import { useRouteReports } from "../hooks/useRouteReports";
 import { updateRouteStatus, upsertRouteReview } from "../services/routes.service";
 import { setActiveNavigationRouteId } from "../stores/active-navigation-store";
 import { setRouteRatingUiOpen } from "../stores/route-rating-ui-store";
@@ -65,6 +67,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   const [phase, setPhase] = useState<NavigationPhase>("navigating");
   const [isFinishing, setIsFinishing] = useState(false);
   const [showStopConfirm, setShowStopConfirm] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [tripDurationSeconds, setTripDurationSeconds] = useState(0);
   const [tripDistanceMeters, setTripDistanceMeters] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -95,6 +98,12 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     currentPosition: navigation.state.currentPosition,
     enabled: phase === "navigating" && !navigation.state.isLoading && !navigation.state.error,
     heading: navigation.state.heading,
+    routeId,
+  });
+
+  const reports = useRouteReports({
+    enabled:
+      phase === "navigating" && !navigation.state.isLoading && !navigation.state.error,
     routeId,
   });
 
@@ -288,6 +297,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
         <RouteNavigationMap
           followUser={navigation.followUser}
           partners={liveLocations.partners}
+          reports={reports.reports}
           photoClusters={mapPhotos.clusters}
           state={navigation.state}
           onPhotoClusterPress={mapPhotos.openCluster}
@@ -308,6 +318,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
         <RouteNavigationControls
           onOpenMedia={media.openMediaSheet}
           onRecenter={navigation.recenter}
+          onReport={() => setShowReport(true)}
         />
       </View>
 
@@ -349,6 +360,14 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
           onConfirm={handleConfirmStop}
         />
       ) : null}
+
+      <RouteNavigationReportSheet
+        visible={showReport}
+        onClose={() => setShowReport(false)}
+        onSelect={(type) => {
+          void reports.sendReport(type, navigation.state.currentPosition);
+        }}
+      />
 
       <RouteNavigationMediaSheet
         visible={media.isMediaSheetVisible}

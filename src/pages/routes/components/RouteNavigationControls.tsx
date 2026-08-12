@@ -3,33 +3,46 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
+import { NAV_CONTROL_BUTTON_SIZE } from "./route-navigation-controls.constants";
+
 type RouteNavigationControlsProps = {
   onOpenMedia: () => void;
   onRecenter: () => void;
+  onReport: () => void;
 };
 
 export function RouteNavigationControls({
   onOpenMedia,
   onRecenter,
+  onReport,
 }: RouteNavigationControlsProps) {
   return (
     <View style={styles.wrap}>
       <Pressable
+        accessibilityLabel="Reportar ocorrência na rota"
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.button, styles.reportButton, pressed && styles.pressed]}
+        onPress={onReport}
+      >
+        <Ionicons color="#FFFFFF" name="warning" size={26} />
+      </Pressable>
+
+      <Pressable
         accessibilityLabel="Tirar foto ou registrar momento"
         accessibilityRole="button"
-        style={styles.photoButton}
+        style={({ pressed }) => [styles.button, styles.photoButton, pressed && styles.pressed]}
         onPress={onOpenMedia}
       >
-        <Ionicons color={colors.brandDark} name="camera" size={18} />
+        <Ionicons color={colors.brandDark} name="camera" size={24} />
       </Pressable>
 
       <Pressable
         accessibilityLabel="Centralizar no mapa"
         accessibilityRole="button"
-        style={styles.button}
+        style={({ pressed }) => [styles.button, styles.recenterButton, pressed && styles.pressed]}
         onPress={onRecenter}
       >
-        <Ionicons color="#374151" name="locate-outline" size={18} />
+        <Ionicons color={colors.brandDark} name="locate" size={24} />
       </Pressable>
     </View>
   );
@@ -38,31 +51,33 @@ export function RouteNavigationControls({
 const styles = StyleSheet.create({
   button: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
     borderRadius: 999,
-    borderWidth: 1,
-    height: 40,
+    height: NAV_CONTROL_BUTTON_SIZE,
     justifyContent: "center",
     shadowColor: "#000000",
     shadowOffset: { height: 4, width: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    width: 40,
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    width: NAV_CONTROL_BUTTON_SIZE,
+    elevation: 6,
   },
   photoButton: {
-    alignItems: "center",
     backgroundColor: colors.brandGreen,
     borderColor: "#FFFFFF",
-    borderRadius: 999,
     borderWidth: 2,
-    height: 44,
-    justifyContent: "center",
-    shadowColor: "#000000",
-    shadowOffset: { height: 4, width: 0 },
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
-    width: 44,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+  recenterButton: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#CBD1D6",
+    borderWidth: 1.5,
+  },
+  reportButton: {
+    backgroundColor: "#F97316",
+    borderColor: "#FFFFFF",
+    borderWidth: 2,
   },
   wrap: {
     alignItems: "center",

@@ -21,6 +21,9 @@ function appendDiscoverQueryFilters(
 }
 
 export const apiRoutes = {
+  auth: {
+    social: "/auth/social",
+  },
   admin: {
     bikeBrands: "/admin/bike-brands",
     bikeCategories: "/admin/bike-categories",
@@ -93,7 +96,21 @@ export const apiRoutes = {
     unreadCount: "/notifications/unread-count",
   },
   places: {
-    autocomplete: (input: string) => `/places/autocomplete?input=${encodeURIComponent(input)}`,
+    autocomplete: (
+      input: string,
+      coords?: { latitude: number; longitude: number },
+    ) => {
+      const params = new URLSearchParams({ input });
+      if (
+        coords &&
+        Number.isFinite(coords.latitude) &&
+        Number.isFinite(coords.longitude)
+      ) {
+        params.set("lat", String(coords.latitude));
+        params.set("lng", String(coords.longitude));
+      }
+      return `/places/autocomplete?${params.toString()}`;
+    },
     details: (placeId: string) => `/places/details?placeId=${encodeURIComponent(placeId)}`,
     directions: "/places/directions",
     estimateFuel: "/places/estimate-fuel",

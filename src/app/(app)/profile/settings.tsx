@@ -322,6 +322,27 @@ export default function ProfileSettingsScreen() {
             </Text>
           ) : null}
         </View>
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          accessibilityLabel="Sair"
+          onPress={() => void handleLogout()}
+          style={{
+            alignItems: "center",
+            backgroundColor: "#FFFFFF",
+            borderColor: "#EF4444",
+            borderRadius: 16,
+            borderWidth: 1,
+            flexDirection: "row",
+            gap: 8,
+            justifyContent: "center",
+            marginTop: 24,
+            paddingVertical: 16,
+          }}
+        >
+          <Ionicons color="#EF4444" name="log-out-outline" size={20} />
+          <Text style={{ color: "#EF4444", fontSize: 16, fontWeight: "600" }}>Sair</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {ownProfile ? (

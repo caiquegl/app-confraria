@@ -17,8 +17,13 @@ import type {
   RouteDaySuggestionsResponse,
 } from "./route-suggestions.types";
 
-export async function fetchPlaceAutocomplete(input: string): Promise<PlaceReference[]> {
-  const { data } = await api.get<PlaceReference[]>(apiRoutes.places.autocomplete(input));
+export async function fetchPlaceAutocomplete(
+  input: string,
+  coords?: { latitude: number; longitude: number } | null,
+): Promise<PlaceReference[]> {
+  const { data } = await api.get<PlaceReference[]>(
+    apiRoutes.places.autocomplete(input, coords ?? undefined),
+  );
   return data;
 }
 

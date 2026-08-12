@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import { getStoredGeolocation } from "@/lib/location";
 import { fetchPlaceAutocomplete } from "@/lib/places";
 import type { PlaceReference } from "@/lib/places";
 import { colors } from "@/theme/colors";
@@ -73,7 +74,12 @@ export function PlaceAutocompleteField({
       if (cancelled) return;
 
       setIsLoading(true);
-      void fetchPlaceAutocomplete(trimmedQuery)
+      const geo = getStoredGeolocation();
+      const coords =
+        geo.latitude != null && geo.longitude != null
+          ? { latitude: geo.latitude, longitude: geo.longitude }
+          : null;
+      void fetchPlaceAutocomplete(trimmedQuery, coords)
         .then((places) => {
           if (cancelled) return;
           setSuggestions(places);
