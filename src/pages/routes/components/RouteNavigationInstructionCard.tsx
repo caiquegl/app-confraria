@@ -76,7 +76,7 @@ export function RouteNavigationInstructionCard({
                 item.kind === "upcoming" && styles.iconWrapUpcoming,
               ]}
             >
-              <Ionicons color={colors.brandDark} name={item.icon} size={28} />
+              <Ionicons color={colors.brandDark} name={item.icon} size={22} />
             </View>
             <View style={styles.copy}>
               <Text style={styles.distance}>{item.distanceLabel}</Text>
@@ -114,15 +114,15 @@ const styles = StyleSheet.create({
   card: {
     alignItems: "center",
     backgroundColor: colors.brandDark,
-    borderRadius: 20,
+    borderRadius: 16,
     flexDirection: "row",
-    gap: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     shadowColor: "#000000",
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
   },
   copy: {
     flex: 1,
@@ -130,34 +130,34 @@ const styles = StyleSheet.create({
   },
   distance: {
     color: "#FFFFFF",
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "800",
-    lineHeight: 32,
+    lineHeight: 26,
   },
   dot: {
     backgroundColor: "rgba(255, 255, 255, 0.25)",
     borderRadius: 999,
-    height: 6,
-    width: 6,
+    height: 5,
+    width: 5,
   },
   dotActive: {
     backgroundColor: colors.brandGreen,
-    width: 18,
+    width: 14,
   },
   dotsRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 6,
+    gap: 5,
     justifyContent: "center",
-    marginTop: 10,
+    marginTop: 6,
   },
   iconWrap: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,
-    borderRadius: 14,
-    height: 48,
+    borderRadius: 12,
+    height: 40,
     justifyContent: "center",
-    width: 48,
+    width: 40,
   },
   iconWrapOffRoute: {
     backgroundColor: "#93C5FD",
@@ -167,16 +167,16 @@ const styles = StyleSheet.create({
   },
   instruction: {
     color: "#D1D5DB",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    marginTop: 4,
+    marginTop: 2,
   },
   upcomingLabel: {
     color: "#9CA3AF",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.4,
-    marginTop: 6,
+    marginTop: 4,
     textTransform: "uppercase",
   },
   wrap: {

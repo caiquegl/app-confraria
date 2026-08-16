@@ -34,10 +34,9 @@ type RouteNavigationMapProps = {
   >;
 };
 
-/** Mapa sempre com norte para cima — o ponteiro não gira com a câmera. */
+/** Course-up: mapa e seta seguem o heading do aparelho. */
 const NAVIGATION_PITCH = 0;
 const NAVIGATION_ZOOM = 17.5;
-const MAP_NORTH_HEADING = 0;
 
 export function RouteNavigationMap({
   followUser,
@@ -57,19 +56,32 @@ export function RouteNavigationMap({
   const colorScheme = useColorScheme();
   const isNightMode = colorScheme === "dark";
   // Android congela o Marker cedo demais com tracksViewChanges=false e o ícone some.
+  // Mantém true no pin do usuário para a seta acompanhar o heading em tempo real.
   const [tracksUserPin, setTracksUserPin] = useState(true);
   const hasUserPosition = Boolean(state.currentPosition);
+  const lastTrackedHeadingRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!hasUserPosition) {
       setTracksUserPin(true);
+      lastTrackedHeadingRef.current = null;
       return;
     }
 
+    const heading = Number.isFinite(state.heading) ? Math.round(state.heading) : 0;
+    const headingChanged =
+      lastTrackedHeadingRef.current == null ||
+      Math.abs(heading - lastTrackedHeadingRef.current) >= 2;
+
+    if (!headingChanged && lastTrackedHeadingRef.current != null) {
+      return;
+    }
+
+    lastTrackedHeadingRef.current = heading;
     setTracksUserPin(true);
-    const timer = setTimeout(() => setTracksUserPin(false), 1200);
+    const timer = setTimeout(() => setTracksUserPin(false), 350);
     return () => clearTimeout(timer);
-  }, [hasUserPosition]);
+  }, [hasUserPosition, state.heading]);
 
   useEffect(() => {
     // Recenter: volta ao zoom padrão da navegação.
@@ -83,16 +95,18 @@ export function RouteNavigationMap({
   useEffect(() => {
     if (!followUser || !state.currentPosition || !mapRef.current) return;
 
+    const heading = Number.isFinite(state.heading) ? state.heading : 0;
+
     mapRef.current.animateCamera(
       {
         center: state.currentPosition,
-        heading: MAP_NORTH_HEADING,
+        heading,
         pitch: NAVIGATION_PITCH,
         zoom: zoomRef.current,
       },
-      { duration: 500 },
+      { duration: 280 },
     );
-  }, [followUser, state.currentPosition]);
+  }, [followUser, state.currentPosition, state.heading]);
 
   const handlePanDrag = () => {
     // No Android o pinch também dispara onPanDrag. Só marcamos o gesto;
@@ -154,7 +168,7 @@ export function RouteNavigationMap({
         initialRegion={initialRegion}
         pitchEnabled={followUser}
         provider={PROVIDER_GOOGLE}
-        rotateEnabled={false}
+        rotateEnabled={!followUser}
         scrollEnabled
         showsBuildings
         showsCompass={false}
@@ -327,12 +341,14 @@ export function RouteNavigationMap({
             coordinate={state.currentPosition}
             flat
             tracksViewChanges={tracksUserPin}
-            rotation={0}
+            rotation={Number.isFinite(state.heading) ? state.heading : 0}
           >
+            {/*
+              Um único SVG quadrado, ponta = topo do viewBox, centro = âncora.
+              Evita badge circular + offset inventado (desalinha o bearing).
+            */}
             <View collapsable={false} style={styles.userPinHitbox}>
-              <View collapsable={false} style={styles.userPin}>
-                <NorthNavArrow />
-              </View>
+              <HeadingNavArrow />
             </View>
           </Marker>
         ) : null}
@@ -341,20 +357,18 @@ export function RouteNavigationMap({
   );
 }
 
-function NorthNavArrow() {
-  // Só a seta (sem haste), ponta para cima = norte.
+function HeadingNavArrow() {
+  // Ponta em (24,2), centro geométrico do viewBox em (24,24) → bearing 0 = norte.
   return (
-    <View collapsable={false} style={styles.pointerWrap}>
-      <Svg width={20} height={20} viewBox="0 0 28 28">
-        <Path
-          d="M14 3 L24 23 L14 18 L4 23 Z"
-          fill={colors.brandGreen}
-          stroke={colors.brandDark}
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-        />
-      </Svg>
-    </View>
+    <Svg width={44} height={44} viewBox="0 0 48 48">
+      <Path
+        d="M24 2 L42 42 L24 32 L6 42 Z"
+        fill={colors.brandGreen}
+        stroke="#FFFFFF"
+        strokeLinejoin="round"
+        strokeWidth={2.5}
+      />
+    </Svg>
   );
 }
 
@@ -477,27 +491,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     overflow: "visible",
   },
-  pointerWrap: {
-    alignItems: "center",
-    height: 20,
-    justifyContent: "center",
-    width: 20,
-  },
-  userPin: {
-    alignItems: "center",
-    backgroundColor: colors.brandDark,
-    borderColor: "#FFFFFF",
-    borderRadius: 999,
-    borderWidth: 3,
-    height: 48,
-    justifyContent: "center",
-    width: 48,
-  },
   userPinHitbox: {
     alignItems: "center",
-    height: 52,
+    height: 44,
     justifyContent: "center",
-    width: 52,
+    width: 44,
   },
   partnerLabel: {
     alignItems: "center",

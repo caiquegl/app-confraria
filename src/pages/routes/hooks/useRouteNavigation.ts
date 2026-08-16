@@ -137,6 +137,10 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
   const nextWaypointIndexRef = useRef(1);
   const avoidTollsRef = useRef(false);
   const headingRef = useRef(0);
+  /** Heading da bússola do aparelho (orientação fundida). */
+  const compassHeadingRef = useRef<number | null>(null);
+  /** m/s — usado para escolher GPS vs bússola. */
+  const speedRef = useRef(0);
   const isReroutingRef = useRef(false);
   const lastRerouteAtRef = useRef(0);
   const offRouteTicksRef = useRef(0);
@@ -520,10 +524,23 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
     [advancePassedWaypoints, rerouteFromPosition],
   );
 
+  const publishHeading = useCallback((heading: number) => {
+    const rounded = Math.round(heading);
+    if (rounded === Math.round(headingRef.current)) {
+      return;
+    }
+    headingRef.current = heading;
+    setState((current) => ({
+      ...current,
+      heading,
+    }));
+  }, []);
+
   useEffect(() => {
     if (state.isLoading || state.error) return;
 
-    let subscription: Location.LocationSubscription | null = null;
+    let positionSubscription: Location.LocationSubscription | null = null;
+    let headingSubscription: Location.LocationSubscription | null = null;
 
     void (async () => {
       const permission = await Location.requestForegroundPermissionsAsync();
@@ -535,7 +552,24 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
         return;
       }
 
-      subscription = await Location.watchPositionAsync(
+      try {
+        headingSubscription = await Location.watchHeadingAsync((update) => {
+          const compassHeading =
+            update.trueHeading >= 0 ? update.trueHeading : update.magHeading;
+          if (!Number.isFinite(compassHeading) || compassHeading < 0) {
+            return;
+          }
+
+          compassHeadingRef.current = compassHeading;
+
+          // Parado ou em movimento: bússola atualiza o heading para mapa + pin.
+          publishHeading(compassHeading);
+        });
+      } catch {
+        // Bússola indisponível — segue só com GPS / bearing.
+      }
+
+      positionSubscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.BestForNavigation,
           distanceInterval: 5,
@@ -547,12 +581,28 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
             longitude: update.coords.longitude,
           };
 
-          const heading =
+          const speed =
+            update.coords.speed != null && update.coords.speed >= 0
+              ? update.coords.speed
+              : 0;
+          speedRef.current = speed;
+
+          const gpsHeading =
             update.coords.heading != null && update.coords.heading >= 0
               ? update.coords.heading
-              : previousPositionRef.current
-                ? bearingBetween(previousPositionRef.current, position)
-                : headingRef.current;
+              : null;
+
+          // Preferência: bússola (mapa + pin no giroscópio). GPS/bearing só se faltar.
+          let heading: number;
+          if (compassHeadingRef.current != null) {
+            heading = compassHeadingRef.current;
+          } else if (gpsHeading != null) {
+            heading = gpsHeading;
+          } else if (previousPositionRef.current) {
+            heading = bearingBetween(previousPositionRef.current, position);
+          } else {
+            heading = headingRef.current;
+          }
 
           previousPositionRef.current = position;
           headingRef.current = heading;
@@ -562,9 +612,10 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
     })();
 
     return () => {
-      subscription?.remove();
+      positionSubscription?.remove();
+      headingSubscription?.remove();
     };
-  }, [state.error, state.isLoading, updateNavigationFromPosition]);
+  }, [publishHeading, state.error, state.isLoading, updateNavigationFromPosition]);
 
   useEffect(() => {
     if (state.isLoading || state.error) return;

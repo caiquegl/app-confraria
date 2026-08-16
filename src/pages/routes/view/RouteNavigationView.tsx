@@ -307,7 +307,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
         <View style={styles.cameraBackdrop} />
       )}
 
-      <View pointerEvents="box-none" style={[styles.overlay, { paddingTop: insets.top + 12 }]}>
+      <View pointerEvents="box-none" style={[styles.overlay, { paddingTop: insets.top + 4 }]}>
         <RouteNavigationInstructionCard
           activeStepIndex={navigation.state.activeStepIndex}
           items={navigation.state.maneuverCarousel}
