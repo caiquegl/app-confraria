@@ -146,6 +146,7 @@ export function SettingsModal({
               <Text style={styles.sectionTitle}>Sobre o app</Text>
               <View style={styles.versionCard}>
                 <InfoRow label="Versão do app" value={updateInfo.appVersion} />
+                <InfoRow label="OTA" value={String(updateInfo.otaVersion)} />
                 <InfoRow label="EAS Update" value={updateInfo.label} />
                 {updateInfo.updatedAt ? (
                   <InfoRow label="Atualizado em" value={updateInfo.updatedAt} />

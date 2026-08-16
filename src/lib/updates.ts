@@ -1,10 +1,13 @@
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
 
+import { OTA_VERSION } from "@/lib/ota-version";
+
 export type UpdateInfo = {
   appVersion: string;
   channel: string;
   label: string;
+  otaVersion: number;
   runtimeVersion: string;
   updatedAt: string | null;
 };
@@ -19,6 +22,7 @@ export function getUpdateInfo(): UpdateInfo {
       appVersion,
       channel,
       label: "Dev (sem OTA)",
+      otaVersion: OTA_VERSION,
       runtimeVersion,
       updatedAt: null,
     };
@@ -29,6 +33,7 @@ export function getUpdateInfo(): UpdateInfo {
       appVersion,
       channel,
       label: "OTA desabilitado",
+      otaVersion: OTA_VERSION,
       runtimeVersion,
       updatedAt: null,
     };
@@ -39,6 +44,7 @@ export function getUpdateInfo(): UpdateInfo {
       appVersion,
       channel,
       label: "Build nativa",
+      otaVersion: OTA_VERSION,
       runtimeVersion,
       updatedAt: null,
     };
@@ -59,6 +65,7 @@ export function getUpdateInfo(): UpdateInfo {
     appVersion,
     channel,
     label: shortId,
+    otaVersion: OTA_VERSION,
     runtimeVersion,
     updatedAt,
   };

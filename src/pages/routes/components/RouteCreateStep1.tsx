@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 import type {
   PlaceReference,
@@ -69,9 +70,13 @@ export function RouteCreateStep1({
     onDragEnd?.();
   }, [onDragEnd]);
 
+  const ScrollComponent = Platform.OS === "web" ? ScrollView : KeyboardAwareScrollView;
+
   return (
-    <ScrollView
+    <ScrollComponent
+      bottomOffset={24}
       contentContainerStyle={styles.scrollContent}
+      extraKeyboardSpace={0}
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
       scrollEnabled={scrollEnabled}
@@ -105,7 +110,7 @@ export function RouteCreateStep1({
         <Ionicons color={colors.brandDark} name="add" size={18} />
         <Text style={styles.addDayText}>Adicionar novo dia ao roteiro</Text>
       </Pressable>
-    </ScrollView>
+    </ScrollComponent>
   );
 }
 

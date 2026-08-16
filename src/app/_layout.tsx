@@ -9,6 +9,7 @@ import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-
 import Toast from "react-native-toast-message";
 
 import { EnvironmentBanner, EnvironmentBannerProvider } from "@/components/EnvironmentBanner";
+import { ForceUpdateGate } from "@/components/ForceUpdateGate";
 import {
   getRouteBackgroundTrackingSession,
   resumeRouteBackgroundTrackingIfNeeded,
@@ -80,6 +81,7 @@ export default function RootLayout() {
               </View>
             </SafeAreaView>
             <AppToastHost />
+            <ForceUpdateGate />
           </EnvironmentBannerProvider>
         </AppKeyboardProvider>
       </SafeAreaProvider>

@@ -1,14 +1,7 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
-import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { useEffect, useRef } from "react";
+import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useKeyboardState } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -45,45 +38,50 @@ export function RoutePlannerSheet({
   const insets = useSafeAreaInsets();
   const bannerInset = useEnvironmentBannerInset();
   const topInset = insets.top + bannerInset;
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const keyboardHeight = useKeyboardState((state) =>
+    state.isVisible ? state.height : 0,
+  );
+  const restWindowHeightRef = useRef(windowHeight);
   const animatedHeight = useSharedValue(
     getSheetHeight(windowHeight, "normal", bottomInset, topInset),
   );
 
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+  if (keyboardHeight === 0) {
+    restWindowHeightRef.current = windowHeight;
+  }
 
-    const showSubscription = Keyboard.addListener(showEvent, (event) => {
-      setKeyboardOffset(event.endCoordinates.height);
+  const windowAlreadyResized =
+    keyboardHeight > 0 && windowHeight < restWindowHeightRef.current - 80;
+  const bottomOffset = windowAlreadyResized ? 0 : keyboardHeight;
+  const availableHeight = Math.max(windowHeight - bottomOffset - topInset, 0);
+  const desiredHeight = getSheetHeight(
+    windowHeight,
+    sheetState,
+    bottomOffset > 0 ? 0 : bottomInset,
+    topInset,
+  );
+  const sheetHeight =
+    bottomOffset > 0 ? Math.min(desiredHeight, availableHeight) : desiredHeight;
+
+  useEffect(() => {
+    if (keyboardHeight > 0) {
       onKeyboardShow?.();
-    });
-    const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setKeyboardOffset(0);
-    });
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, [onKeyboardShow]);
+    }
+  }, [keyboardHeight, onKeyboardShow]);
 
   useEffect(() => {
-    animatedHeight.value = withTiming(
-      getSheetHeight(windowHeight, sheetState, bottomInset, topInset),
-      {
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-      },
-    );
-  }, [animatedHeight, bottomInset, sheetState, topInset, windowHeight]);
+    animatedHeight.value = withTiming(sheetHeight, {
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [animatedHeight, sheetHeight]);
 
   const sheetStyle = useAnimatedStyle(() => ({
     height: animatedHeight.value,
   }));
 
   return (
-    <Animated.View style={[styles.sheet, sheetStyle, { bottom: keyboardOffset }]}>
+    <Animated.View style={[styles.sheet, sheetStyle, { bottom: bottomOffset }]}>
       <Pressable
         accessibilityLabel="Alternar tamanho do painel"
         accessibilityRole="button"
@@ -96,24 +94,34 @@ export function RoutePlannerSheet({
 
       <View style={styles.stepperWrap}>{stepper}</View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
-        style={styles.keyboardAvoiding}
-      >
+      <View style={styles.body}>
         <View style={styles.content}>{children}</View>
 
         {footer ? (
-          <View style={[styles.footer, { paddingBottom: Math.max(bottomInset, 16) }]}>
+          <View
+            style={[
+              styles.footer,
+              {
+                paddingBottom:
+                  bottomOffset > 0 || windowAlreadyResized
+                    ? 16
+                    : Math.max(bottomInset, 16),
+              },
+            ]}
+          >
             {footer}
           </View>
         ) : null}
-      </KeyboardAvoidingView>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  body: {
+    flex: 1,
+    minHeight: 0,
+  },
   content: {
     flex: 1,
     minHeight: 0,
@@ -124,10 +132,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingHorizontal: 24,
     paddingTop: 16,
-  },
-  keyboardAvoiding: {
-    flex: 1,
-    minHeight: 0,
   },
   handle: {
     backgroundColor: "#D1D5DB",

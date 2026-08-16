@@ -21,6 +21,10 @@ function appendDiscoverQueryFilters(
 }
 
 export const apiRoutes = {
+  app: {
+    versionPolicy: (channel: string) =>
+      `/app/version-policy?channel=${encodeURIComponent(channel)}`,
+  },
   auth: {
     social: "/auth/social",
   },

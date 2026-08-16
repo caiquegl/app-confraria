@@ -74,6 +74,70 @@ function getWaypointLabel(
   return `Parada ${stopNumber}`;
 }
 
+function WaypointRowView({
+  canRemove,
+  drag,
+  editable,
+  isDragging,
+  item,
+  label,
+  onChange,
+  onRemove,
+}: {
+  canRemove: boolean;
+  drag?: () => void;
+  editable: boolean;
+  isDragging: boolean;
+  item: WaypointRow;
+  label: string;
+  onChange: (place: PlaceReference | null) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <View style={[styles.fieldBlock, isDragging && styles.fieldBlockDragging]}>
+      <View style={styles.stopHeader}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        {canRemove ? (
+          <Pressable
+            accessibilityLabel="Remover parada"
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={onRemove}
+          >
+            <Ionicons color="#9CA3AF" name="close" size={16} />
+          </Pressable>
+        ) : null}
+      </View>
+      <View style={styles.inputRow}>
+        <View style={styles.inputFlex}>
+          <PlaceAutocompleteField
+            compact
+            editable={editable}
+            placeholder=""
+            suppressSuggestions={!editable}
+            value={toPlaceReference(item.place)}
+            onChange={onChange}
+          />
+        </View>
+        {drag ? (
+          <Pressable
+            accessibilityLabel="Arrastar ponto"
+            accessibilityRole="button"
+            hitSlop={8}
+            style={[styles.dragHandle, isDragging && styles.dragHandleActive]}
+            onPressIn={() => {
+              Keyboard.dismiss();
+              drag();
+            }}
+          >
+            <Ionicons color="#9CA3AF" name="menu" size={20} />
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 export function RouteDayCard({
   day,
   dayIndex,
@@ -163,52 +227,20 @@ export function RouteDayCard({
     ({ item, drag, getIndex, isActive: isDragging }: RenderItemParams<WaypointRow>) => {
       const index = getIndex() ?? 0;
       const total = sortableData.length;
-      const label = getWaypointLabel(index, total, isFirstDay);
-      const isStopRow =
-        !(isFirstDay && index === 0) && index !== total - 1;
-      const canRemove = isStopRow && item.kind === "stop";
+      const isStopRow = !(isFirstDay && index === 0) && index !== total - 1;
 
       return (
         <ScaleDecorator>
-          <View style={[styles.fieldBlock, isDragging && styles.fieldBlockDragging]}>
-            <View style={styles.stopHeader}>
-              <Text style={styles.fieldLabel}>{label}</Text>
-              {canRemove ? (
-                <Pressable
-                  accessibilityLabel="Remover parada"
-                  accessibilityRole="button"
-                  hitSlop={8}
-                  onPress={() => onRemoveStop(item.id)}
-                >
-                  <Ionicons color="#9CA3AF" name="close" size={16} />
-                </Pressable>
-              ) : null}
-            </View>
-            <View style={styles.inputRow}>
-              <View style={styles.inputFlex}>
-                <PlaceAutocompleteField
-                  compact
-                  editable={!isReordering}
-                  placeholder=""
-                  suppressSuggestions={isReordering}
-                  value={toPlaceReference(item.place)}
-                  onChange={(place) => handlePlaceChange(item, index, place)}
-                />
-              </View>
-              <Pressable
-                accessibilityLabel="Arrastar ponto"
-                accessibilityRole="button"
-                hitSlop={8}
-                style={[styles.dragHandle, isDragging && styles.dragHandleActive]}
-                onPressIn={() => {
-                  Keyboard.dismiss();
-                  drag();
-                }}
-              >
-                <Ionicons color="#9CA3AF" name="menu" size={20} />
-              </Pressable>
-            </View>
-          </View>
+          <WaypointRowView
+            canRemove={isStopRow && item.kind === "stop"}
+            drag={drag}
+            editable={!isReordering}
+            isDragging={isDragging}
+            item={item}
+            label={getWaypointLabel(index, total, isFirstDay)}
+            onChange={(place) => handlePlaceChange(item, index, place)}
+            onRemove={() => onRemoveStop(item.id)}
+          />
         </ScaleDecorator>
       );
     },
@@ -269,16 +301,24 @@ export function RouteDayCard({
           />
         ) : (
           <View style={styles.waypointList}>
-            {sortableData.map((item, index) => (
-              <View key={item.id}>
-                {renderWaypoint({
-                  drag: () => undefined,
-                  getIndex: () => index,
-                  isActive: false,
-                  item,
-                })}
-              </View>
-            ))}
+            {sortableData.map((item, index) => {
+              const total = sortableData.length;
+              const isStopRow =
+                !(isFirstDay && index === 0) && index !== total - 1;
+
+              return (
+                <WaypointRowView
+                  key={item.id}
+                  canRemove={isStopRow && item.kind === "stop"}
+                  editable
+                  isDragging={false}
+                  item={item}
+                  label={getWaypointLabel(index, total, isFirstDay)}
+                  onChange={(place) => handlePlaceChange(item, index, place)}
+                  onRemove={() => onRemoveStop(item.id)}
+                />
+              );
+            })}
           </View>
         )}
 
