@@ -1,3 +1,5 @@
+import { isAxiosError } from "axios";
+
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
 import { getApiBaseUrl } from "@/lib/api-environment";
@@ -32,16 +34,45 @@ export async function fetchPlaceDetails(placeId: string): Promise<PlaceGeometryD
   return data;
 }
 
+const DIRECTIONS_RETRY_STATUSES = new Set([429, 502, 503]);
+const DIRECTIONS_MAX_ATTEMPTS = 3;
+
 export async function fetchPlaceDirections(
   waypoints: PlaceDirectionsWaypoint[],
   options: PlaceDirectionsRequestOptions = {},
 ): Promise<PlaceDirectionsResponse> {
-  const { data } = await api.post<PlaceDirectionsResponse>(apiRoutes.places.directions, {
+  const payload = {
     avoidTolls: options.avoidTolls ?? false,
     includeSteps: options.includeSteps ?? false,
     waypoints,
-  });
-  return data;
+  };
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= DIRECTIONS_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const { data } = await api.post<PlaceDirectionsResponse>(
+        apiRoutes.places.directions,
+        payload,
+      );
+      return data;
+    } catch (error) {
+      lastError = error;
+      const status = isAxiosError(error) ? error.response?.status : undefined;
+      const canRetry =
+        status != null &&
+        DIRECTIONS_RETRY_STATUSES.has(status) &&
+        attempt < DIRECTIONS_MAX_ATTEMPTS;
+
+      if (!canRetry) {
+        throw error;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 700 * attempt));
+    }
+  }
+
+  throw lastError;
 }
 
 export async function fetchFuelCostEstimate(

@@ -51,7 +51,8 @@ import { setRouteRatingUiOpen } from "../stores/route-rating-ui-store";
 import { getRouteTripDurationSeconds } from "../utils/route-trip-time.utils";
 
 function NavigationKeepAwake() {
-  useKeepAwake("route-navigation");
+  // Android rejeita deactivate se a Activity já morreu (background/killed).
+  useKeepAwake("route-navigation", { suppressDeactivateWarnings: true });
   return null;
 }
 

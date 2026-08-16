@@ -2,7 +2,7 @@ import { create } from "axios";
 
 import { getApiBaseUrl } from "./api-environment";
 import { getToken } from "./auth";
-import { captureApiError } from "./sentry";
+import { captureApiError, isTransientApiError } from "./sentry";
 
 export const api = create({
   timeout: 60000,
@@ -73,17 +73,19 @@ api.interceptors.response.use(
         ? config.url.trim()
         : "(unknown)";
 
-    captureApiError(error, {
-      baseURL: config?.baseURL ?? null,
-      method: (config?.method ?? "get").toUpperCase(),
-      params: config?.params ?? null,
-      requestData: serializeRequestData(config?.data),
-      responseData: response?.data ?? null,
-      route,
-      status: response?.status ?? null,
-      statusText: response?.statusText ?? null,
-      url: route,
-    });
+    if (!isTransientApiError(error)) {
+      captureApiError(error, {
+        baseURL: config?.baseURL ?? null,
+        method: (config?.method ?? "get").toUpperCase(),
+        params: config?.params ?? null,
+        requestData: serializeRequestData(config?.data),
+        responseData: response?.data ?? null,
+        route,
+        status: response?.status ?? null,
+        statusText: response?.statusText ?? null,
+        url: route,
+      });
+    }
 
     return Promise.reject(error);
   },

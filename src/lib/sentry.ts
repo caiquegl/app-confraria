@@ -184,11 +184,22 @@ export function initSentry(): void {
   });
 }
 
+const TRANSIENT_API_STATUSES = new Set([429, 502, 503]);
+
+export function isTransientApiError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+
+  const response = (error as { response?: { status?: number } }).response;
+  const status = response?.status;
+  return typeof status === "number" && TRANSIENT_API_STATUSES.has(status);
+}
+
 export function captureApiError(
   error: unknown,
   context?: Record<string, unknown>,
 ): void {
   if (!shouldSendToSentry()) return;
+  if (isTransientApiError(error)) return;
 
   Sentry.withScope((scope) => {
     scope.setTag("feature", "api");
@@ -227,6 +238,7 @@ export function captureRouteError(
   context?: Record<string, unknown>,
 ): void {
   if (!shouldSendToSentry()) return;
+  if (isTransientApiError(error)) return;
 
   Sentry.withScope((scope) => {
     scope.setTag("feature", "routes");
