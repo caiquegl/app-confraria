@@ -1,7 +1,10 @@
 import * as Location from "expo-location";
+import { AppState, Platform } from "react-native";
 
 import { formatReverseGeocodeLabel } from "./format-location-label";
 import type { GeolocationState } from "./types";
+
+const ANDROID_PERMISSION_SETTLE_MS = 500;
 
 const INITIAL_STATE: GeolocationState = {
   canAskAgain: true,
@@ -213,3 +216,69 @@ export function requestGeolocationPermission() {
 export function refreshGeolocation() {
   return resolveGeolocation(false);
 }
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function getForegroundPermissionAfterResume() {
+  let permission = await Location.getForegroundPermissionsAsync();
+  if (permission.granted || Platform.OS !== "android") {
+    return permission;
+  }
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await delay(ANDROID_PERMISSION_SETTLE_MS);
+    permission = await Location.getForegroundPermissionsAsync();
+    if (permission.granted) {
+      return permission;
+    }
+  }
+
+  return permission;
+}
+
+async function recheckGeolocationOnAppActive() {
+  if (geolocation.status !== "denied" && geolocation.status !== "error") {
+    return;
+  }
+
+  if (geolocation.status === "error") {
+    if (Platform.OS === "android") {
+      await delay(ANDROID_PERMISSION_SETTLE_MS);
+    }
+    await resolveGeolocation(false);
+    return;
+  }
+
+  const permission = await getForegroundPermissionAfterResume();
+  if (!permission.granted) {
+    if (permission.canAskAgain !== geolocation.canAskAgain) {
+      patchGeolocation({ canAskAgain: permission.canAskAgain });
+    }
+    return;
+  }
+
+  await resolveGeolocation(false);
+}
+
+let appStateListenerStarted = false;
+
+function startGeolocationAppStateListener() {
+  if (appStateListenerStarted) {
+    return;
+  }
+
+  appStateListenerStarted = true;
+  AppState.addEventListener("change", (nextState) => {
+    if (nextState !== "active") {
+      return;
+    }
+
+    void recheckGeolocationOnAppActive();
+  });
+}
+
+startGeolocationAppStateListener();
