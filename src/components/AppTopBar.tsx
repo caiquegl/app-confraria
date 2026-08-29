@@ -7,12 +7,15 @@ import { colors } from "@/theme/colors";
 type AppTopBarProps = {
   hasUnreadNotifications?: boolean;
   locationLabel: string;
+  onBack?: () => void;
   onOpenNotifications: () => void;
   onOpenProfile: () => void;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
   searchQuery: string;
-  topInset: number;
+  showBack?: boolean;
+  /** Padding extra no topo. Não incluir safe area — o root layout já aplica. */
+  topInset?: number;
   userAvatar: string | null;
   userName: string;
 };
@@ -20,12 +23,14 @@ type AppTopBarProps = {
 export function AppTopBar({
   hasUnreadNotifications = false,
   locationLabel,
+  onBack,
   onOpenNotifications,
   onOpenProfile,
   onSearchChange,
   searchPlaceholder,
   searchQuery,
-  topInset,
+  showBack = false,
+  topInset = 8,
   userAvatar,
   userName,
 }: AppTopBarProps) {
@@ -51,6 +56,17 @@ export function AppTopBar({
       </View>
 
       <View style={styles.searchRow}>
+        {showBack ? (
+          <Pressable
+            accessibilityLabel="Voltar"
+            accessibilityRole="button"
+            style={styles.backButton}
+            onPress={onBack}
+          >
+            <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
+          </Pressable>
+        ) : null}
+
         <View style={styles.searchWrap}>
           <Ionicons color="#9CA3AF" name="search" size={20} style={styles.searchIcon} />
           <TextInput
@@ -76,6 +92,16 @@ export function AppTopBar({
 }
 
 const styles = StyleSheet.create({
+  backButton: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
+  },
   avatarButton: {
     borderColor: "#FFFFFF",
     borderRadius: 999,

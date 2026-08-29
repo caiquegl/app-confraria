@@ -22,13 +22,16 @@ import type { RoutePathOption } from "../hooks/useRouteDirections";
 import type { QuickRoutePlace } from "../types/quick-route.types";
 import { formatRouteDistance, formatRouteDuration } from "../utils/route-format.utils";
 import { trackRoutesEvent } from "../utils/track-routes-event";
+import { RouteCoverPicker } from "./RouteCoverPicker";
 import { RouteBikePickerSheet } from "./RouteBikePickerSheet";
+import type { RouteThumbnailType } from "../types/saved-route.types";
 
 const GARAGE_ROUTE = "/profile/bikes" as Href;
 const PLANNER_HINT_THRESHOLD = 2;
 
 type QuickRouteSheetProps = {
   bikes: UserBike[];
+  coverImageUri: string;
   destination: QuickRoutePlace;
   isLoadingBikes?: boolean;
   etaLabel: string | null;
@@ -37,14 +40,18 @@ type QuickRouteSheetProps = {
   isLoadingFuel: boolean;
   isPersisting: boolean;
   onAddStop: (place: QuickRoutePlace) => void;
+  onCoverImageChange: (uri: string) => void;
   onPlanRoute: () => void;
+  onRemoveCover: () => void;
   onSaveRoute: () => void;
   onSelectBike: (bikeId: string) => void;
   onStartRoute: () => void;
+  onThumbnailTypeChange: (type: RouteThumbnailType) => void;
   routeError: string | null;
   selectedBikeId: string | null;
   selectedOption: RoutePathOption | null;
   stops: QuickRoutePlace[];
+  thumbnailType: RouteThumbnailType;
 };
 
 function toQuickPlace(
@@ -70,6 +77,7 @@ function getDistanceKm(distanceMeters: number | null): string {
 
 export function QuickRouteSheet({
   bikes,
+  coverImageUri,
   destination,
   isLoadingBikes = false,
   etaLabel,
@@ -78,14 +86,18 @@ export function QuickRouteSheet({
   isLoadingFuel,
   isPersisting,
   onAddStop,
+  onCoverImageChange,
   onPlanRoute,
+  onRemoveCover,
   onSaveRoute,
   onSelectBike,
   onStartRoute,
+  onThumbnailTypeChange,
   routeError,
   selectedBikeId,
   selectedOption,
   stops,
+  thumbnailType,
 }: QuickRouteSheetProps) {
   const [showStopSearch, setShowStopSearch] = useState(false);
   const [showBikePicker, setShowBikePicker] = useState(false);
@@ -249,6 +261,15 @@ export function QuickRouteSheet({
             />
           </View>
         ) : null}
+
+        <RouteCoverPicker
+          compact
+          coverImageUri={coverImageUri}
+          thumbnailType={thumbnailType}
+          onCoverImageChange={onCoverImageChange}
+          onRemoveCover={onRemoveCover}
+          onThumbnailTypeChange={onThumbnailTypeChange}
+        />
 
         <Button
           disabled={!canStart || isPersisting}

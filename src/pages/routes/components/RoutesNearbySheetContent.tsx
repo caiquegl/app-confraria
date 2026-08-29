@@ -19,6 +19,15 @@ import { sortNearbyPlacesByPriority } from "../utils/nearby-places.utils";
 
 type NearbyCategoryFilter = "all" | "Postos de Gasolina" | "Mecânicas" | "Restaurantes" | "Hotéis";
 
+const ADDRESS_MAX_CHARS = 28;
+
+function truncateAddress(address: string | null | undefined): string {
+  const value = address?.trim();
+  if (!value) return " ";
+  if (value.length <= ADDRESS_MAX_CHARS) return value;
+  return `${value.slice(0, ADDRESS_MAX_CHARS - 1).trimEnd()}…`;
+}
+
 const CATEGORY_FILTERS: { key: NearbyCategoryFilter; label: string }[] = [
   { key: "all", label: "Todos" },
   { key: "Postos de Gasolina", label: "Postos" },
@@ -199,13 +208,14 @@ export function RoutesNearbySheetContent({
                       </View>
                     ) : null}
                     <Text
+                      numberOfLines={1}
                       style={[
                         styles.partnerOpen,
                         place.openNow === false && styles.partnerClosed,
                       ]}
                     >
                       {place.openNow == null
-                        ? place.address ?? " "
+                        ? truncateAddress(place.address)
                         : place.openNow
                           ? "Aberto agora"
                           : "Fechado"}
@@ -402,6 +412,7 @@ const styles = StyleSheet.create({
   },
   partnerOpen: {
     color: colors.brandPrimary,
+    flexShrink: 1,
     fontSize: 10,
     fontWeight: "700",
     marginTop: 6,

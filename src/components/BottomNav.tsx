@@ -78,7 +78,24 @@ export function BottomNav({ userAvatar, userName }: BottomNavProps) {
 
   const handlePress = useCallback(
     (item: NavItem) => {
-      if (isActive(item) || isNavigatingRef.current) {
+      if (isNavigatingRef.current) {
+        return;
+      }
+
+      const active = isActive(item);
+      const isRoutesHome = pathname === "/routes" || pathname === "/routes/";
+
+      if (active && item.href === "/routes" && !isRoutesHome) {
+        isNavigatingRef.current = true;
+        router.replace("/routes");
+
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+        }, NAVIGATION_COOLDOWN_MS);
+        return;
+      }
+
+      if (active) {
         return;
       }
 
@@ -89,19 +106,22 @@ export function BottomNav({ userAvatar, userName }: BottomNavProps) {
         isNavigatingRef.current = false;
       }, NAVIGATION_COOLDOWN_MS);
     },
-    [isActive],
+    [isActive, pathname],
   );
 
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
       {NAV_ITEMS.map((item) => {
         const active = isActive(item);
+        const isRoutesHome = pathname === "/routes" || pathname === "/routes/";
+        const canReturnToRoutesHome =
+          item.href === "/routes" && active && !isRoutesHome;
 
         return (
           <TouchableOpacity
             key={item.href}
-            activeOpacity={active ? 1 : 0.7}
-            disabled={active}
+            activeOpacity={canReturnToRoutesHome ? 0.7 : active ? 1 : 0.7}
+            disabled={active && !canReturnToRoutesHome}
             style={styles.item}
             onPress={() => handlePress(item)}
           >

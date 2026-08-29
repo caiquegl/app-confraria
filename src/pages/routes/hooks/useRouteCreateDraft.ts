@@ -8,6 +8,7 @@ import type {
   RouteCreateDraft,
   RouteCreatePayload,
   RouteCreateTripSchedule,
+  RouteCoverDraft,
   RouteDraftDay,
   RouteMotorcycleDraft,
   RoutePreferencesDraft,
@@ -15,6 +16,7 @@ import type {
   TripIntent,
   WizardStep,
 } from "../types/route-create.types";
+import { createDefaultRouteCover } from "../types/route-create.types";
 import {
   createRouteDayDraft,
   createRouteStop,
@@ -64,6 +66,7 @@ export function useRouteCreateDraft({
   const [tripSchedule, setTripSchedule] = useState<RouteCreateTripSchedule>(
     createDefaultTripSchedule,
   );
+  const [routeCover, setRouteCover] = useState<RouteCoverDraft>(createDefaultRouteCover);
   const [isCacheReady, setIsCacheReady] = useState(false);
 
   const skipNextSaveRef = useRef(true);
@@ -78,11 +81,12 @@ export function useRouteCreateDraft({
     () =>
       buildRouteCreateCacheSnapshot({
         draft,
+        routeCover,
         sheetState,
         step,
         tripSchedule,
       }),
-    [draft, sheetState, step, tripSchedule],
+    [draft, routeCover, sheetState, step, tripSchedule],
   );
 
   useEffect(() => {
@@ -109,6 +113,7 @@ export function useRouteCreateDraft({
       setStep(initialSnapshot.step);
       setSheetState(initialSnapshot.sheetState);
       setTripSchedule(initialSnapshot.tripSchedule);
+      setRouteCover(initialSnapshot.routeCover ?? createDefaultRouteCover());
       skipNextSaveRef.current = true;
       setIsCacheReady(true);
       return () => {
@@ -124,6 +129,7 @@ export function useRouteCreateDraft({
         setStep(snapshot.step);
         setSheetState(snapshot.sheetState);
         setTripSchedule(snapshot.tripSchedule);
+        setRouteCover(snapshot.routeCover ?? createDefaultRouteCover());
       }
 
       skipNextSaveRef.current = true;
@@ -435,6 +441,28 @@ export function useRouteCreateDraft({
     }));
   }, []);
 
+  const setCoverImageUri = useCallback((coverImageUri: string) => {
+    setRouteCover((current) => ({
+      ...current,
+      coverImageUri,
+    }));
+  }, []);
+
+  const setThumbnailType = useCallback(
+    (thumbnailType: RouteCoverDraft["thumbnailType"]) => {
+      setRouteCover((current) => ({
+        ...current,
+        thumbnailType,
+        ...(thumbnailType === "map" ? { coverImageUri: "" } : {}),
+      }));
+    },
+    [],
+  );
+
+  const clearRouteCover = useCallback(() => {
+    setRouteCover(createDefaultRouteCover());
+  }, []);
+
   const clearCache = useCallback(async () => {
     // Impede debounce/unmount de regravar o rascunho depois de iniciar/salvar.
     cacheDiscardedRef.current = true;
@@ -464,6 +492,8 @@ export function useRouteCreateDraft({
     canContinueStep3,
     canContinueStep4,
     clearCache,
+    clearRouteCover,
+    coverImageUri: routeCover.coverImageUri,
     days,
     draft,
     getDayOrigin: (dayIndex: number) => getDayOrigin(days, dayIndex),
@@ -477,6 +507,7 @@ export function useRouteCreateDraft({
     removeStopFromDay,
     reorderDayWaypoints,
     setActiveDayId,
+    setCoverImageUri,
     setDayDestination,
     setDayOrigin,
     setMotorcycleDraft,
@@ -485,6 +516,7 @@ export function useRouteCreateDraft({
     setSheetState,
     setStep,
     setStopPlace,
+    setThumbnailType,
     setTripDate,
     setTripIntent,
     setTripNote,
@@ -494,6 +526,7 @@ export function useRouteCreateDraft({
     toggleDayOvernight,
     togglePreference,
     toggleSheetState,
+    thumbnailType: routeCover.thumbnailType,
     tripDate: tripSchedule.tripDate,
     tripIntent: tripSchedule.tripIntent,
     tripNote: tripSchedule.tripNote,

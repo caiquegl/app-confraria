@@ -17,12 +17,14 @@ type BuildQuickRoutePayloadParams = {
   action: RouteCreateAction | "save_draft";
   avoidTolls?: boolean;
   bikeId: string;
+  coverImageUri?: string | null;
   destination: QuickRoutePlace;
   fuelCost?: number | null;
   kind: RouteKind;
   origin: QuickRoutePlace;
   selectedOption: RoutePathOption | null;
   stops: QuickRoutePlace[];
+  thumbnailType?: CreateRoutePayload["thumbnailType"];
   tripNote?: string;
 };
 
@@ -30,12 +32,14 @@ export function buildQuickRoutePayload({
   action,
   avoidTolls = false,
   bikeId,
+  coverImageUri,
   destination,
   fuelCost,
   kind,
   origin,
   selectedOption,
   stops,
+  thumbnailType,
   tripNote,
 }: BuildQuickRoutePayloadParams): CreateRoutePayload {
   return {
@@ -57,6 +61,8 @@ export function buildQuickRoutePayload({
       avoidTolls,
       optimizeFuel: true,
     },
+    thumbnailType: thumbnailType ?? "map",
+    ...(thumbnailType === "image" && coverImageUri ? { coverImageUri } : {}),
     schedule: {
       tripNote: tripNote?.trim() || undefined,
     },

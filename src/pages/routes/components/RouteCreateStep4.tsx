@@ -14,8 +14,10 @@ import {
 import type { UserBike } from "@/pages/bikes/types/bikes.types";
 import { colors } from "@/theme/colors";
 
+import { RouteCoverPicker } from "../components/RouteCoverPicker";
 import type { RouteCostEstimate } from "../types/route-cost.types";
 import type { RouteDraftDay, RoutePreferencesDraft, TripIntent } from "../types/route-create.types";
+import type { RouteThumbnailType } from "../types/saved-route.types";
 import { formatRouteDistance, formatRouteDuration, getPlaceLabel } from "../utils/route-format.utils";
 import {
   formatBrazilianDateInput,
@@ -32,8 +34,12 @@ type RouteDaySummary = {
 
 type RouteCreateStep4Props = {
   costEstimate: RouteCostEstimate;
+  coverImageUri: string;
   daySummaries: RouteDaySummary[];
   days: RouteDraftDay[];
+  onCoverImageChange: (value: string) => void;
+  onRemoveCover: () => void;
+  onThumbnailTypeChange: (value: RouteThumbnailType) => void;
   onTripDateChange: (value: string) => void;
   onTripIntentChange: (value: TripIntent) => void;
   onTripNoteChange: (value: string) => void;
@@ -46,12 +52,17 @@ type RouteCreateStep4Props = {
   tripIntent: TripIntent;
   tripNote: string;
   tripTime: string;
+  thumbnailType: RouteThumbnailType;
 };
 
 export function RouteCreateStep4({
   costEstimate,
+  coverImageUri,
   daySummaries,
   days,
+  onCoverImageChange,
+  onRemoveCover,
+  onThumbnailTypeChange,
   onTripDateChange,
   onTripIntentChange,
   onTripNoteChange,
@@ -64,6 +75,7 @@ export function RouteCreateStep4({
   tripIntent,
   tripNote,
   tripTime,
+  thumbnailType,
 }: RouteCreateStep4Props) {
   const [expandedDayIds, setExpandedDayIds] = useState<string[]>([]);
   const scrollRef = useRef<ScrollView>(null);
@@ -235,6 +247,15 @@ export function RouteCreateStep4({
           </View>
         </View>
       </View>
+
+      <RouteCoverPicker
+        coverImageUri={coverImageUri}
+        style={styles.coverPicker}
+        thumbnailType={thumbnailType}
+        onCoverImageChange={onCoverImageChange}
+        onRemoveCover={onRemoveCover}
+        onThumbnailTypeChange={onThumbnailTypeChange}
+      />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Custos estimados</Text>
@@ -502,6 +523,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     marginTop: 12,
+  },
+  coverPicker: {
+    marginBottom: 16,
+    marginTop: 16,
   },
   costCard: {
     backgroundColor: "#FFFFFF",

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { decodeEncodedPolyline, fetchPlaceDirections } from "@/lib/places";
 
@@ -17,6 +17,8 @@ type UseQuickRouteDirectionsParams = {
   avoidTolls?: boolean;
   destination: QuickRoutePlace | null;
   enabled: boolean;
+  /** Incrementado ao limpar a rota — invalida fetch em voo e zera o traçado. */
+  resetToken?: number;
   origin: QuickRoutePlace | null;
   stops: QuickRoutePlace[];
 };
@@ -43,6 +45,7 @@ export function useQuickRouteDirections({
   destination,
   enabled,
   origin,
+  resetToken = 0,
   stops,
 }: UseQuickRouteDirectionsParams) {
   const [options, setOptions] = useState<RoutePathOption[]>([]);
@@ -50,6 +53,16 @@ export function useQuickRouteDirections({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasTrackedCalculatedRef = useRef(false);
+  const requestIdRef = useRef(0);
+
+  const clearDirections = () => {
+    requestIdRef.current += 1;
+    setOptions([]);
+    setSelectedOptionId(null);
+    setIsLoading(false);
+    setError(null);
+    hasTrackedCalculatedRef.current = false;
+  };
 
   const waypoints = useMemo(() => {
     if (!origin || !destination) return [];
@@ -75,25 +88,27 @@ export function useQuickRouteDirections({
 
   const waypointsKey = useMemo(() => JSON.stringify(waypoints), [waypoints]);
 
-  useEffect(() => {
-    let cancelled = false;
+  useLayoutEffect(() => {
+    if (!enabled || !destination || waypoints.length < 2) {
+      clearDirections();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clear só quando some destino/reset
+  }, [destination, enabled, resetToken, waypoints.length]);
 
+  useEffect(() => {
     if (!enabled || waypoints.length < 2) {
-      setOptions([]);
-      setSelectedOptionId(null);
-      setIsLoading(false);
-      setError(null);
-      hasTrackedCalculatedRef.current = false;
       return;
     }
 
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     setIsLoading(true);
     setError(null);
 
     const timer = setTimeout(() => {
       void fetchPlaceDirections(waypoints, { avoidTolls })
         .then((response) => {
-          if (cancelled) return;
+          if (requestId !== requestIdRef.current) return;
 
           const defaultRoute =
             response.routes.find((route) => route.isDefault) ?? response.routes[0];
@@ -112,7 +127,7 @@ export function useQuickRouteDirections({
             distanceMeters: defaultRoute.distanceMeters,
             durationSeconds: defaultRoute.durationSeconds,
             encodedPolyline: defaultRoute.encodedPolyline,
-            id: `quick-${defaultRoute.id}`,
+            id: `quick-${defaultRoute.id}-${requestId}`,
             isDefault: true,
             label: "Rota sugerida",
             tollAvailable: defaultRoute.tollAvailable,
@@ -133,7 +148,7 @@ export function useQuickRouteDirections({
           }
         })
         .catch(() => {
-          if (cancelled) return;
+          if (requestId !== requestIdRef.current) return;
           setOptions([]);
           setSelectedOptionId(null);
           setIsLoading(false);
@@ -142,32 +157,40 @@ export function useQuickRouteDirections({
     }, ROUTE_DEBOUNCE_MS);
 
     return () => {
-      cancelled = true;
       clearTimeout(timer);
+      // Invalida resposta pendente ao trocar waypoints / limpar.
+      if (requestId === requestIdRef.current) {
+        requestIdRef.current += 1;
+      }
     };
-  }, [avoidTolls, enabled, stops.length, waypoints, waypointsKey]);
+  }, [avoidTolls, enabled, resetToken, stops.length, waypoints, waypointsKey]);
 
   const selectedOption = useMemo(
     () => options.find((option) => option.id === selectedOptionId) ?? null,
     [options, selectedOptionId],
   );
 
+  const selectedPolyline = useMemo(() => {
+    if (!enabled || !destination) return [];
+    return selectedOption?.coordinates ?? [];
+  }, [destination, enabled, selectedOption?.coordinates]);
+
   const etaLabel = useMemo(() => {
-    if (!selectedOption?.durationSeconds) return null;
+    if (!enabled || !destination || !selectedOption?.durationSeconds) return null;
     const eta = new Date(Date.now() + selectedOption.durationSeconds * 1000);
     return eta.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       hour12: false,
       minute: "2-digit",
     });
-  }, [selectedOption?.durationSeconds]);
+  }, [destination, enabled, selectedOption?.durationSeconds]);
 
   return {
-    error,
+    error: enabled && destination ? error : null,
     etaLabel,
-    isLoading,
-    selectedOption,
-    selectedOptionId,
-    selectedPolyline: selectedOption?.coordinates ?? [],
+    isLoading: enabled && destination ? isLoading : false,
+    selectedOption: enabled && destination ? selectedOption : null,
+    selectedOptionId: enabled && destination ? selectedOptionId : null,
+    selectedPolyline,
   };
 }

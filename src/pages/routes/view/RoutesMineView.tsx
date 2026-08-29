@@ -163,7 +163,6 @@ export function RoutesMineView() {
             locationLabel={locationLabel}
             searchPlaceholder="Buscar rota por nome"
             searchQuery={searchQuery}
-            topInset={insets.top}
             userAvatar={userAvatar}
             userName={userName}
             onOpenNotifications={() => router.push("/notifications")}

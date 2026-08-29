@@ -88,6 +88,10 @@ export function mapApiRouteToEditSnapshot(route: RouteApiResponse): RouteCreateC
         optimizeFuel: route.optimizeFuel,
       },
     },
+    routeCover: {
+      coverImageUri: route.coverImageUrl ?? "",
+      thumbnailType: route.thumbnailType ?? "map",
+    },
     sheetState: "normal",
     step: 1,
     tripSchedule,

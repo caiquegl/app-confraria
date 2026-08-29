@@ -103,7 +103,12 @@ export function RouteMapPinCamera({
             <Text style={styles.permissionText}>
               Para marcar um ponto no mapa, o Confraria precisa acessar sua câmera.
             </Text>
-            <Button size="lg" style={styles.permissionButton} onPress={requestPermission}>
+            <Button
+              size="lg"
+              style={styles.permissionButton}
+              textStyle={styles.permissionButtonText}
+              onPress={requestPermission}
+            >
               Permitir câmera
             </Button>
           </View>
@@ -277,13 +282,22 @@ const styles = StyleSheet.create({
     width: 42,
   },
   permissionButton: {
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 8,
     minWidth: 220,
+  },
+  permissionButtonText: {
+    includeFontPadding: false,
+    textAlign: "center",
+    textAlignVertical: "center",
+    width: "100%",
   },
   permissionContent: {
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 32,
+    width: "100%",
   },
   permissionScreen: {
     alignItems: "center",

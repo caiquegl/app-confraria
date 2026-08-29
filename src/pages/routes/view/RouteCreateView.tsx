@@ -296,6 +296,8 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
     try {
       const payload = buildCreateRoutePayload({
         action,
+        coverImageUri:
+          draft.thumbnailType === "image" ? draft.coverImageUri || null : null,
         daySummaries: directions.daySummaries,
         draftPayload,
         schedule: {
@@ -303,6 +305,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
           tripNote: draft.tripNote,
           tripTime: draft.tripTime,
         },
+        thumbnailType: draft.thumbnailType,
         totals: {
           fuelCost: costEstimate.fuelCost,
           tollCost: costEstimate.tollCost,
@@ -311,9 +314,12 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         },
       });
 
+      const coverUri =
+        draft.thumbnailType === "image" ? draft.coverImageUri || null : null;
+
       if (editRouteId) {
         const { action: _action, ...updatePayload } = payload;
-        await updateRoute(editRouteId, updatePayload);
+        await updateRoute(editRouteId, updatePayload, coverUri);
         await draft.clearCache();
 
         Toast.show({
@@ -326,7 +332,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         return;
       }
 
-      const createdRoute = await createRoute(payload);
+      const createdRoute = await createRoute(payload, coverUri);
       await draft.clearCache();
 
       if (action === "start_now") {
@@ -513,16 +519,21 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         {draft.step === 4 ? (
           <RouteCreateStep4
             costEstimate={costEstimate}
+            coverImageUri={draft.coverImageUri}
             daySummaries={directions.daySummaries}
             days={draft.days}
             preferences={draft.preferences}
             selectedBike={selectedBike}
+            thumbnailType={draft.thumbnailType}
             totalDistanceMeters={directions.totalDistanceMeters}
             totalDurationSeconds={directions.totalDurationSeconds}
             tripDate={draft.tripDate}
             tripIntent={draft.tripIntent}
             tripNote={draft.tripNote}
             tripTime={draft.tripTime}
+            onCoverImageChange={draft.setCoverImageUri}
+            onRemoveCover={draft.clearRouteCover}
+            onThumbnailTypeChange={draft.setThumbnailType}
             onTripDateChange={draft.setTripDate}
             onTripIntentChange={draft.setTripIntent}
             onTripNoteChange={draft.setTripNote}

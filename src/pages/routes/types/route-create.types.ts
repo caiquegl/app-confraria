@@ -75,8 +75,21 @@ export type RouteCreateTripSchedule = {
   tripTime: string;
 };
 
+export type RouteCoverDraft = {
+  coverImageUri: string;
+  thumbnailType: import("./saved-route.types").RouteThumbnailType;
+};
+
+export function createDefaultRouteCover(): RouteCoverDraft {
+  return {
+    coverImageUri: "",
+    thumbnailType: "map",
+  };
+}
+
 export type RouteCreateCacheSnapshot = {
   draft: RouteCreateDraft;
+  routeCover?: RouteCoverDraft;
   sheetState: SheetState;
   step: WizardStep;
   tripSchedule: RouteCreateTripSchedule;

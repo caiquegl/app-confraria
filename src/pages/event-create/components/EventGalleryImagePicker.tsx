@@ -228,7 +228,12 @@ function GalleryCameraModal({
             <Text style={styles.permissionText}>
               Para adicionar fotos à galeria, o Confraria precisa acessar sua câmera.
             </Text>
-            <Button size="lg" style={styles.permissionButton} onPress={onRequestPermission}>
+            <Button
+              size="lg"
+              style={styles.permissionButton}
+              textStyle={styles.permissionButtonText}
+              onPress={onRequestPermission}
+            >
               Permitir câmera
             </Button>
           </View>
@@ -447,13 +452,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   permissionButton: {
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 22,
+    width: "100%",
+  },
+  permissionButtonText: {
+    includeFontPadding: false,
+    textAlign: "center",
+    textAlignVertical: "center",
     width: "100%",
   },
   permissionContent: {
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 28,
+    width: "100%",
   },
   permissionScreen: {
     alignItems: "center",

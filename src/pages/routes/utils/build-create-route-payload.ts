@@ -9,6 +9,7 @@ type DaySummary = {
 
 type BuildCreateRoutePayloadParams = {
   action: RouteCreateAction;
+  coverImageUri?: string | null;
   daySummaries: DaySummary[];
   draftPayload: RouteCreatePayload;
   kind?: CreateRoutePayload["kind"];
@@ -17,6 +18,7 @@ type BuildCreateRoutePayloadParams = {
     tripNote: string;
     tripTime: string;
   };
+  thumbnailType?: CreateRoutePayload["thumbnailType"];
   totals: {
     fuelCost: number | null;
     tollCost: number | null;
@@ -27,10 +29,12 @@ type BuildCreateRoutePayloadParams = {
 
 export function buildCreateRoutePayload({
   action,
+  coverImageUri,
   daySummaries,
   draftPayload,
   kind,
   schedule,
+  thumbnailType,
   totals,
 }: BuildCreateRoutePayloadParams): CreateRoutePayload {
   return {
@@ -57,6 +61,8 @@ export function buildCreateRoutePayload({
     },
     ...(kind ? { kind } : {}),
     preferences: draftPayload.preferences,
+    thumbnailType: thumbnailType ?? "map",
+    ...(thumbnailType === "image" && coverImageUri ? { coverImageUri } : {}),
     schedule: {
       tripDate: schedule.tripDate.trim() || undefined,
       tripNote: schedule.tripNote.trim() || undefined,

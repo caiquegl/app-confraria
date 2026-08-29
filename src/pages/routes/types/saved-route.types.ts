@@ -2,6 +2,8 @@ export type RouteStatus = "draft" | "scheduled" | "in_progress" | "finished";
 
 export type RouteKind = "quick" | "planned";
 
+export type RouteThumbnailType = "map" | "image";
+
 export type RouteInvitationStatus = "pending" | "accepted" | "declined";
 
 export type RouteInvitationResponse = {
@@ -64,6 +66,7 @@ export type SavedRoute = {
   avoidTolls: boolean;
   bikeId: string;
   bikeName: string;
+  coverImageUrl: string | null;
   createdAt: string;
   creator: SavedRouteCreator | null;
   dayCount: number;
@@ -79,9 +82,13 @@ export type SavedRoute = {
   myReview: RouteMyReview | null;
   optimizeFuel: boolean;
   originLabel: string;
+  rating: number | null;
+  regionLabel: string | null;
+  reviewCount: number;
   startsAt: string;
   startedAt: string | null;
   status: RouteStatus;
+  thumbnailType: RouteThumbnailType;
   title: string;
   tollCost: number | null;
   tripDate: string;
@@ -139,7 +146,9 @@ export type CreateRoutePayload = {
     tripNote?: string;
     tripTime?: string;
   };
+  coverImageUri?: string | null;
   kind?: RouteKind;
+  thumbnailType?: RouteThumbnailType;
   totals?: {
     distanceMeters?: number;
     durationSeconds?: number;
@@ -178,6 +187,7 @@ export type RouteApiResponse = {
     imageUrl: string | null;
     name: string;
   };
+  coverImageUrl: string | null;
   createdAt: string;
   createdBy: {
     avatarUrl: string | null;
@@ -208,6 +218,7 @@ export type RouteApiResponse = {
   startedAt: string | null;
   startsAt: string;
   status: RouteStatus;
+  thumbnailType: RouteThumbnailType;
   title: string;
   tollCost: number | null;
   tripNote: string | null;

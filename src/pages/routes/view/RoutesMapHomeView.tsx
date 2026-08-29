@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, type Href } from "expo-router";
+import { router, type Href, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Linking,
@@ -38,6 +38,8 @@ import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
 
 import { QuickRouteSheet } from "../components/QuickRouteSheet";
+import { RouteMapPhotosCarouselModal } from "../components/RouteMapPhotosCarouselModal";
+import { RoutePhotoClusterMarker } from "../components/RoutePhotoClusterMarker";
 import {
   DestinationMapPin,
   NearbyPartnerPin,
@@ -53,11 +55,14 @@ import {
   type NearbyCategoryFilter,
 } from "../components/RoutesNearbySheetContent";
 import { useMyRoutes } from "../hooks/useMyRoutes";
+import { useNearbyRouteMapPhotos } from "../hooks/useNearbyRouteMapPhotos";
 import { useQuickRouteDirections } from "../hooks/useQuickRouteDirections";
 import { useRouteBikes } from "../hooks/useRouteBikes";
 import { createRoute } from "../services/routes.service";
 import type { QuickRoutePlace } from "../types/quick-route.types";
+import type { RouteThumbnailType } from "../types/saved-route.types";
 import { buildQuickRoutePayload } from "../utils/build-quick-route-payload";
+import { createDefaultRouteCover } from "../types/route-create.types";
 import {
   dedupeNearbyPlaces,
   sortNearbyPlacesByPriority,
@@ -134,12 +139,14 @@ export function RoutesMapHomeView() {
   const [fuelCost, setFuelCost] = useState<number | null>(null);
   const [isLoadingFuel, setIsLoadingFuel] = useState(false);
   const [isPersisting, setIsPersisting] = useState(false);
+  const [routeCover, setRouteCover] = useState(createDefaultRouteCover);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [mapGasStations, setMapGasStations] = useState<NearbyPlace[]>([]);
   const [isLoadingNearby, setIsLoadingNearby] = useState(false);
   const [sheetDetent, setSheetDetent] = useState<RoutesSheetDetent>("collapsed");
   const [nearbyCategory, setNearbyCategory] = useState<NearbyCategoryFilter>("all");
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
+  const [routeResetToken, setRouteResetToken] = useState(0);
 
   const hasCoords = location.latitude != null && location.longitude != null;
   const isLocationReady = location.status === "ready" && hasCoords;
@@ -149,6 +156,12 @@ export function RoutesMapHomeView() {
     location.status === "idle" ||
     location.status === "loading" ||
     (location.status === "ready" && !hasCoords);
+
+  const mapPhotos = useNearbyRouteMapPhotos({
+    enabled: isLocationReady,
+    latitude: location.latitude,
+    longitude: location.longitude,
+  });
 
   const origin = useMemo<QuickRoutePlace | null>(() => {
     if (!hasCoords) return null;
@@ -163,6 +176,7 @@ export function RoutesMapHomeView() {
     destination,
     enabled: isLocationReady && destination != null,
     origin,
+    resetToken: routeResetToken,
     stops,
   });
 
@@ -378,10 +392,40 @@ export function RoutesMapHomeView() {
   };
 
   const handleClearDestination = useCallback(() => {
-    setDestination(null);
-    setStops([]);
+    setDestination((prevDestination) => {
+      setStops((prevStops) => {
+        if (prevDestination != null || prevStops.length > 0) {
+          setRouteResetToken((token) => token + 1);
+        }
+        return [];
+      });
+      return null;
+    });
+    setFuelCost(null);
+    setIsLoadingFuel(false);
+    setIsPersisting(false);
+    setRouteCover(createDefaultRouteCover());
     setSheetDetent("collapsed");
-  }, []);
+
+    if (hasCoords) {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: location.latitude!,
+          longitude: location.longitude!,
+          latitudeDelta: 0.045,
+          longitudeDelta: 0.045,
+        },
+        450,
+      );
+    }
+  }, [hasCoords, location.latitude, location.longitude]);
+
+  useFocusEffect(
+    useCallback(() => {
+      handleClearDestination();
+      void mapPhotos.reload();
+    }, [handleClearDestination, mapPhotos.reload]),
+  );
 
   const applyDestination = useCallback((place: QuickRoutePlace) => {
     setDestination(place);
@@ -510,15 +554,21 @@ export function RoutesMapHomeView() {
         const payload = buildQuickRoutePayload({
           action,
           bikeId: bikeForAction.id,
+          coverImageUri:
+            routeCover.thumbnailType === "image" ? routeCover.coverImageUri || null : null,
           destination,
           fuelCost,
           kind: action === "start_now" ? "quick" : "planned",
           origin: origin!,
           selectedOption: directions.selectedOption,
           stops,
+          thumbnailType: routeCover.thumbnailType,
         });
 
-        const route = await createRoute(payload);
+        const coverUri =
+          routeCover.thumbnailType === "image" ? routeCover.coverImageUri || null : null;
+
+        const route = await createRoute(payload, coverUri);
 
         if (action === "start_now") {
           trackRoutesEvent("quick_route_started", { routeId: route.id });
@@ -554,7 +604,7 @@ export function RoutesMapHomeView() {
         setIsPersisting(false);
       }
     },
-    [bikes, destination, directions.selectedOption, fuelCost, origin, selectedBike, stops],
+    [bikes, destination, directions.selectedOption, fuelCost, origin, routeCover, selectedBike, stops],
   );
 
   const handlePlanRoute = useCallback(async () => {
@@ -646,6 +696,7 @@ export function RoutesMapHomeView() {
         }}
       >
         <MapView
+          key={`routes-home-map-${routeResetToken}`}
           ref={mapRef}
           customMapStyle={ROUTE_PLANNER_MAP_STYLE}
           initialRegion={mapRegion}
@@ -698,13 +749,34 @@ export function RoutesMapHomeView() {
             </Marker>
           ))}
 
-          {directions.selectedPolyline.length > 1 ? (
+          {destination && directions.selectedPolyline.length > 1 ? (
             <Polyline
+              key={`quick-route-${routeResetToken}-${destination.placeId}-${stops.length}-${directions.selectedOptionId}`}
               coordinates={directions.selectedPolyline}
               strokeColor={colors.brandDark}
               strokeWidth={5}
             />
           ) : null}
+
+          {mapPhotos.clusters
+            .filter(
+              (cluster) =>
+                Number.isFinite(cluster.latitude) && Number.isFinite(cluster.longitude),
+            )
+            .map((cluster) => (
+              <Marker
+                key={cluster.id}
+                anchor={{ x: 0.5, y: 0.5 }}
+                coordinate={{
+                  latitude: cluster.latitude,
+                  longitude: cluster.longitude,
+                }}
+                tracksViewChanges={false}
+                onPress={() => mapPhotos.openCluster(cluster)}
+              >
+                <RoutePhotoClusterMarker photoCount={cluster.photos.length} />
+              </Marker>
+            ))}
         </MapView>
 
         {!showQuickSheet ? (
@@ -765,6 +837,7 @@ export function RoutesMapHomeView() {
             <View style={styles.quickSheetWrap}>
               <QuickRouteSheet
                 bikes={bikes}
+                coverImageUri={routeCover.coverImageUri}
                 destination={destination}
                 isLoadingBikes={isLoadingBikes}
                 etaLabel={directions.etaLabel}
@@ -776,11 +849,23 @@ export function RoutesMapHomeView() {
                 selectedBikeId={selectedBikeId}
                 selectedOption={directions.selectedOption}
                 stops={stops}
+                thumbnailType={routeCover.thumbnailType}
                 onAddStop={(place) => setStops((current) => [...current, place])}
+                onCoverImageChange={(uri) =>
+                  setRouteCover((current) => ({ ...current, coverImageUri: uri }))
+                }
                 onPlanRoute={() => void handlePlanRoute()}
+                onRemoveCover={() => setRouteCover(createDefaultRouteCover())}
                 onSaveRoute={() => void persistQuickRoute("save_for_later")}
                 onSelectBike={setSelectedBikeId}
                 onStartRoute={() => void persistQuickRoute("start_now")}
+                onThumbnailTypeChange={(thumbnailType) =>
+                  setRouteCover((current) => ({
+                    ...current,
+                    thumbnailType,
+                    ...(thumbnailType === "map" ? { coverImageUri: "" } : {}),
+                  }))
+                }
               />
             </View>
           ) : (
@@ -805,6 +890,12 @@ export function RoutesMapHomeView() {
           )}
         </RoutesHomeBottomSheet>
       </View>
+
+      <RouteMapPhotosCarouselModal
+        photos={mapPhotos.selectedCluster?.photos ?? []}
+        visible={mapPhotos.selectedCluster != null}
+        onClose={mapPhotos.closeCluster}
+      />
     </View>
   );
 }

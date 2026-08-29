@@ -164,6 +164,19 @@ export const apiRoutes = {
       const query = params.toString();
       return `/routes/discover/friends${query ? `?${query}` : ""}`;
     },
+    mapPhotos: (options: {
+      latitude: number;
+      longitude: number;
+      limit?: number;
+      radiusKm?: number;
+    }) => {
+      const params = new URLSearchParams();
+      params.set("latitude", String(options.latitude));
+      params.set("longitude", String(options.longitude));
+      if (options.limit != null) params.set("limit", String(options.limit));
+      if (options.radiusKm != null) params.set("radiusKm", String(options.radiusKm));
+      return `/routes/discover/map-photos?${params.toString()}`;
+    },
     detail: (routeId: string) => `/routes/${routeId}`,
     reviews: (routeId: string) => `/routes/${routeId}/reviews`,
     update: (routeId: string) => `/routes/${routeId}`,

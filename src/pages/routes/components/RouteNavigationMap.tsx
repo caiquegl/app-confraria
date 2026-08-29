@@ -11,6 +11,7 @@ import type { RouteLiveLocation, RouteLiveReport } from "@/lib/route-navigation-
 import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 import type { RoutePhotoCluster } from "../types/route-photo.types";
 import type { RouteNavigationPlacePin } from "../utils/build-navigation-place-pins";
+import { RoutePhotoClusterMarker } from "./RoutePhotoClusterMarker";
 import { ROUTE_REPORT_TYPE_BY_KEY } from "../utils/route-report-types";
 import {
   ROUTE_NAVIGATION_MAP_STYLE_NIGHT,
@@ -282,16 +283,7 @@ export function RouteNavigationMap({
               tracksViewChanges={false}
               onPress={() => onPhotoClusterPress?.(cluster)}
             >
-              <View collapsable={false} style={styles.cameraPin}>
-                <Ionicons color="#FFFFFF" name="camera" size={16} />
-                {cluster.photos.length > 1 ? (
-                  <View style={styles.cameraPinBadge}>
-                    <Text style={styles.cameraPinBadgeText}>
-                      {cluster.photos.length}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
+              <RoutePhotoClusterMarker photoCount={cluster.photos.length} />
             </Marker>
           ))}
 
@@ -531,7 +523,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 34,
   },
-reportPin: {
+  reportPin: {
     alignItems: "center",
     borderColor: "#FFFFFF",
     borderRadius: 999,
@@ -543,33 +535,5 @@ reportPin: {
     shadowOpacity: 0.3,
     shadowRadius: 4,
     width: 34,
-  },
-    cameraPin: {
-    alignItems: "center",
-    backgroundColor: colors.brandDark,
-    borderColor: colors.brandGreen,
-    borderRadius: 999,
-    borderWidth: 2,
-    height: 38,
-    justifyContent: "center",
-    overflow: "visible",
-    width: 38,
-  },
-  cameraPinBadge: {
-    alignItems: "center",
-    backgroundColor: colors.brandGreen,
-    borderRadius: 999,
-    height: 18,
-    justifyContent: "center",
-    minWidth: 18,
-    paddingHorizontal: 4,
-    position: "absolute",
-    right: -6,
-    top: -6,
-  },
-  cameraPinBadgeText: {
-    color: colors.brandDark,
-    fontSize: 10,
-    fontWeight: "800",
   },
 });

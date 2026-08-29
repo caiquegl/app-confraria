@@ -1,5 +1,21 @@
 import { formatRouteDistance, formatRouteDuration } from "./route-format.utils";
 
+function extractRegionLabel(route: import("../types/saved-route.types").RouteApiResponse) {
+  for (const day of route.days) {
+    const destination = day.places.find((place) => place.role === "destination");
+    if (destination?.region) {
+      return destination.region;
+    }
+
+    const origin = day.places.find((place) => place.role === "origin");
+    if (origin?.region) {
+      return origin.region;
+    }
+  }
+
+  return null;
+}
+
 export function mapApiRouteToSavedRoute(route: import("../types/saved-route.types").RouteApiResponse) {
   const startsAtDate = new Date(route.startsAt);
   const tripDate = Number.isNaN(startsAtDate.getTime())
@@ -17,6 +33,7 @@ export function mapApiRouteToSavedRoute(route: import("../types/saved-route.type
     avoidTolls: route.avoidTolls,
     bikeId: route.bike.id,
     bikeName: route.bike.name,
+    coverImageUrl: route.coverImageUrl ?? null,
     createdAt: route.createdAt,
     creator: route.createdBy
       ? {
@@ -43,9 +60,13 @@ export function mapApiRouteToSavedRoute(route: import("../types/saved-route.type
     myReview: route.myReview ?? null,
     optimizeFuel: route.optimizeFuel,
     originLabel: route.originLabel,
+    rating: route.rating,
+    regionLabel: extractRegionLabel(route),
+    reviewCount: route.reviewCount,
     startsAt: route.startsAt,
     startedAt: route.startedAt ?? null,
     status: route.status,
+    thumbnailType: route.thumbnailType ?? "map",
     title: route.title,
     tollCost: route.tollCost,
     tripDate,

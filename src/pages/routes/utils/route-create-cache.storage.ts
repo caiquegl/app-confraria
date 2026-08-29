@@ -113,12 +113,14 @@ export function parseRouteCreateCacheSnapshot(raw: string): RouteCreateCacheSnap
 
 export function buildRouteCreateCacheSnapshot({
   draft,
+  routeCover,
   sheetState,
   step,
   tripSchedule,
 }: Omit<RouteCreateCacheSnapshot, "version">): RouteCreateCacheSnapshot {
   return {
     draft,
+    ...(routeCover ? { routeCover } : {}),
     sheetState,
     step,
     tripSchedule,

@@ -14,10 +14,17 @@ import type {
   UpsertRouteReviewResponse,
 } from "../types/saved-route.types";
 import type { RoutePlaceResponse } from "../types/saved-route.types";
+import {
+  copyPublishedRoute as copyPublishedRouteRequest,
+  createRoute as createRouteRequest,
+  updateRoute as updateRouteRequest,
+} from "../utils/route-cover-request.utils";
 
-export async function createRoute(payload: CreateRoutePayload): Promise<RouteApiResponse> {
-  const { data } = await api.post<RouteApiResponse>(apiRoutes.routes.create, payload);
-  return data;
+export async function createRoute(
+  payload: CreateRoutePayload,
+  coverImageUri?: string | null,
+): Promise<RouteApiResponse> {
+  return createRouteRequest(payload, coverImageUri);
 }
 
 export async function fetchMyRoutes(): Promise<RouteApiResponse[]> {
@@ -33,9 +40,9 @@ export async function fetchMyRecentRoutes(days = 30): Promise<RouteApiResponse[]
 export async function copyPublishedRoute(
   routeId: string,
   payload: CreateRoutePayload,
+  coverImageUri?: string | null,
 ): Promise<RouteApiResponse> {
-  const { data } = await api.post<RouteApiResponse>(apiRoutes.routes.copy(routeId), payload);
-  return data;
+  return copyPublishedRouteRequest(routeId, payload, coverImageUri);
 }
 
 export const PUBLISHED_ROUTES_PAGE_SIZE = 10;
@@ -104,12 +111,9 @@ export async function upsertRouteReview(
 export async function updateRoute(
   routeId: string,
   payload: UpdateRoutePayload,
+  coverImageUri?: string | null,
 ): Promise<RouteApiResponse> {
-  const { data } = await api.patch<RouteApiResponse>(
-    apiRoutes.routes.update(routeId),
-    payload,
-  );
-  return data;
+  return updateRouteRequest(routeId, payload, coverImageUri);
 }
 
 export async function updateRouteStatus(
@@ -187,6 +191,16 @@ export async function removeRouteStop(
 
 export async function fetchRoutePhotos(routeId: string): Promise<RoutePhoto[]> {
   const { data } = await api.get<RoutePhoto[]>(apiRoutes.routes.photos(routeId));
+  return data;
+}
+
+export async function fetchNearbyMapPhotos(options: {
+  latitude: number;
+  longitude: number;
+  limit?: number;
+  radiusKm?: number;
+}): Promise<RoutePhoto[]> {
+  const { data } = await api.get<RoutePhoto[]>(apiRoutes.routes.mapPhotos(options));
   return data;
 }
 

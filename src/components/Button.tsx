@@ -84,6 +84,9 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: "600",
+    includeFontPadding: false,
+    textAlign: "center",
+    textAlignVertical: "center",
   },
 });
 

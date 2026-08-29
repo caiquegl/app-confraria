@@ -3,9 +3,11 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-nativ
 import { colors } from "@/theme/colors";
 
 import type { SavedRoute } from "../types/saved-route.types";
+import { CommunityRouteCard } from "./CommunityRouteCard";
 import { SavedRouteCard } from "./SavedRouteCard";
 
 type RoutesHorizontalSectionProps = {
+  cardVariant?: "community" | "saved";
   hasMore: boolean;
   isLoading: boolean;
   isLoadingMore: boolean;
@@ -18,6 +20,7 @@ type RoutesHorizontalSectionProps = {
 };
 
 export function RoutesHorizontalSection({
+  cardVariant = "saved",
   hasMore,
   isLoading,
   isLoadingMore,
@@ -45,15 +48,19 @@ export function RoutesHorizontalSection({
         contentContainerStyle={styles.carousel}
         data={routes}
         keyExtractor={(route) => route.id}
-        renderItem={({ item }) => (
-          <SavedRouteCard
-            route={item}
-            showAuthor={showAuthor}
-            onPress={() => onRoutePress(item.id)}
-          />
-        )}
+        renderItem={({ item }) =>
+          cardVariant === "community" ? (
+            <CommunityRouteCard route={item} onPress={() => onRoutePress(item.id)} />
+          ) : (
+            <SavedRouteCard
+              route={item}
+              showAuthor={showAuthor}
+              onPress={() => onRoutePress(item.id)}
+            />
+          )
+        }
         showsHorizontalScrollIndicator={false}
-        style={styles.list}
+        style={[styles.list, cardVariant === "community" && styles.listCommunity]}
         onEndReached={() => {
           if (hasMore && !isLoadingMore) {
             onLoadMore();
@@ -105,6 +112,9 @@ const styles = StyleSheet.create({
   },
   list: {
     minHeight: 188,
+  },
+  listCommunity: {
+    minHeight: 280,
   },
   section: {
     marginBottom: 24,

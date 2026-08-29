@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -20,10 +20,24 @@ import { useGeolocation } from "@/lib/location";
 import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
 
+import {
+  CommunityRoutesFiltersSheet,
+  DEFAULT_COMMUNITY_ROUTE_FILTERS,
+  type CommunityRoutesFilters,
+} from "../components/CommunityRoutesFiltersSheet";
 import { RoutesHorizontalSection } from "../components/RoutesHorizontalSection";
 import { useFriendsRoutes } from "../hooks/useFriendsRoutes";
 import { useMyPublishedRoutes } from "../hooks/useMyPublishedRoutes";
 import { useNearPublishedRoutes } from "../hooks/useNearPublishedRoutes";
+import type { SavedRoute } from "../types/saved-route.types";
+
+function filterCommunityRoutes(routes: SavedRoute[], filters: CommunityRoutesFilters) {
+  if (filters.minRating <= 0) {
+    return routes;
+  }
+
+  return routes.filter((route) => (route.rating ?? 0) >= filters.minRating);
+}
 
 export function RoutesExploreView() {
   const insets = useSafeAreaInsets();
@@ -32,6 +46,10 @@ export function RoutesExploreView() {
   const storedProfile = getStoredCurrentProfile();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<CommunityRoutesFilters>(DEFAULT_COMMUNITY_ROUTE_FILTERS);
+  const [draftFilters, setDraftFilters] =
+    useState<CommunityRoutesFilters>(DEFAULT_COMMUNITY_ROUTE_FILTERS);
+  const [showFiltersSheet, setShowFiltersSheet] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(storedProfile.avatar);
   const [userName, setUserName] = useState<string>(storedProfile.name ?? "Perfil");
 
@@ -57,16 +75,37 @@ export function RoutesExploreView() {
     });
   }, []);
 
+  const filteredPublishedRoutes = useMemo(
+    () => filterCommunityRoutes(publishedRoutes.routes, filters),
+    [filters, publishedRoutes.routes],
+  );
+  const filteredNearRoutes = useMemo(
+    () => filterCommunityRoutes(nearRoutes.routes, filters),
+    [filters, nearRoutes.routes],
+  );
+  const filteredFriendsRoutes = useMemo(
+    () => filterCommunityRoutes(friendsRoutes.routes, filters),
+    [filters, friendsRoutes.routes],
+  );
+
   const hasCommunityContent =
-    publishedRoutes.routes.length > 0 ||
-    nearRoutes.routes.length > 0 ||
-    friendsRoutes.routes.length > 0;
+    filteredPublishedRoutes.length > 0 ||
+    filteredNearRoutes.length > 0 ||
+    filteredFriendsRoutes.length > 0;
   const isCommunityLoading =
     (publishedRoutes.isLoading || nearRoutes.isLoading || friendsRoutes.isLoading) &&
     !hasCommunityContent;
+  const hasAppliedFilters = filters.minRating > 0;
+  const hasSearchOrFilters = searchQuery.trim().length > 0 || hasAppliedFilters;
 
   const locationLabel =
     location.cityLabel ?? (location.status === "ready" ? "Localização atual" : "Explorar rotas");
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setFilters(DEFAULT_COMMUNITY_ROUTE_FILTERS);
+    setDraftFilters(DEFAULT_COMMUNITY_ROUTE_FILTERS);
+  };
 
   return (
     <View style={styles.screen}>
@@ -79,39 +118,72 @@ export function RoutesExploreView() {
           <AppTopBar
             hasUnreadNotifications={hasUnread}
             locationLabel={locationLabel}
-            searchPlaceholder="Buscar rota por nome"
+            searchPlaceholder="Buscar rota"
             searchQuery={searchQuery}
-            topInset={insets.top}
+            showBack
             userAvatar={userAvatar}
             userName={userName}
+            onBack={() => router.back()}
             onOpenNotifications={() => router.push("/notifications")}
             onOpenProfile={() => router.push("/profile")}
             onSearchChange={setSearchQuery}
           />
 
-          <View style={styles.headerRow}>
-            <Pressable
-              accessibilityLabel="Voltar para o mapa"
-              accessibilityRole="button"
-              hitSlop={8}
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
-            </Pressable>
-            <View style={styles.headerCopy}>
-              <Text style={styles.eyebrow}>Comunidade</Text>
-              <Text style={styles.pageTitle}>Explorar rotas</Text>
+          <View style={styles.titleRow}>
+            <View style={styles.titleCopy}>
+              <Text style={styles.pageTitle}>Todas as Rotas</Text>
+              <Text style={styles.pageSubtitle}>Encontre novas rotas para você sair</Text>
             </View>
+
+            <Pressable
+              accessibilityLabel="Abrir filtros"
+              accessibilityRole="button"
+              style={styles.filtersButton}
+              onPress={() => {
+                setDraftFilters(filters);
+                setShowFiltersSheet(true);
+              }}
+            >
+              <Ionicons color="#6B7280" name="options-outline" size={16} />
+              <Text style={styles.filtersButtonText}>Filtros</Text>
+              {hasAppliedFilters ? (
+                <View style={styles.filtersBadge}>
+                  <Text style={styles.filtersBadgeText}>1</Text>
+                </View>
+              ) : null}
+            </Pressable>
           </View>
+
+          {hasAppliedFilters ? (
+            <View style={styles.activeFiltersRow}>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.activeFilterChip}
+                onPress={() => {
+                  const next = { ...filters, minRating: 0 };
+                  setFilters(next);
+                  setDraftFilters(next);
+                }}
+              >
+                <Text style={styles.activeFilterChipText}>
+                  Nota ≥ {filters.minRating.toFixed(1).replace(".", ",")}
+                </Text>
+                <Ionicons color={colors.brandDark} name="close" size={12} />
+              </Pressable>
+              <Pressable accessibilityRole="button" onPress={clearFilters}>
+                <Text style={styles.clearAllText}>Limpar tudo</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.communityContent}>
           <RoutesHorizontalSection
+            cardVariant="community"
             hasMore={publishedRoutes.hasMore}
             isLoading={publishedRoutes.isLoading}
             isLoadingMore={publishedRoutes.isLoadingMore}
-            routes={publishedRoutes.routes}
+            routes={filteredPublishedRoutes}
             subtitle="Suas rotas disponíveis para o Confraria"
             title="Publicadas por você"
             onLoadMore={() => void publishedRoutes.loadMore()}
@@ -119,10 +191,11 @@ export function RoutesExploreView() {
           />
 
           <RoutesHorizontalSection
+            cardVariant="community"
             hasMore={nearRoutes.hasMore}
             isLoading={nearRoutes.isLoading}
             isLoadingMore={nearRoutes.isLoadingMore}
-            routes={nearRoutes.routes}
+            routes={filteredNearRoutes}
             subtitle="Roteiros compartilhados perto da sua região"
             title="Rotas próximas de você"
             onLoadMore={() => void nearRoutes.loadMore()}
@@ -130,10 +203,11 @@ export function RoutesExploreView() {
           />
 
           <RoutesHorizontalSection
+            cardVariant="community"
             hasMore={friendsRoutes.hasMore}
             isLoading={friendsRoutes.isLoading}
             isLoadingMore={friendsRoutes.isLoadingMore}
-            routes={friendsRoutes.routes}
+            routes={filteredFriendsRoutes}
             subtitle="Roteiros de quem você segue no Confraria"
             title="Rotas de amigos"
             onLoadMore={() => void friendsRoutes.loadMore()}
@@ -145,75 +219,155 @@ export function RoutesExploreView() {
               <ActivityIndicator color={colors.brandDark} size="large" />
             </View>
           ) : !hasCommunityContent ? (
-            <View style={styles.communityPlaceholder}>
-              <Text style={styles.communityTitle}>
-                {searchQuery.trim() ? "Nenhum resultado" : "Explorar rotas"}
-              </Text>
-              <Text style={styles.communitySubtitle}>
-                {searchQuery.trim()
-                  ? "Não encontramos rotas publicadas com esse termo."
-                  : "Publique uma rota, explore roteiros da sua cidade ou siga outros membros para ver mais passeios."}
-              </Text>
+            <View style={styles.emptyStateWrap}>
+              <View style={styles.emptyStateCard}>
+                <Text style={styles.emptyStateTitle}>
+                  {hasSearchOrFilters ? "Nenhuma rota encontrada" : "Nenhuma rota disponível"}
+                </Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Ajuste a busca ou os filtros para ver mais resultados.
+                </Text>
+                {hasSearchOrFilters ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    style={styles.emptyStateButton}
+                    onPress={clearFilters}
+                  >
+                    <Text style={styles.emptyStateButtonText}>Limpar filtros</Text>
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
           ) : null}
         </View>
       </ScrollView>
+
+      <CommunityRoutesFiltersSheet
+        draftFilters={draftFilters}
+        visible={showFiltersSheet}
+        onApply={() => {
+          setFilters(draftFilters);
+          setShowFiltersSheet(false);
+        }}
+        onChangeDraft={setDraftFilters}
+        onClear={() => {
+          setDraftFilters(DEFAULT_COMMUNITY_ROUTE_FILTERS);
+        }}
+        onClose={() => setShowFiltersSheet(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backButton: {
+  activeFilterChip: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 14,
+    backgroundColor: "rgba(200, 247, 99, 0.2)",
+    borderColor: colors.brandGreen,
+    borderRadius: 12,
     borderWidth: 1,
-    height: 40,
-    justifyContent: "center",
-    width: 40,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  activeFilterChipText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  activeFiltersRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 24,
+  },
+  clearAllText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "700",
   },
   communityContent: {
     paddingBottom: 24,
   },
-  communityPlaceholder: {
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 48,
+  emptyStateButton: {
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
-  communitySubtitle: {
-    color: "#6B7280",
+  emptyStateButtonText: {
+    color: colors.brandDark,
     fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
+    fontWeight: "700",
+  },
+  emptyStateCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 24,
+  },
+  emptyStateSubtitle: {
+    color: "#6B7280",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
     textAlign: "center",
   },
-  communityTitle: {
+  emptyStateTitle: {
     color: colors.brandDark,
-    fontSize: 20,
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  emptyStateWrap: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
+  },
+  filtersBadge: {
+    alignItems: "center",
+    backgroundColor: colors.brandGreen,
+    borderRadius: 999,
+    height: 18,
+    justifyContent: "center",
+    minWidth: 18,
+    paddingHorizontal: 4,
+  },
+  filtersBadgeText: {
+    color: colors.brandDark,
+    fontSize: 11,
     fontWeight: "800",
   },
-  eyebrow: {
-    color: "#9CA3AF",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    marginBottom: 4,
-    textTransform: "uppercase",
-  },
-  headerCopy: {
-    flex: 1,
-  },
-  headerRow: {
+  filtersButton: {
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 18,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 12,
-    paddingBottom: 12,
-    paddingHorizontal: 24,
+    gap: 6,
+    height: 48,
+    paddingHorizontal: 14,
+  },
+  filtersButtonText: {
+    color: colors.brandDark,
+    fontSize: 14,
+    fontWeight: "700",
   },
   loadingState: {
     alignItems: "center",
     paddingVertical: 48,
+  },
+  pageSubtitle: {
+    color: "#6B7280",
+    fontSize: 13,
+    marginTop: 4,
   },
   pageTitle: {
     color: colors.brandDark,
@@ -226,5 +380,16 @@ const styles = StyleSheet.create({
   },
   stickyHeader: {
     backgroundColor: colors.brandGray,
+  },
+  titleCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  titleRow: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 24,
   },
 });
