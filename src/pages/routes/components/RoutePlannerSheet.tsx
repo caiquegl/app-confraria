@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
-import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useKeyboardState } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -13,24 +14,58 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEnvironmentBannerInset } from "@/components/EnvironmentBanner";
 
 import type { SheetState } from "../types/route-create.types";
-import { getSheetHeight } from "../utils/route-day.utils";
+import {
+  cycleSheetState,
+  getPlannerSheetDetentHeights,
+  getSheetHeight,
+} from "../utils/route-day.utils";
+
+const TAP_THRESHOLD_PX = 8;
 
 type RoutePlannerSheetProps = {
   bottomInset?: number;
   children: ReactNode;
   footer?: ReactNode;
   onKeyboardShow?: () => void;
-  onToggleSize: () => void;
+  onSheetStateChange: (state: SheetState) => void;
   sheetState: SheetState;
   stepper: ReactNode;
 };
+
+function snapToSheetState(
+  heightPx: number,
+  compact: number,
+  normal: number,
+  full: number,
+): SheetState {
+  "worklet";
+
+  const targets: [SheetState, number][] = [
+    ["compact", compact],
+    ["normal", normal],
+    ["full", full],
+  ];
+
+  let closest: SheetState = "compact";
+  let best = Number.POSITIVE_INFINITY;
+
+  for (const [key, target] of targets) {
+    const delta = Math.abs(target - heightPx);
+    if (delta < best) {
+      best = delta;
+      closest = key;
+    }
+  }
+
+  return closest;
+}
 
 export function RoutePlannerSheet({
   bottomInset = 0,
   children,
   footer,
   onKeyboardShow,
-  onToggleSize,
+  onSheetStateChange,
   sheetState,
   stepper,
 }: RoutePlannerSheetProps) {
@@ -42,9 +77,7 @@ export function RoutePlannerSheet({
     state.isVisible ? state.height : 0,
   );
   const restWindowHeightRef = useRef(windowHeight);
-  const animatedHeight = useSharedValue(
-    getSheetHeight(windowHeight, "normal", bottomInset, topInset),
-  );
+  const [isDragging, setIsDragging] = useState(false);
 
   if (keyboardHeight === 0) {
     restWindowHeightRef.current = windowHeight;
@@ -54,14 +87,26 @@ export function RoutePlannerSheet({
     keyboardHeight > 0 && windowHeight < restWindowHeightRef.current - 80;
   const bottomOffset = windowAlreadyResized ? 0 : keyboardHeight;
   const availableHeight = Math.max(windowHeight - bottomOffset - topInset, 0);
+  const effectiveBottomInset = bottomOffset > 0 ? 0 : bottomInset;
+
+  const detentHeights = useMemo(
+    () => getPlannerSheetDetentHeights(windowHeight, effectiveBottomInset, topInset),
+    [effectiveBottomInset, topInset, windowHeight],
+  );
+
+  const { compact, full, maxHeight, minHeight, normal } = detentHeights;
+
   const desiredHeight = getSheetHeight(
     windowHeight,
     sheetState,
-    bottomOffset > 0 ? 0 : bottomInset,
+    effectiveBottomInset,
     topInset,
   );
   const sheetHeight =
     bottomOffset > 0 ? Math.min(desiredHeight, availableHeight) : desiredHeight;
+
+  const height = useSharedValue(sheetHeight);
+  const startHeight = useSharedValue(sheetHeight);
 
   useEffect(() => {
     if (keyboardHeight > 0) {
@@ -70,27 +115,81 @@ export function RoutePlannerSheet({
   }, [keyboardHeight, onKeyboardShow]);
 
   useEffect(() => {
-    animatedHeight.value = withTiming(sheetHeight, {
+    if (isDragging) return;
+    height.value = withTiming(sheetHeight, {
       duration: 220,
       easing: Easing.out(Easing.cubic),
     });
-  }, [animatedHeight, sheetHeight]);
+  }, [height, isDragging, sheetHeight]);
+
+  const cycleDetent = useCallback(() => {
+    onSheetStateChange(cycleSheetState(sheetState));
+  }, [onSheetStateChange, sheetState]);
+
+  const commitDetent = useCallback(
+    (next: SheetState) => {
+      setIsDragging(false);
+      onSheetStateChange(next);
+    },
+    [onSheetStateChange],
+  );
+
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .onBegin(() => {
+          startHeight.value = height.value;
+          runOnJS(setIsDragging)(true);
+        })
+        .onUpdate((event) => {
+          const next = startHeight.value - event.translationY;
+          height.value = Math.min(maxHeight, Math.max(minHeight - 16, next));
+        })
+        .onEnd((event) => {
+          const moved = Math.abs(event.translationY) > TAP_THRESHOLD_PX;
+          if (!moved) {
+            runOnJS(setIsDragging)(false);
+            runOnJS(cycleDetent)();
+            return;
+          }
+
+          const nextDetent = snapToSheetState(height.value, compact, normal, full);
+          const nextHeight =
+            nextDetent === "compact" ? compact : nextDetent === "normal" ? normal : full;
+
+          height.value = withTiming(nextHeight, {
+            duration: 240,
+            easing: Easing.out(Easing.cubic),
+          });
+          runOnJS(commitDetent)(nextDetent);
+        })
+        .onFinalize(() => {
+          runOnJS(setIsDragging)(false);
+        }),
+    [
+      commitDetent,
+      compact,
+      cycleDetent,
+      full,
+      height,
+      maxHeight,
+      minHeight,
+      normal,
+      startHeight,
+    ],
+  );
 
   const sheetStyle = useAnimatedStyle(() => ({
-    height: animatedHeight.value,
+    height: height.value,
   }));
 
   return (
     <Animated.View style={[styles.sheet, sheetStyle, { bottom: bottomOffset }]}>
-      <Pressable
-        accessibilityLabel="Alternar tamanho do painel"
-        accessibilityRole="button"
-        hitSlop={12}
-        style={styles.handleArea}
-        onPress={onToggleSize}
-      >
-        <View style={styles.handle} />
-      </Pressable>
+      <GestureDetector gesture={panGesture}>
+        <View style={styles.handleArea}>
+          <View style={styles.handle} />
+        </View>
+      </GestureDetector>
 
       <View style={styles.stepperWrap}>{stepper}</View>
 

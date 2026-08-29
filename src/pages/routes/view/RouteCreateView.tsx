@@ -464,7 +464,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
           />
         }
         onKeyboardShow={handleSheetExpandForKeyboard}
-        onToggleSize={draft.toggleSheetState}
+        onSheetStateChange={draft.setSheetState}
       >
         {draft.step === 1 ? (
           <RouteCreateStep1
