@@ -25,6 +25,19 @@ export async function fetchMyRoutes(): Promise<RouteApiResponse[]> {
   return data;
 }
 
+export async function fetchMyRecentRoutes(days = 30): Promise<RouteApiResponse[]> {
+  const { data } = await api.get<RouteApiResponse[]>(apiRoutes.routes.recents(days));
+  return data;
+}
+
+export async function copyPublishedRoute(
+  routeId: string,
+  payload: CreateRoutePayload,
+): Promise<RouteApiResponse> {
+  const { data } = await api.post<RouteApiResponse>(apiRoutes.routes.copy(routeId), payload);
+  return data;
+}
+
 export const PUBLISHED_ROUTES_PAGE_SIZE = 10;
 
 export async function fetchMyPublishedRoutes(options?: {

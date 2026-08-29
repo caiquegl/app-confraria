@@ -63,11 +63,18 @@ export function useRouteCostEstimate({
     setIsLoadingFuel(true);
 
     const timer = setTimeout(() => {
+      const canResolveStateFromPlace =
+        Boolean(destinationPlaceId?.trim()) &&
+        !destinationPlaceId!.startsWith("gps:") &&
+        !destinationPlaceId!.startsWith("manual:");
+
       void fetchFuelCostEstimate({
         baseConsumption,
-        destinationPlaceId,
         distanceMeters: totalDistanceMeters,
         fuelType: "gasoline",
+        ...(canResolveStateFromPlace
+          ? { destinationPlaceId: destinationPlaceId! }
+          : {}),
       })
         .then((estimate) => {
           if (!cancelled) {

@@ -13,7 +13,7 @@ type RouteNavigationStatsCardProps = {
   onStop: () => void;
   state: Pick<
     RouteNavigationState,
-    "etaLabel" | "remainingDistanceLabel" | "remainingDurationLabel"
+    "etaLabel" | "isRerouting" | "remainingDistanceLabel" | "remainingDurationLabel" | "speedLabel"
   >;
 };
 
@@ -28,13 +28,17 @@ export function RouteNavigationStatsCard({
       <View style={styles.copy}>
         <Text style={styles.duration}>{state.remainingDurationLabel}</Text>
         <View style={styles.metaRow}>
-          {isOffRoute ? (
-            <Text style={styles.offRouteMeta}></Text>
+          {state.isRerouting ? (
+            <Text style={styles.offRouteMeta}>Recalculando rota...</Text>
+          ) : isOffRoute ? (
+            <Text style={styles.offRouteMeta}>Fora da rota</Text>
           ) : (
             <>
               <Text style={styles.meta}>{state.remainingDistanceLabel}</Text>
               <Text style={styles.dot}>•</Text>
               <Text style={styles.meta}>Chegada {state.etaLabel}</Text>
+              <Text style={styles.dot}>•</Text>
+              <Text style={styles.meta}>{state.speedLabel}</Text>
             </>
           )}
         </View>

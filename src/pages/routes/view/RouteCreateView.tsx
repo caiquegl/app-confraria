@@ -30,6 +30,11 @@ import type { RouteCreateAction } from "../types/saved-route.types";
 import type { WizardStep } from "../types/route-create.types";
 import { buildCreateRoutePayload } from "../utils/build-create-route-payload";
 import { mapApiRouteToEditSnapshot } from "../utils/map-api-route-to-edit";
+import { buildRouteCreateSnapshotFromQuickRoute } from "../utils/quick-route-create.utils";
+import {
+  clearQuickRoutePlannerSnapshot,
+  loadQuickRoutePlannerSnapshot,
+} from "../utils/quick-route-planner.storage";
 import { validateRouteSchedule } from "../utils/route-schedule.utils";
 
 type RouteCreateWizardProps = {
@@ -76,11 +81,32 @@ function getMaxReachableWizardStep(
 
 function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardProps) {
   const insets = useSafeAreaInsets();
+  const [quickPlannerSnapshot, setQuickPlannerSnapshot] = useState(
+    null as ReturnType<typeof buildRouteCreateSnapshotFromQuickRoute> | null,
+  );
   const [editSnapshot, setEditSnapshot] = useState(
     null as ReturnType<typeof mapApiRouteToEditSnapshot> | null,
   );
   const [loadedEditRouteId, setLoadedEditRouteId] = useState<string | null>(null);
   const isLoadingEdit = Boolean(editRouteId) && loadedEditRouteId !== editRouteId;
+
+  useEffect(() => {
+    if (editRouteId) return;
+
+    let cancelled = false;
+
+    void loadQuickRoutePlannerSnapshot()
+      .then((snapshot) => {
+        if (cancelled || !snapshot) return;
+        setQuickPlannerSnapshot(buildRouteCreateSnapshotFromQuickRoute(snapshot));
+        void clearQuickRoutePlannerSnapshot();
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editRouteId]);
 
   useEffect(() => {
     if (!editRouteId) {
@@ -126,7 +152,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         ? { latitude: location.latitude, longitude: location.longitude }
         : null,
     initialOriginLabel: location.cityLabel,
-    initialSnapshot: editSnapshot,
+    initialSnapshot: editSnapshot ?? quickPlannerSnapshot,
   });
   const { bikes, isLoading: isLoadingBikes } = useRouteBikes();
   const directions = useRouteDirections({
@@ -320,10 +346,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
         type: "success",
       });
 
-      router.replace({
-        params: { tab: "mine" },
-        pathname: "/routes",
-      });
+      router.replace("/routes/mine" as Href);
     } catch (error) {
       Toast.show({
         text1: "Não foi possível salvar a rota",

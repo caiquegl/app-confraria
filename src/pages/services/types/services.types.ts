@@ -60,6 +60,7 @@ export const NEARBY_CATEGORIES = [
 
 export type NearbyCategory = (typeof NEARBY_CATEGORIES)[number];
 
+/** Resultado de POST /places/nearby (Google + parceiros manuais). */
 export type NearbyPlace = {
   googlePlaceId: string;
   name: string;
@@ -72,6 +73,8 @@ export type NearbyPlace = {
   googleRatingCount: number | null;
   openNow: boolean | null;
   primaryType: string | null;
+  isConfrariaPartner?: boolean;
+  isSponsored?: boolean;
 };
 
 export type NearbySection = {

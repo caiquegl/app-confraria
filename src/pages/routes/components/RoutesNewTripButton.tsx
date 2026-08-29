@@ -11,13 +11,13 @@ export function RoutesNewTripButton({ onPress }: RoutesNewTripButtonProps) {
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>
       <Pressable
-        accessibilityLabel="Novo passeio"
+        accessibilityLabel="Planejar roteiro"
         accessibilityRole="button"
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         onPress={onPress}
       >
         <Ionicons color={colors.brandDark} name="navigate" size={16} />
-        <Text style={styles.label}>Novo Passeio</Text>
+        <Text style={styles.label}>Planejar roteiro</Text>
       </Pressable>
     </View>
   );

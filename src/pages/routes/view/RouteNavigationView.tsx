@@ -232,10 +232,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
 
   const handleCloseCompleted = useCallback(() => {
     setRouteRatingUiOpen(false);
-    router.replace({
-      params: { tab: "mine" },
-      pathname: "/routes",
-    } as Href);
+    router.replace("/routes/mine" as Href);
   }, []);
 
   const handleSubmitRating = useCallback(

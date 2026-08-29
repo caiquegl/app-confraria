@@ -28,6 +28,26 @@ export async function fetchNearbyPlaces(params: {
   return data;
 }
 
+export async function fetchMapGasStations(params: {
+  latitude: number;
+  longitude: number;
+  radius?: number;
+  minRating?: number;
+  signal?: AbortSignal;
+}): Promise<NearbyPlace[]> {
+  const { data } = await api.post<NearbyPlace[]>(
+    apiRoutes.places.mapGasStations,
+    {
+      latitude: params.latitude,
+      longitude: params.longitude,
+      ...(params.radius ? { radius: params.radius } : {}),
+      ...(params.minRating != null ? { minRating: params.minRating } : {}),
+    },
+    { signal: params.signal },
+  );
+  return data;
+}
+
 export async function importPlace(params: {
   googlePlaceId: string;
   category?: string;

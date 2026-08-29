@@ -34,7 +34,9 @@ import { RouteGuestsSection } from "../components/RouteGuestsSection";
 import { RoutePublishNoticeModal } from "../components/RoutePublishNoticeModal";
 import { RouteShareSheet } from "../components/RouteShareSheet";
 import { useRouteDirections } from "../hooks/useRouteDirections";
+import { useRouteBikes } from "../hooks/useRouteBikes";
 import {
+  copyPublishedRoute,
   deleteRoute,
   fetchRoute,
   removeRouteStop,
@@ -53,6 +55,8 @@ import {
   getRouteTripDurationSeconds,
 } from "../utils/route-trip-time.utils";
 import { buildMapMarkersFromDraft } from "../utils/route-draft.utils";
+import { buildCommunityRouteCopyPayload } from "../utils/build-community-route-copy-payload";
+import { trackRoutesEvent } from "../utils/track-routes-event";
 
 type RouteDetailViewProps = {
   onBack: () => void;
@@ -218,6 +222,8 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const hasPendingInvitation =
     route?.invitation?.status === "pending" && !isOwner && !isParticipant;
   const canUseRouteActions = isOwner || isParticipant;
+  const isCommunityVisitor = Boolean(route?.isPublished && !canUseRouteActions && !hasPendingInvitation);
+  const { bikes } = useRouteBikes();
 
   const draftDays = useMemo(
     () => (route ? mapApiRouteToEditSnapshot(route).draft.itinerary.days : []),
@@ -483,6 +489,56 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     } catch (error) {
       Toast.show({
         text1: "Não foi possível atualizar a rota",
+        text2: getApiErrorMessage(error, "Tente novamente em instantes."),
+        type: "error",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleCommunityCopy = async (action: "start_now" | "save_for_later" | "save_draft") => {
+    if (!route || isUpdatingStatus) return;
+
+    const bikeId = bikes[0]?.id;
+    if (!bikeId) {
+      Toast.show({
+        text1: "Cadastre uma moto",
+        text2: "Você precisa de uma moto na garagem para usar esta rota.",
+        type: "error",
+      });
+      router.push("/profile/bikes" as Href);
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      const copied = await copyPublishedRoute(
+        route.id,
+        buildCommunityRouteCopyPayload(route, bikeId, action),
+      );
+
+      if (action === "start_now") {
+        await ensureRouteBackgroundTracking(copied.id, copied.title);
+        router.push(`/routes/${copied.id}/navigate` as Href);
+        return;
+      }
+
+      if (action === "save_draft") {
+        trackRoutesEvent("community_route_personalized", { routeId: copied.id });
+        router.push(`/routes/edit?routeId=${copied.id}` as Href);
+        return;
+      }
+
+      Toast.show({
+        text1: "Rota salva",
+        text2: "A cópia foi adicionada em Minhas rotas.",
+        type: "success",
+      });
+      router.push("/routes/mine" as Href);
+    } catch (error) {
+      Toast.show({
+        text1: "Não foi possível copiar a rota",
         text2: getApiErrorMessage(error, "Tente novamente em instantes."),
         type: "error",
       });
@@ -934,6 +990,36 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         </View>
       ) : null}
 
+      {activeTab === "geral" && isCommunityVisitor ? (
+        <View style={styles.footer}>
+          <View style={styles.communityActions}>
+            <Button
+              disabled={isUpdatingStatus}
+              size="lg"
+              onPress={() => void handleCommunityCopy("start_now")}
+            >
+              Iniciar agora
+            </Button>
+            <Button
+              disabled={isUpdatingStatus}
+              size="lg"
+              variant="secondary"
+              onPress={() => void handleCommunityCopy("save_for_later")}
+            >
+              Salvar em Minhas rotas
+            </Button>
+            <Button
+              disabled={isUpdatingStatus}
+              size="lg"
+              variant="secondary"
+              onPress={() => void handleCommunityCopy("save_draft")}
+            >
+              Personalizar roteiro
+            </Button>
+          </View>
+        </View>
+      ) : null}
+
       {activeTab === "geral" && canUseRouteActions && !isFinished && !hasPendingInvitation ? (
         <View style={styles.footer}>
           <Button
@@ -1133,6 +1219,9 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     position: "absolute",
     right: 0,
+  },
+  communityActions: {
+    gap: 10,
   },
   invitationActions: {
     flexDirection: "row",

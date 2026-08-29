@@ -11,6 +11,7 @@ type BuildCreateRoutePayloadParams = {
   action: RouteCreateAction;
   daySummaries: DaySummary[];
   draftPayload: RouteCreatePayload;
+  kind?: CreateRoutePayload["kind"];
   schedule: {
     tripDate: string;
     tripNote: string;
@@ -28,6 +29,7 @@ export function buildCreateRoutePayload({
   action,
   daySummaries,
   draftPayload,
+  kind,
   schedule,
   totals,
 }: BuildCreateRoutePayloadParams): CreateRoutePayload {
@@ -53,6 +55,7 @@ export function buildCreateRoutePayload({
     motorcycle: {
       bikeId: draftPayload.motorcycle.bikeId as string,
     },
+    ...(kind ? { kind } : {}),
     preferences: draftPayload.preferences,
     schedule: {
       tripDate: schedule.tripDate.trim() || undefined,

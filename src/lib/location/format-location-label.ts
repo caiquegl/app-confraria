@@ -17,3 +17,19 @@ export function formatReverseGeocodeLabel(
 
   return place.name?.trim() || "Localização atual";
 }
+
+export function formatMapPointLabel(
+  place: LocationGeocodedAddress | undefined,
+): string {
+  if (!place) return "Local selecionado no mapa";
+
+  const streetParts = [place.street, place.streetNumber].filter(Boolean);
+  if (streetParts.length > 0) {
+    const street = streetParts.join(", ");
+    const city = place.city?.trim() || place.subregion?.trim();
+    if (city) return `${street} — ${city}`;
+    return street;
+  }
+
+  return formatReverseGeocodeLabel(place);
+}

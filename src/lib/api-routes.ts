@@ -119,6 +119,7 @@ export const apiRoutes = {
     directions: "/places/directions",
     estimateFuel: "/places/estimate-fuel",
     nearby: "/places/nearby",
+    mapGasStations: "/places/nearby/map-gas-stations",
     import: "/places/import",
     live: (googlePlaceId: string) =>
       `/places/live/${encodeURIComponent(googlePlaceId)}`,
@@ -129,6 +130,8 @@ export const apiRoutes = {
   routes: {
     create: "/routes",
     mine: "/routes/me",
+    recents: (days = 30) => `/routes/me/recents?days=${days}`,
+    copy: (routeId: string) => `/routes/${routeId}/copy`,
     pendingReview: "/routes/me/pending-review",
     minePublished: (options?: { cursor?: string; limit?: number; q?: string }) => {
       const params = new URLSearchParams();

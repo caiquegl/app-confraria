@@ -60,6 +60,8 @@ export type RouteNavigationState = {
   remainingPolyline: Coordinate[];
   route: RouteApiResponse | null;
   routePolyline: Coordinate[];
+  speedKmh: number | null;
+  speedLabel: string;
   totalDistanceMeters: number;
   traveledDistanceMeters: number;
 };
@@ -93,6 +95,8 @@ const INITIAL_STATE: RouteNavigationState = {
   remainingPolyline: [],
   route: null,
   routePolyline: [],
+  speedKmh: null,
+  speedLabel: "—",
   totalDistanceMeters: 0,
   traveledDistanceMeters: 0,
 };
@@ -483,6 +487,9 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
 
       remainingDurationSecondsRef.current = remainingDurationSeconds;
 
+      const speedKmh =
+        speedRef.current > 0 ? Math.round(speedRef.current * 3.6) : null;
+
       setState((current) => ({
         ...current,
         activeStep,
@@ -505,6 +512,8 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
         remainingDistanceMeters,
         remainingDurationLabel: formatDurationFromSeconds(remainingDurationSeconds),
         remainingPolyline,
+        speedKmh,
+        speedLabel: speedKmh != null ? `${speedKmh} km/h` : "—",
         traveledDistanceMeters,
       }));
 

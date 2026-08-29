@@ -1,3 +1,4 @@
+import { Children, isValidElement } from "react";
 import {
   StyleSheet,
   Text,
@@ -21,6 +22,28 @@ type ButtonProps = TouchableOpacityProps & {
   children: React.ReactNode;
 };
 
+function renderButtonChildren(
+  children: React.ReactNode,
+  size: ButtonSize,
+  variant: ButtonVariant,
+  textStyle?: StyleProp<TextStyle>,
+) {
+  return Children.toArray(children).map((child, index) => {
+    if (typeof child === "string" || typeof child === "number") {
+      return (
+        <Text
+          key={`button-text-${index}`}
+          style={[styles.text, sizeTextStyles[size], variantTextStyles[variant], textStyle]}
+        >
+          {child}
+        </Text>
+      );
+    }
+
+    return isValidElement(child) ? child : null;
+  });
+}
+
 export function Button({
   children,
   disabled,
@@ -43,9 +66,7 @@ export function Button({
       ]}
       {...props}
     >
-      <Text style={[styles.text, sizeTextStyles[size], variantTextStyles[variant], textStyle]}>
-        {children}
-      </Text>
+      {renderButtonChildren(children, size, variant, textStyle)}
     </TouchableOpacity>
   );
 }
@@ -79,11 +100,17 @@ const sizeTextStyles: Record<ButtonSize, TextStyle> = {
 };
 
 const variantStyles: Record<ButtonVariant, ViewStyle> = {
-  default: { backgroundColor: colors.brandGreen },
+  default: {
+    backgroundColor: colors.brandGreen,
+  },
   destructive: { backgroundColor: "#EF4444" },
   ghost: { backgroundColor: "transparent" },
   outline: { backgroundColor: "transparent", borderColor: "#D1D5DB", borderWidth: 1 },
-  secondary: { backgroundColor: "#FFFFFF", borderColor: "#F3F4F6", borderWidth: 1 },
+  secondary: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F3F4F6",
+    borderWidth: 1,
+  },
 };
 
 const variantTextStyles: Record<ButtonVariant, TextStyle> = {

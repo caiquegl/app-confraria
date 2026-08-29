@@ -45,6 +45,10 @@ export function PlaceAutocompleteField({
 
   useEffect(() => {
     if (!value) {
+      setQuery("");
+      setSuggestions([]);
+      setHasError(false);
+      setIsLoading(false);
       return;
     }
 

@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     width: 10,
   },
   dotPing: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.brandDark,
     borderRadius: 999,
     opacity: 0.35,

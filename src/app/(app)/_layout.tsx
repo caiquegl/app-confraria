@@ -37,6 +37,7 @@ export default function AppLayout() {
     getActiveNavigationRouteId(),
   );
   const isOnNavigationScreen = /\/routes\/[^/]+\/navigate/.test(pathname);
+  const isRoutesMapHome = pathname === "/routes";
   const shouldHideBottomNav =
     pathname.startsWith("/event/") ||
     pathname.startsWith("/events/discover") ||
@@ -53,7 +54,8 @@ export default function AppLayout() {
   const showActiveRouteFab =
     authState === "authenticated" &&
     activeNavigationRouteId != null &&
-    !isOnNavigationScreen;
+    !isOnNavigationScreen &&
+    !isRoutesMapHome;
 
   useEffect(() => {
     if (authState !== "authenticated") return;

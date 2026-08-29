@@ -1,4 +1,6 @@
-export type RouteStatus = "scheduled" | "in_progress" | "finished";
+export type RouteStatus = "draft" | "scheduled" | "in_progress" | "finished";
+
+export type RouteKind = "quick" | "planned";
 
 export type RouteInvitationStatus = "pending" | "accepted" | "declined";
 
@@ -22,7 +24,7 @@ export type RoutePendingInviteResponse = {
   userId: string;
 };
 
-export type RouteCreateAction = "start_now" | "save_for_later";
+export type RouteCreateAction = "start_now" | "save_for_later" | "save_draft";
 
 export type RelativePeriod = "ALL" | "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "UPCOMING" | "NO_DATE";
 
@@ -73,10 +75,12 @@ export type SavedRoute = {
   fuelCost: number | null;
   hasOvernight: boolean;
   id: string;
+  kind: RouteKind;
   myReview: RouteMyReview | null;
   optimizeFuel: boolean;
   originLabel: string;
   startsAt: string;
+  startedAt: string | null;
   status: RouteStatus;
   title: string;
   tollCost: number | null;
@@ -135,6 +139,7 @@ export type CreateRoutePayload = {
     tripNote?: string;
     tripTime?: string;
   };
+  kind?: RouteKind;
   totals?: {
     distanceMeters?: number;
     durationSeconds?: number;
@@ -191,6 +196,7 @@ export type RouteApiResponse = {
   isOwner: boolean;
   isParticipant: boolean;
   isPublished: boolean;
+  kind: RouteKind;
   myReview: RouteMyReview | null;
   optimizeFuel: boolean;
   originLabel: string;
