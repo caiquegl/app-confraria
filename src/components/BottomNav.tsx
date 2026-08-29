@@ -17,7 +17,10 @@ type NavItem = {
   isProfile?: boolean;
 };
 
-const NAV_ITEMS: NavItem[] = [
+/** Página `/services` permanece no app, mas o acesso pelo menu inferior fica oculto. */
+const SHOW_SERVICES_NAV = false;
+
+const ALL_NAV_ITEMS: NavItem[] = [
   {
     href: "/feed",
     icon: "people-outline",
@@ -50,6 +53,10 @@ const NAV_ITEMS: NavItem[] = [
     matchPaths: ["/profile"],
   },
 ];
+
+const NAV_ITEMS = SHOW_SERVICES_NAV
+  ? ALL_NAV_ITEMS
+  : ALL_NAV_ITEMS.filter((item) => item.href !== "/services");
 
 const NAVIGATION_COOLDOWN_MS = 400;
 
