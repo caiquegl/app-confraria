@@ -30,6 +30,7 @@ import { colors } from "@/theme/colors";
 
 import { RouteCompletedView } from "../components/RouteCompletedView";
 import { RouteDetailMap } from "../components/RouteDetailMap";
+import { FreeRouteLimitPaywall } from "../components/FreeRouteLimitPaywall";
 import { RouteGuestsSection } from "../components/RouteGuestsSection";
 import { RoutePublishNoticeModal } from "../components/RoutePublishNoticeModal";
 import { RouteShareSheet } from "../components/RouteShareSheet";
@@ -47,7 +48,10 @@ import {
 } from "../services/routes.service";
 import { setRouteRatingUiOpen } from "../stores/route-rating-ui-store";
 import type { RouteApiResponse, RouteDayApiResponse, RoutePlaceResponse } from "../types/saved-route.types";
+import { buildCommunityRouteCopyPayload } from "../utils/build-community-route-copy-payload";
+import { isFreeRouteLimitError } from "../utils/free-route-limit.utils";
 import { mapApiRouteToEditSnapshot } from "../utils/map-api-route-to-edit";
+import { trackRoutesEvent } from "../utils/track-routes-event";
 import { formatRouteDistance, formatRouteDuration } from "../utils/route-format.utils";
 import {
   formatRouteDateTime,
@@ -55,8 +59,6 @@ import {
   getRouteTripDurationSeconds,
 } from "../utils/route-trip-time.utils";
 import { buildMapMarkersFromDraft } from "../utils/route-draft.utils";
-import { buildCommunityRouteCopyPayload } from "../utils/build-community-route-copy-payload";
-import { trackRoutesEvent } from "../utils/track-routes-event";
 
 type RouteDetailViewProps = {
   onBack: () => void;
@@ -199,6 +201,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   >(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showRatingAfterFinish, setShowRatingAfterFinish] = useState(false);
+  const [showFreeRoutePaywall, setShowFreeRoutePaywall] = useState(false);
 
   useEffect(() => {
     if (!showRatingAfterFinish) return;
@@ -537,6 +540,12 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
       });
       router.push("/routes/mine" as Href);
     } catch (error) {
+      if (isFreeRouteLimitError(error)) {
+        trackRoutesEvent("free_route_limit_reached");
+        setShowFreeRoutePaywall(true);
+        return;
+      }
+
       Toast.show({
         text1: "Não foi possível copiar a rota",
         text2: getApiErrorMessage(error, "Tente novamente em instantes."),
@@ -1088,6 +1097,15 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         mode={publishNoticeMode}
         visible={publishNoticeMode != null}
         onContinue={() => setPublishNoticeMode(null)}
+      />
+
+      <FreeRouteLimitPaywall
+        visible={showFreeRoutePaywall}
+        onClose={() => setShowFreeRoutePaywall(false)}
+        onSubscribe={() => {
+          setShowFreeRoutePaywall(false);
+          router.push("/profile/subscription" as Href);
+        }}
       />
     </View>
   );

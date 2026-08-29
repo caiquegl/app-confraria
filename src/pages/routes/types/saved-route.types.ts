@@ -226,6 +226,23 @@ export type RouteApiResponse = {
   userBikeId: string;
 };
 
+export type MyRoutesListResponse = {
+  data: RouteApiResponse[];
+  historyDays: number | null;
+  historyLimited: boolean;
+  isPremium: boolean;
+  savedPrivateCount: number;
+  savedPrivateLimit: number | null;
+};
+
+export type MyRoutesQuota = {
+  historyDays: number | null;
+  historyLimited: boolean;
+  isPremium: boolean;
+  savedPrivateCount: number;
+  savedPrivateLimit: number | null;
+};
+
 export type UpsertRouteReviewPayload = {
   comment?: string;
   rating: number;

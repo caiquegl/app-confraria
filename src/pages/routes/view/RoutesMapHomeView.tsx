@@ -38,6 +38,7 @@ import { useNotificationBadge } from "@/pages/notifications";
 import { colors } from "@/theme/colors";
 
 import { QuickRouteSheet } from "../components/QuickRouteSheet";
+import { FreeRouteLimitPaywall } from "../components/FreeRouteLimitPaywall";
 import { RouteMapPhotosCarouselModal } from "../components/RouteMapPhotosCarouselModal";
 import { RoutePhotoClusterMarker } from "../components/RoutePhotoClusterMarker";
 import {
@@ -63,6 +64,7 @@ import type { QuickRoutePlace } from "../types/quick-route.types";
 import type { RouteThumbnailType } from "../types/saved-route.types";
 import { buildQuickRoutePayload } from "../utils/build-quick-route-payload";
 import { createDefaultRouteCover } from "../types/route-create.types";
+import { isFreeRouteLimitError } from "../utils/free-route-limit.utils";
 import {
   dedupeNearbyPlaces,
   sortNearbyPlacesByPriority,
@@ -84,11 +86,6 @@ const NEARBY_CATEGORIES = [
   "Restaurantes",
   "Hotéis",
 ] as const;
-
-function isFreeRouteLimitError(error: unknown) {
-  const response = (error as { response?: { data?: { code?: string } } })?.response?.data;
-  return response?.code === "FREE_ROUTE_LIMIT";
-}
 
 function toQuickPlace(
   place: PlaceReference & { latitude?: number; longitude?: number },
@@ -147,6 +144,7 @@ export function RoutesMapHomeView() {
   const [nearbyCategory, setNearbyCategory] = useState<NearbyCategoryFilter>("all");
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
   const [routeResetToken, setRouteResetToken] = useState(0);
+  const [showFreeRoutePaywall, setShowFreeRoutePaywall] = useState(false);
 
   const hasCoords = location.latitude != null && location.longitude != null;
   const isLocationReady = location.status === "ready" && hasCoords;
@@ -586,12 +584,7 @@ export function RoutesMapHomeView() {
       } catch (error) {
         if (isFreeRouteLimitError(error)) {
           trackRoutesEvent("free_route_limit_reached");
-          Toast.show({
-            text1: "Limite do plano free",
-            text2: "Você já tem 5 rotas salvas. Assine para continuar.",
-            type: "error",
-            onPress: () => router.push("/profile/subscription" as Href),
-          });
+          setShowFreeRoutePaywall(true);
           return;
         }
 
@@ -895,6 +888,15 @@ export function RoutesMapHomeView() {
         photos={mapPhotos.selectedCluster?.photos ?? []}
         visible={mapPhotos.selectedCluster != null}
         onClose={mapPhotos.closeCluster}
+      />
+
+      <FreeRouteLimitPaywall
+        visible={showFreeRoutePaywall}
+        onClose={() => setShowFreeRoutePaywall(false)}
+        onSubscribe={() => {
+          setShowFreeRoutePaywall(false);
+          router.push("/profile/subscription" as Href);
+        }}
       />
     </View>
   );

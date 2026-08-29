@@ -7,6 +7,7 @@ import { optimizeImageForUpload } from "@/lib/media-optimization";
 import type { RoutePhoto } from "../types/route-photo.types";
 import type {
   CreateRoutePayload,
+  MyRoutesListResponse,
   PublishedRoutesPageResponse,
   RouteApiResponse,
   UpdateRoutePayload,
@@ -27,8 +28,23 @@ export async function createRoute(
   return createRouteRequest(payload, coverImageUri);
 }
 
-export async function fetchMyRoutes(): Promise<RouteApiResponse[]> {
-  const { data } = await api.get<RouteApiResponse[]>(apiRoutes.routes.mine);
+export async function fetchMyRoutes(): Promise<MyRoutesListResponse> {
+  const { data } = await api.get<MyRoutesListResponse | RouteApiResponse[]>(
+    apiRoutes.routes.mine,
+  );
+
+  // Compatibilidade transitória se o backend ainda devolver array.
+  if (Array.isArray(data)) {
+    return {
+      data,
+      historyDays: null,
+      historyLimited: false,
+      isPremium: true,
+      savedPrivateCount: 0,
+      savedPrivateLimit: null,
+    };
+  }
+
   return data;
 }
 

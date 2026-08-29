@@ -31,6 +31,7 @@ import { SavedRouteCard } from "../components/SavedRouteCard";
 import { useMyRoutes } from "../hooks/useMyRoutes";
 import type { SavedRouteFilters } from "../types/saved-route.types";
 import {
+  COMPLETED_GROUP_LABEL,
   COMPLETION_OPTIONS,
   DEFAULT_ROUTE_FILTERS,
   ONGOING_GROUP_LABEL,
@@ -47,7 +48,7 @@ export function RoutesMineView() {
   const { hasUnread } = useNotificationBadge();
   const { location } = useGeolocation();
   const storedProfile = getStoredCurrentProfile();
-  const { error, isLoading, routes } = useMyRoutes();
+  const { error, isLoading, quota, routes } = useMyRoutes();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<SavedRouteFilters>(DEFAULT_ROUTE_FILTERS);
@@ -67,7 +68,16 @@ export function RoutesMineView() {
     () => filterSavedRoutes(routes, filters, searchQuery),
     [filters, routes, searchQuery],
   );
-  const groupedRoutes = useMemo(() => groupSavedRoutes(filteredRoutes), [filteredRoutes]);
+  const groupedRoutes = useMemo(() => {
+    const groups = groupSavedRoutes(filteredRoutes);
+    if (
+      !quota.historyLimited ||
+      groups.some((group) => group.label === COMPLETED_GROUP_LABEL)
+    ) {
+      return groups;
+    }
+    return [...groups, { label: COMPLETED_GROUP_LABEL, routes: [] }];
+  }, [filteredRoutes, quota.historyLimited]);
   const activeFilterChips = useMemo(
     () => buildActiveFilterChips(filters, setFilters),
     [filters],
@@ -308,6 +318,26 @@ export function RoutesMineView() {
             </View>
           ) : null}
 
+          {!quota.isPremium && quota.savedPrivateLimit != null ? (
+            <View style={styles.quotaCard}>
+              <View style={styles.quotaCopy}>
+                <Text style={styles.quotaTitle}>Rotas salvas</Text>
+                <Text style={styles.quotaValue}>
+                  {quota.savedPrivateCount} de {quota.savedPrivateLimit}
+                </Text>
+              </View>
+              {quota.savedPrivateCount >= quota.savedPrivateLimit ? (
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.quotaCta}
+                  onPress={() => router.push("/profile/subscription" as Href)}
+                >
+                  <Text style={styles.quotaCtaText}>Assinar</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+
           {isLoading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator color={colors.brandDark} size="large" />
@@ -361,17 +391,37 @@ export function RoutesMineView() {
             <View style={styles.groups}>
               {groupedRoutes.map((group) => {
                 const isOngoing = group.label === ONGOING_GROUP_LABEL;
+                const isCompleted = group.label === COMPLETED_GROUP_LABEL;
                 return (
                   <View key={group.label} style={styles.groupSection}>
                     <View style={styles.groupHeader}>
                       <Text style={styles.groupTitle}>{group.label}</Text>
-                      {!isOngoing ? (
+                      {!isOngoing && group.routes.length > 0 ? (
                         <Text style={styles.groupCount}>
                           {group.routes.length} passeio
                           {group.routes.length > 1 ? "s" : ""}
                         </Text>
                       ) : null}
                     </View>
+
+                    {isCompleted && quota.historyLimited ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        style={styles.historyBanner}
+                        onPress={() => router.push("/profile/subscription" as Href)}
+                      >
+                        <Ionicons color={colors.brandDark} name="time-outline" size={16} />
+                        <View style={styles.historyCopy}>
+                          <Text style={styles.historyTitle}>
+                            Mostrando os últimos {quota.historyDays ?? 30} dias
+                          </Text>
+                          <Text style={styles.historySubtitle}>
+                            Assine para ver seu histórico completo
+                          </Text>
+                        </View>
+                        <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
+                      </Pressable>
+                    ) : null}
 
                     {isOngoing ? (
                       <SavedRouteCard
@@ -560,6 +610,71 @@ const styles = StyleSheet.create({
   },
   groups: {
     paddingBottom: 24,
+  },
+  historyBanner: {
+    alignItems: "center",
+    backgroundColor: "#F8FAF3",
+    borderColor: "#E5E7EB",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  historyCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  historySubtitle: {
+    color: "#6B7280",
+    fontSize: 12,
+  },
+  historyTitle: {
+    color: colors.brandDark,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  quotaCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  quotaCopy: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  quotaCta: {
+    backgroundColor: colors.brandGreen,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  quotaCtaText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  quotaTitle: {
+    color: "#6B7280",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  quotaValue: {
+    color: colors.brandDark,
+    fontSize: 16,
+    fontWeight: "800",
   },
   headerCopy: {
     flex: 1,

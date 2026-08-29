@@ -17,6 +17,7 @@ import { RouteCreateStep1 } from "../components/RouteCreateStep1";
 import { RouteCreateStep2 } from "../components/RouteCreateStep2";
 import { RouteCreateStep3 } from "../components/RouteCreateStep3";
 import { RouteCreateStep4 } from "../components/RouteCreateStep4";
+import { FreeRouteLimitPaywall } from "../components/FreeRouteLimitPaywall";
 import { RoutePlannerMap } from "../components/RoutePlannerMap";
 import { RoutePlannerSheet } from "../components/RoutePlannerSheet";
 import { RouteWizardStepper } from "../components/RouteWizardStepper";
@@ -29,6 +30,7 @@ import { createRoute, fetchRoute, updateRoute } from "../services/routes.service
 import type { RouteCreateAction } from "../types/saved-route.types";
 import type { WizardStep } from "../types/route-create.types";
 import { buildCreateRoutePayload } from "../utils/build-create-route-payload";
+import { isFreeRouteLimitError } from "../utils/free-route-limit.utils";
 import { mapApiRouteToEditSnapshot } from "../utils/map-api-route-to-edit";
 import { buildRouteCreateSnapshotFromQuickRoute } from "../utils/quick-route-create.utils";
 import {
@@ -36,6 +38,7 @@ import {
   loadQuickRoutePlannerSnapshot,
 } from "../utils/quick-route-planner.storage";
 import { validateRouteSchedule } from "../utils/route-schedule.utils";
+import { trackRoutesEvent } from "../utils/track-routes-event";
 
 type RouteCreateWizardProps = {
   editRouteId?: string | null;
@@ -88,6 +91,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
     null as ReturnType<typeof mapApiRouteToEditSnapshot> | null,
   );
   const [loadedEditRouteId, setLoadedEditRouteId] = useState<string | null>(null);
+  const [showFreeRoutePaywall, setShowFreeRoutePaywall] = useState(false);
   const isLoadingEdit = Boolean(editRouteId) && loadedEditRouteId !== editRouteId;
 
   useEffect(() => {
@@ -354,6 +358,12 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
 
       router.replace("/routes/mine" as Href);
     } catch (error) {
+      if (isFreeRouteLimitError(error)) {
+        trackRoutesEvent("free_route_limit_reached");
+        setShowFreeRoutePaywall(true);
+        return;
+      }
+
       Toast.show({
         text1: "Não foi possível salvar a rota",
         text2: getApiErrorMessage(error, "Tente novamente em instantes."),
@@ -541,6 +551,15 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
           />
         ) : null}
       </RoutePlannerSheet>
+
+      <FreeRouteLimitPaywall
+        visible={showFreeRoutePaywall}
+        onClose={() => setShowFreeRoutePaywall(false)}
+        onSubscribe={() => {
+          setShowFreeRoutePaywall(false);
+          router.push("/profile/subscription" as Href);
+        }}
+      />
     </View>
   );
 }
