@@ -6,11 +6,12 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { InputField } from "@/components/InputField";
+import { QUICK_RIDE_FIELD } from "@/pages/quick-rides/lib/quick-ride-form";
 import { colors } from "@/theme/colors";
 
 type QuickRideCancelModalProps = {
@@ -79,17 +80,20 @@ export function QuickRideCancelModal({
             </Text>
           </View>
 
-          <Text style={styles.label}>Motivo do cancelamento</Text>
-          <TextInput
-            editable={!isDeleting}
-            multiline
-            placeholder="Ex.: choveu forte, vamos remarcar para outro dia."
-            placeholderTextColor="#9CA3AF"
-            style={styles.textarea}
-            textAlignVertical="top"
-            value={reason}
-            onChangeText={setReason}
-          />
+          <View style={styles.reasonField}>
+            <InputField
+              autoCapitalize={QUICK_RIDE_FIELD.cancelReason.autoCapitalize}
+              editable={!isDeleting}
+              helperText={QUICK_RIDE_FIELD.cancelReason.helperText}
+              label={QUICK_RIDE_FIELD.cancelReason.label}
+              multiline
+              persistentLabel
+              placeholder={QUICK_RIDE_FIELD.cancelReason.placeholder}
+              required={QUICK_RIDE_FIELD.cancelReason.required}
+              value={reason}
+              onChangeText={setReason}
+            />
+          </View>
 
           <Pressable
             accessibilityRole="button"
@@ -179,11 +183,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "900",
   },
-  label: {
-    color: colors.brandDark,
-    fontSize: 13,
-    fontWeight: "800",
-    marginBottom: 8,
+  reasonField: {
+    marginBottom: 20,
   },
   primaryButton: {
     alignItems: "center",
@@ -221,16 +222,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     width: "100%",
-  },
-  textarea: {
-    borderColor: "#E5E7EB",
-    borderRadius: 18,
-    borderWidth: 1,
-    color: colors.brandDark,
-    fontSize: 16,
-    marginBottom: 20,
-    minHeight: 96,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
   },
 });
