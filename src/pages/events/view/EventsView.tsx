@@ -613,7 +613,6 @@ export function EventsView() {
           locationLabel={location.cityLabel}
           searchPlaceholder="Buscar em eventos"
           searchQuery={searchQuery}
-          topInset={insets.top}
           userAvatar={userAvatar}
           userName={userName}
           onOpenNotifications={() => router.push("/notifications")}

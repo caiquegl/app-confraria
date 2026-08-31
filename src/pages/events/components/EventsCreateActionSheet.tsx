@@ -191,11 +191,9 @@ const styles = StyleSheet.create({
     width: 40,
   },
   sheet: {
-    alignSelf: "center",
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxWidth: 390,
     paddingHorizontal: 16,
     paddingTop: 12,
     width: "100%",
