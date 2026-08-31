@@ -689,6 +689,7 @@ export function EventsView() {
             <EventsEmptyFiltersCard isLoading />
           ) : categoryListKind === "initial-error" ? (
             <EventsEmptyFiltersCard
+              retrying={isLoadingCategoryEvents}
               variant="error"
               onRetry={() => loadCategoryEvents(selectedCategory)}
             />
@@ -712,7 +713,11 @@ export function EventsView() {
         ) : discoverListKind === "loading" ? (
           <EventsEmptyFiltersCard isLoading />
         ) : discoverListKind === "initial-error" ? (
-          <EventsEmptyFiltersCard variant="error" onRetry={reloadDiscoverData} />
+          <EventsEmptyFiltersCard
+            retrying={isLoadingDiscover}
+            variant="error"
+            onRetry={reloadDiscoverData}
+          />
         ) : !hasDiscoveryResults ? (
           <EventsContentEmpty
             hasFilters={hasEventFilters}

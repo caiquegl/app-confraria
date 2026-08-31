@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import { ErrorState } from "@/components/ErrorState";
 import { colors } from "@/theme/colors";
 
 import { useUserSearch } from "../business/useUserSearch";
@@ -16,7 +17,7 @@ import { SearchUserCard } from "../components/SearchUserCard";
 import type { UserSearchViewProps } from "../types/search.types";
 
 export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
-  const { error, hasSearched, isSearching, results, searchQuery, setSearchQuery } =
+  const { error, hasSearched, isRetrying, isSearching, results, retry, searchQuery, setSearchQuery } =
     useUserSearch();
 
   const showEmptyHint = searchQuery.trim().length === 0;
@@ -49,9 +50,14 @@ export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
           <ActivityIndicator color={colors.brandPrimary} />
         </View>
       ) : error ? (
-        <View style={styles.centerState}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
+        <ErrorState
+          description="Verifique a conexão e tente novamente."
+          layout="inline"
+          retrying={isRetrying}
+          style={styles.errorState}
+          title="Não foi possível buscar perfis"
+          onRetry={retry}
+        />
       ) : showEmptyHint ? (
         <View style={styles.centerState}>
           <Ionicons color="#D1D5DB" name="search-outline" size={42} />
@@ -95,10 +101,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  errorText: {
-    color: "#EF4444",
-    fontSize: 14,
-    textAlign: "center",
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
   },
   header: {
     alignItems: "center",

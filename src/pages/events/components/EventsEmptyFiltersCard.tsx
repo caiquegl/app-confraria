@@ -1,16 +1,19 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
+import { ErrorState } from "@/components/ErrorState";
 import { colors } from "@/theme/colors";
 
 type EventsEmptyFiltersCardProps = {
   isLoading?: boolean;
   onRetry?: () => void;
+  retrying?: boolean;
   variant?: "error";
 };
 
 export function EventsEmptyFiltersCard({
   isLoading = false,
   onRetry,
+  retrying = false,
 }: EventsEmptyFiltersCardProps) {
   if (isLoading) {
     return (
@@ -21,58 +24,21 @@ export function EventsEmptyFiltersCard({
   }
 
   return (
-    <View style={styles.emptyWrap}>
-      <Text style={styles.emptyTitle}>Não foi possível carregar os eventos</Text>
-      <Text style={styles.emptyText}>
-        Verifique a conexão e tente novamente. Isso não significa que não há eventos.
-      </Text>
-      {onRetry ? (
-        <Pressable accessibilityRole="button" style={styles.clearButton} onPress={onRetry}>
-          <Text style={styles.clearButtonText}>Tentar novamente</Text>
-        </Pressable>
-      ) : null}
-    </View>
+    <ErrorState
+      description="Verifique a conexão e tente novamente. Isso não significa que não há eventos."
+      layout="card"
+      retrying={retrying}
+      style={styles.errorCard}
+      title="Não foi possível carregar os eventos"
+      onRetry={() => onRetry?.()}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  clearButton: {
-    alignSelf: "center",
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  clearButtonText: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  emptyText: {
-    color: "#6B7280",
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  emptyTitle: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  emptyWrap: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    borderWidth: 1,
+  errorCard: {
     marginHorizontal: 16,
     marginTop: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
   },
   loadingWrap: {
     alignItems: "center",

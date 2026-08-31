@@ -22,8 +22,12 @@ export function useMyRoutes() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ListLoadError>(null);
   const hasLoadedOnceRef = useRef(false);
+  const inFlightRef = useRef(false);
 
   const refresh = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
     const isRefresh = hasLoadedOnceRef.current;
     if (!isRefresh) {
       setIsLoading(true);
@@ -52,6 +56,7 @@ export function useMyRoutes() {
         });
       }
     } finally {
+      inFlightRef.current = false;
       setIsLoading(false);
     }
   }, []);

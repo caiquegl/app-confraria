@@ -1,5 +1,6 @@
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Toast from "react-native-toast-message";
 
 import {
   connectNotificationsSocket,
@@ -22,46 +23,61 @@ export function useNotifications(): UseNotificationsResult {
   const [newNotifications, setNewNotifications] = useState<AppNotification[]>([]);
   const [oldNotifications, setOldNotifications] = useState<AppNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const hasDataRef = useRef(false);
 
-  useEffect(() => {
-    let mounted = true;
+  const reload = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
 
-    async function loadNotifications() {
+    const hasData = hasDataRef.current;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
       setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await fetchNotifications();
-        if (!mounted) return;
-
-        setNewNotifications(data.newNotifications);
-        setOldNotifications(data.oldNotifications);
-        await markAllNotificationsRead();
-        setStoredUnreadCount(0);
-      } catch {
-        if (!mounted) return;
-        setError("Não foi possível carregar as notificações.");
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
     }
 
-    void loadNotifications();
-
-    return () => {
-      mounted = false;
-    };
+    try {
+      const data = await fetchNotifications();
+      setNewNotifications(data.newNotifications);
+      setOldNotifications(data.oldNotifications);
+      setError(null);
+      hasDataRef.current = true;
+      await markAllNotificationsRead();
+      setStoredUnreadCount(0);
+    } catch {
+      if (hasData) {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar as notificações",
+          text2: "Mantivemos a lista anterior.",
+        });
+      } else {
+        setError("Não foi possível carregar as notificações.");
+      }
+    } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
+      setIsLoading(false);
+      setIsRetrying(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
 
   return {
     error,
     hasUnread: newNotifications.length > 0,
     isLoading,
+    isRetrying,
     newNotifications,
     oldNotifications,
+    reload,
     unreadCount: newNotifications.length,
   };
 }

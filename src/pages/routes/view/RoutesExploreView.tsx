@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppTopBar } from "@/components/AppTopBar";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import {
   getStoredCurrentProfile,
   subscribeStoredCurrentProfile,
@@ -98,7 +99,6 @@ export function RoutesExploreView() {
     !hasCommunityContent;
   const hasInitialListError =
     !hasCommunityContent &&
-    !isCommunityLoading &&
     (publishedRoutes.error === "initial" ||
       nearRoutes.error === "initial" ||
       friendsRoutes.error === "initial");
@@ -224,29 +224,23 @@ export function RoutesExploreView() {
             onRoutePress={(routeId) => router.push(`/routes/${routeId}` as Href)}
           />
 
-          {isCommunityLoading ? (
+          {hasInitialListError ? (
+            <View style={styles.emptyStateWrap}>
+              <ErrorState
+                description="Verifique a conexão e tente novamente. Isso não significa que não há rotas."
+                layout="card"
+                retrying={isCommunityLoading}
+                title="Não foi possível carregar as rotas"
+                onRetry={() => {
+                  void publishedRoutes.refresh();
+                  void nearRoutes.refresh();
+                  void friendsRoutes.refresh();
+                }}
+              />
+            </View>
+          ) : isCommunityLoading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator color={colors.brandDark} size="large" />
-            </View>
-          ) : hasInitialListError ? (
-            <View style={styles.emptyStateWrap}>
-              <View style={styles.emptyStateCard}>
-                <Text style={styles.emptyStateTitle}>Não foi possível carregar as rotas</Text>
-                <Text style={styles.emptyStateSubtitle}>
-                  Verifique a conexão e tente novamente. Isso não significa que não há rotas.
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  style={styles.emptyStateButton}
-                  onPress={() => {
-                    void publishedRoutes.refresh();
-                    void nearRoutes.refresh();
-                    void friendsRoutes.refresh();
-                  }}
-                >
-                  <Text style={styles.emptyStateButtonText}>Tentar novamente</Text>
-                </Pressable>
-              </View>
             </View>
           ) : !hasCommunityContent ? (
             <View style={styles.emptyStateWrap}>
@@ -331,40 +325,6 @@ const styles = StyleSheet.create({
   },
   communityContent: {
     paddingBottom: 24,
-  },
-  emptyStateButton: {
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  emptyStateButtonText: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  emptyStateCard: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 24,
-  },
-  emptyStateSubtitle: {
-    color: "#6B7280",
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  emptyStateTitle: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
-    textAlign: "center",
   },
   emptyStateWrap: {
     paddingHorizontal: 24,

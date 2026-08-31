@@ -32,7 +32,9 @@ export type UseNotificationsResult = {
   error: string | null;
   hasUnread: boolean;
   isLoading: boolean;
+  isRetrying: boolean;
   newNotifications: AppNotification[];
   oldNotifications: AppNotification[];
+  reload: () => Promise<void>;
   unreadCount: number;
 };

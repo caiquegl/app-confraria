@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
+import { ErrorState } from "@/components/ErrorState";
 import { UserAvatar } from "@/components/UserAvatar";
 import { QuickRideCancelModal } from "@/pages/quick-ride-detail/components/QuickRideCancelModal";
 import { QuickRideDeleteConfirmModal } from "@/pages/quick-ride-detail/components/QuickRideDeleteConfirmModal";
@@ -43,11 +44,16 @@ export function QuickRideDetailView({ onBack, quickRideId }: QuickRideDetailView
   const [ride, setRide] = useState<QuickRideDetail | null>(null);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [isTogglingJoin, setIsTogglingJoin] = useState(false);
   const [editUnavailableVisible, setEditUnavailableVisible] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const rideRef = useRef<QuickRideDetail | null>(null);
+  rideRef.current = ride;
 
   const loadRide = useCallback(async () => {
     if (!quickRideId) {
@@ -56,17 +62,35 @@ export function QuickRideDetailView({ onBack, quickRideId }: QuickRideDetailView
       return;
     }
 
-    setHasError(false);
-    setIsLoading(true);
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const hasData = rideRef.current != null;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoading(true);
+    }
 
     try {
       const response = await fetchQuickRideDetail(quickRideId);
       setRide(response);
+      setHasError(false);
     } catch {
-      setRide(null);
-      setHasError(true);
+      if (hasData) {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar o rolê",
+          text2: "Mantivemos os dados anteriores.",
+        });
+      } else {
+        setHasError(true);
+      }
     } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
       setIsLoading(false);
+      setIsRetrying(false);
     }
   }, [quickRideId]);
 
@@ -191,10 +215,14 @@ export function QuickRideDetailView({ onBack, quickRideId }: QuickRideDetailView
         </View>
       ) : null}
 
-      {!isLoading && hasError ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>Não foi possível carregar este rolê.</Text>
-        </View>
+      {!isLoading && hasError && !ride ? (
+        <ErrorState
+          description="Verifique a conexão e tente novamente."
+          retrying={isRetrying}
+          style={styles.errorState}
+          title="Não foi possível carregar este rolê"
+          onRetry={() => void loadRide()}
+        />
       ) : null}
 
       {!isLoading && ride ? (
@@ -370,10 +398,10 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 12,
   },
-  errorText: {
-    color: "#6B7280",
-    fontSize: 14,
-    textAlign: "center",
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
   },
   footer: {
     backgroundColor: "#FFFFFF",

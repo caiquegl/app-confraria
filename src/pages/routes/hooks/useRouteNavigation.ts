@@ -1,6 +1,7 @@
 import * as Location from "expo-location";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { isTechnicalErrorMessage } from "@/components/ErrorState";
 import { decodeEncodedPolyline, fetchPlaceDirections } from "@/lib/places";
 import type { PlaceDirectionsStep } from "@/lib/places";
 import type { PlaceDirectionsRouteOption } from "@/lib/places/types";
@@ -356,7 +357,7 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
       return;
     }
 
-    setState((current) => ({ ...current, error: null, isLoading: true }));
+    setState((current) => ({ ...current, isLoading: true }));
 
     try {
       const route = await fetchRoute(routeId);
@@ -405,7 +406,7 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
       setState((current) => ({
         ...current,
         error:
-          error instanceof Error
+          error instanceof Error && !isTechnicalErrorMessage(error.message)
             ? error.message
             : "Não foi possível iniciar a navegação",
         isLoading: false,

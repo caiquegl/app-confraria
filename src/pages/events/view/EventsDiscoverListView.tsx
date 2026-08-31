@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { toggleFavoriteEvent } from "@/pages/favorites/services/favorites.service";
 import { PublicProfileEventCard } from "@/pages/public-profile-events/components/PublicProfileEventCard";
 import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
@@ -48,14 +49,23 @@ export function EventsDiscoverListView({
   const [events, setEvents] = useState<PublicProfileEvent[]>([]);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const hasLoadedOnceRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const inFlightRef = useRef(false);
 
   const requestFilters = useMemo(() => filters, [filters]);
 
   const loadEvents = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
     const isRefresh = hasLoadedOnceRef.current;
-    setHasError(false);
-    if (!isRefresh) {
+    if (isRefresh) {
+      // Keep the current list; toast on failure.
+    } else if (hasAttemptedRef.current) {
+      setIsRetrying(true);
+    } else {
       setIsLoading(true);
     }
 
@@ -66,6 +76,7 @@ export function EventsDiscoverListView({
         scope,
       });
       setEvents(response);
+      setHasError(false);
       hasLoadedOnceRef.current = true;
     } catch {
       setHasError(true);
@@ -77,7 +88,10 @@ export function EventsDiscoverListView({
         });
       }
     } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
       setIsLoading(false);
+      setIsRetrying(false);
     }
   }, [category, requestFilters, scope]);
 
@@ -137,12 +151,13 @@ export function EventsDiscoverListView({
           <ActivityIndicator color={colors.brandPrimary} size="large" />
         </View>
       ) : hasError && events.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorTitle}>Não foi possível carregar os eventos</Text>
-          <Pressable accessibilityRole="button" style={styles.retryButton} onPress={loadEvents}>
-            <Text style={styles.retryText}>Tentar novamente</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          description="Verifique a conexão e tente novamente. Isso não significa que não há eventos."
+          retrying={isRetrying}
+          style={styles.emptyState}
+          title="Não foi possível carregar os eventos"
+          onRetry={() => void loadEvents()}
+        />
       ) : events.length === 0 ? (
         <EmptyState
           description={
@@ -188,13 +203,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingTop: 0,
   },
-  errorTitle: {
-    color: colors.brandDark,
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 12,
-    textAlign: "center",
-  },
   header: {
     alignItems: "center",
     flexDirection: "row",
@@ -209,18 +217,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 16,
     paddingTop: 8,
-  },
-  retryButton: {
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  retryText: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
   },
   screen: {
     backgroundColor: colors.brandGray,

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, type Href } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,8 +10,10 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { QuickRideCard } from "@/pages/events/components/QuickRideCard";
 import { fetchMyQuickRides } from "@/pages/quick-rides/services/quick-rides.service";
 import type { QuickRide, QuickRideListItem } from "@/pages/quick-rides/types/quick-ride.types";
@@ -38,20 +40,43 @@ export function MyQuickRidesView({ onBack }: MyQuickRidesViewProps) {
   const insets = useSafeAreaInsets();
   const [rides, setRides] = useState<QuickRideListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const hasDataRef = useRef(false);
 
   const loadRides = useCallback(async () => {
-    setHasError(false);
-    setIsLoading(true);
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const hasData = hasDataRef.current;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoading(true);
+    }
 
     try {
       const response = await fetchMyQuickRides();
       setRides(response);
+      setHasError(false);
+      hasDataRef.current = true;
     } catch {
-      setRides([]);
-      setHasError(true);
+      if (hasData) {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar seus rolês",
+          text2: "Mantivemos a lista anterior.",
+        });
+      } else {
+        setHasError(true);
+      }
     } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
       setIsLoading(false);
+      setIsRetrying(false);
     }
   }, []);
 
@@ -98,9 +123,13 @@ export function MyQuickRidesView({ onBack }: MyQuickRidesViewProps) {
       ) : null}
 
       {!isLoading && hasError ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>Não foi possível carregar seus rolês.</Text>
-        </View>
+        <ErrorState
+          description="Verifique a conexão e tente novamente. Isso não significa que você não tem rolês."
+          retrying={isRetrying}
+          style={styles.emptyState}
+          title="Não foi possível carregar seus rolês"
+          onRetry={() => void loadRides()}
+        />
       ) : null}
 
       {!isLoading && !hasError && rides.length === 0 ? (
@@ -154,11 +183,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingTop: 0,
-  },
-  errorText: {
-    color: "#6B7280",
-    fontSize: 14,
-    textAlign: "center",
   },
   header: {
     alignItems: "center",

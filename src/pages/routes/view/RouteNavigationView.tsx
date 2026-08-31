@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-import { Button } from "@/components/Button";
+import { ErrorState, isTechnicalErrorMessage } from "@/components/ErrorState";
 import { getCurrentUserId } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import {
@@ -246,25 +246,37 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     [routeId],
   );
 
+  if (navigation.state.error) {
+    const isFinished = navigation.state.error === "Esta rota já foi finalizada";
+    const title = isTechnicalErrorMessage(navigation.state.error)
+      ? "Não foi possível iniciar a navegação"
+      : navigation.state.error;
+
+    return (
+      <ErrorState
+        description={
+          isFinished
+            ? "Volte para os detalhes da rota."
+            : "Verifique a conexão e tente novamente."
+        }
+        retrying={navigation.state.isLoading}
+        secondaryAction={{
+          accessibilityLabel: "Voltar",
+          label: "Voltar",
+          onPress: onBack,
+        }}
+        style={styles.errorState}
+        title={title}
+        onRetry={() => void navigation.reload()}
+      />
+    );
+  }
+
   if (navigation.state.isLoading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={colors.brandDark} size="large" />
         <Text style={styles.loadingText}>Preparando navegação...</Text>
-      </View>
-    );
-  }
-
-  if (navigation.state.error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorTitle}>{navigation.state.error}</Text>
-        <Button size="default" onPress={() => void navigation.reload()}>
-          Tentar novamente
-        </Button>
-        <Button size="default" variant="secondary" onPress={onBack}>
-          Voltar
-        </Button>
       </View>
     );
   }
@@ -452,15 +464,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
+  errorState: {
+    backgroundColor: colors.brandGray,
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
+  },
   controlsWrap: {
     position: "absolute",
     right: 16,
-  },
-  errorTitle: {
-    color: colors.brandDark,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
   },
   footer: {
     bottom: 0,

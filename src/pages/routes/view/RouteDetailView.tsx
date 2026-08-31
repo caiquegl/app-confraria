@@ -16,6 +16,7 @@ import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { ErrorState } from "@/components/ErrorState";
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
 import {
@@ -187,7 +188,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const { width: screenWidth } = useWindowDimensions();
   const [route, setRoute] = useState<RouteApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [activeTab, setActiveTab] = useState<DetailTab>("geral");
   const [showOptions, setShowOptions] = useState(false);
   const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
@@ -209,6 +210,10 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     null,
   );
   const [isRemovingStop, setIsRemovingStop] = useState(false);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const routeRef = useRef<RouteApiResponse | null>(null);
+  routeRef.current = route;
 
   useEffect(() => {
     if (!showRatingAfterFinish) return;
@@ -253,22 +258,36 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
 
   const loadRoute = useCallback(async () => {
     if (!routeId) {
-      setHasError(true);
       setIsLoading(false);
       return;
     }
 
-    setHasError(false);
-    setIsLoading(true);
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const hasData = routeRef.current != null;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoading(true);
+    }
 
     try {
       const response = await fetchRoute(routeId);
       setRoute(response);
     } catch {
-      setHasError(true);
-      setRoute(null);
+      if (hasData) {
+        Toast.show({
+          text1: "Não foi possível atualizar a rota",
+          text2: "Mantivemos os dados anteriores.",
+          type: "error",
+        });
+      }
     } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
       setIsLoading(false);
+      setIsRetrying(false);
     }
   }, [routeId]);
 
@@ -649,7 +668,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !route) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color={colors.brandDark} size="large" />
@@ -657,14 +676,15 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     );
   }
 
-  if (hasError || !route) {
+  if (!route) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorTitle}>Não foi possível carregar a rota</Text>
-        <Button size="default" onPress={() => void loadRoute()}>
-          Tentar novamente
-        </Button>
-      </View>
+      <ErrorState
+        description="Verifique a conexão e tente novamente."
+        retrying={isRetrying}
+        style={styles.errorState}
+        title="Não foi possível carregar a rota"
+        onRetry={() => void loadRoute()}
+      />
     );
   }
 
@@ -1153,6 +1173,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
+  errorState: {
+    backgroundColor: colors.brandGray,
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
+  },
   dayCard: {
     backgroundColor: "#FFFFFF",
     borderColor: "#E5E7EB",
@@ -1213,12 +1239,6 @@ const styles = StyleSheet.create({
   emptyPlacesText: {
     color: "#9CA3AF",
     fontSize: 13,
-    textAlign: "center",
-  },
-  errorTitle: {
-    color: colors.brandDark,
-    fontSize: 16,
-    fontWeight: "700",
     textAlign: "center",
   },
   financialCard: {

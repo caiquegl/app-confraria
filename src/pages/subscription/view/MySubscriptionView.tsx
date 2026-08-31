@@ -1,6 +1,6 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,6 +14,7 @@ import Toast from "react-native-toast-message";
 import { colors } from "@/theme/colors";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { ErrorState } from "@/components/ErrorState";
 import {
   cancelSubscription,
   changeSubscriptionPlan,
@@ -67,40 +68,53 @@ type MySubscriptionViewProps = {
 export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
   const [subscription, setSubscription] = useState<SubscriptionMe | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const [busyPlan, setBusyPlan] = useState<SubscriptionPlanCode | null>(null);
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const subscriptionRef = useRef<SubscriptionMe | null>(null);
+  subscriptionRef.current = subscription;
 
   const load = useCallback(async () => {
-    const data = await fetchSubscriptionMe();
-    setSubscription(data);
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const hasData = subscriptionRef.current != null;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoading(true);
+    }
+
+    try {
+      const data = await fetchSubscriptionMe();
+      setSubscription(data);
+      setHasError(false);
+    } catch {
+      if (hasData) {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar a assinatura",
+          text2: "Mantivemos os dados anteriores.",
+        });
+      } else {
+        setHasError(true);
+      }
+    } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
+      setIsLoading(false);
+      setIsRetrying(false);
+    }
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-
-    void (async () => {
-      try {
-        const data = await fetchSubscriptionMe();
-        if (mounted) setSubscription(data);
-      } catch {
-        if (mounted) {
-          Toast.show({
-            type: "error",
-            text1: "Erro ao carregar assinatura",
-            text2: "Tente novamente em instantes.",
-          });
-        }
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    void load();
+  }, [load]);
 
   const alternatePlan = useMemo(() => {
     if (!subscription?.currentPlan) return null;
@@ -218,6 +232,14 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
         <View style={styles.centered}>
           <ActivityIndicator color={colors.brandPrimary} />
         </View>
+      ) : hasError ? (
+        <ErrorState
+          description="Verifique a conexão e tente novamente."
+          retrying={isRetrying}
+          style={styles.errorState}
+          title="Não foi possível carregar sua assinatura"
+          onRetry={() => void load()}
+        />
       ) : (
         <ScrollView
           contentContainerStyle={styles.content}
@@ -441,6 +463,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
+  },
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
   },
   content: {
     gap: 16,

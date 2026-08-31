@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { searchUsers } from "../services/search.service";
 import type { UserSearchResult } from "../types/search.types";
@@ -22,6 +22,9 @@ export function useUserSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [searchState, setSearchState] = useState<SearchState>(EMPTY_SEARCH_STATE);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const failedQueryRef = useRef<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,14 +36,20 @@ export function useUserSearch() {
 
   useEffect(() => {
     if (debouncedQuery.length < MIN_QUERY_LENGTH) {
+      failedQueryRef.current = null;
       return;
     }
 
     let cancelled = false;
+    const isRetryAttempt = failedQueryRef.current === debouncedQuery;
+    if (isRetryAttempt) {
+      setIsRetrying(true);
+    }
 
     void searchUsers(debouncedQuery)
       .then((data) => {
         if (cancelled) return;
+        failedQueryRef.current = null;
         setSearchState({
           query: debouncedQuery,
           results: data,
@@ -49,17 +58,28 @@ export function useUserSearch() {
       })
       .catch(() => {
         if (cancelled) return;
+        failedQueryRef.current = debouncedQuery;
         setSearchState({
           query: debouncedQuery,
           results: [],
-          error: "Não foi possível buscar perfis. Tente novamente.",
+          error: "Não foi possível buscar perfis.",
         });
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsRetrying(false);
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, retryCount]);
+
+  const retry = useCallback(() => {
+    if (isRetrying) return;
+    setRetryCount((current) => current + 1);
+  }, [isRetrying]);
 
   const canSearch = debouncedQuery.length >= MIN_QUERY_LENGTH;
   const matchesQuery = searchState.query === debouncedQuery;
@@ -67,8 +87,10 @@ export function useUserSearch() {
   return {
     error: canSearch && matchesQuery ? searchState.error : null,
     hasSearched: canSearch && matchesQuery,
-    isSearching: canSearch && !matchesQuery,
+    isRetrying,
+    isSearching: canSearch && !matchesQuery && !isRetrying,
     results: canSearch && matchesQuery ? searchState.results : [],
+    retry,
     searchQuery,
     setSearchQuery,
   };

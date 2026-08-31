@@ -13,8 +13,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { AppTopBar } from "@/components/AppTopBar";
-import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import {
   getStoredCurrentProfile,
   subscribeStoredCurrentProfile,
@@ -339,19 +339,16 @@ export function RoutesMineView() {
             </View>
           ) : null}
 
-          {isLoading && routes.length === 0 ? (
+          {error === "initial" && routes.length === 0 ? (
+            <ErrorState
+              description="Verifique a conexão e tente novamente. Isso não significa que você não tem rotas."
+              retrying={isLoading}
+              title="Não foi possível carregar suas rotas"
+              onRetry={() => void refresh()}
+            />
+          ) : isLoading && routes.length === 0 ? (
             <View style={styles.loadingState}>
               <ActivityIndicator color={colors.brandDark} size="large" />
-            </View>
-          ) : error === "initial" && routes.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Não foi possível carregar suas rotas</Text>
-              <Text style={styles.emptySubtitle}>
-                Verifique a conexão e tente novamente. Isso não significa que você não tem rotas.
-              </Text>
-              <Button size="lg" style={styles.emptyButton} onPress={() => void refresh()}>
-                Tentar novamente
-              </Button>
             </View>
           ) : routes.length === 0 ? (
             <EmptyState
@@ -511,28 +508,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 24,
     paddingTop: 8,
-  },
-  emptyButton: {
-    marginTop: 24,
-    minWidth: 220,
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingTop: 48,
-  },
-  emptySubtitle: {
-    color: "#6B7280",
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
-    maxWidth: 260,
-    textAlign: "center",
-  },
-  emptyTitle: {
-    color: colors.brandDark,
-    fontSize: 18,
-    fontWeight: "800",
-    textAlign: "center",
   },
   eyebrow: {
     color: "#9CA3AF",

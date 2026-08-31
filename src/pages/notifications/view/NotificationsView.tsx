@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 
+import { ErrorState } from "@/components/ErrorState";
 import { colors } from "@/theme/colors";
 
 import { useNotifications } from "../business/useNotifications";
@@ -14,7 +15,8 @@ export function NotificationsView({
   onOpenPost,
   onOpenQuickRide,
 }: NotificationsViewProps) {
-  const { error, isLoading, newNotifications, oldNotifications } = useNotifications();
+  const { error, isLoading, isRetrying, newNotifications, oldNotifications, reload } =
+    useNotifications();
 
   return (
     <View style={styles.screen}>
@@ -37,9 +39,14 @@ export function NotificationsView({
             <ActivityIndicator color={colors.brandPrimary} size="large" />
           </View>
         ) : error ? (
-          <View style={styles.loadingWrap}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
+          <ErrorState
+            description="Verifique a conexão e tente novamente. Isso não significa que você não tem notificações."
+            layout="inline"
+            retrying={isRetrying}
+            style={styles.errorState}
+            title="Não foi possível carregar as notificações"
+            onRetry={() => void reload()}
+          />
         ) : (
           <NotificationsList
             newNotifications={newNotifications}
@@ -92,10 +99,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  errorText: {
-    color: "#6B7280",
-    fontSize: 14,
-    textAlign: "center",
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
   },
   header: {
     alignItems: "center",
