@@ -22,112 +22,130 @@ export function EventsCreateActionSheet({
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable
-          style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) + 8 }]}
-          onPress={(event) => event.stopPropagation()}
+    <Modal
+      animationType="slide"
+      statusBarTranslucent
+      transparent
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View style={styles.backdropWrap}>
+        <Pressable accessibilityRole="button" style={styles.backdrop} onPress={onClose} />
+        <View
+          style={[
+            styles.sheet,
+            { paddingBottom: Math.max(insets.bottom, 20) + 16 },
+          ]}
         >
-          <View style={styles.handle} />
+          <View style={styles.header}>
+            <View style={styles.headerSpacer} />
+            <View style={styles.handle} />
+            <Pressable
+              accessibilityLabel="Fechar"
+              accessibilityRole="button"
+              hitSlop={8}
+              style={styles.closeButton}
+              onPress={onClose}
+            >
+              <Ionicons color="#9CA3AF" name="close" size={20} />
+            </Pressable>
+          </View>
 
-          <Pressable accessibilityRole="button" style={styles.quickRideButton} onPress={onCreateQuickRide}>
-            <View style={styles.quickRideIconWrap}>
-              <Ionicons color={colors.brandPrimary} name="flame" size={18} />
-            </View>
-            <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>Rolê rápido</Text>
-              <Text style={styles.optionDescription}>Chamar a galera pra hoje ou amanhã</Text>
-            </View>
-          </Pressable>
+          <View style={styles.options}>
+            <Pressable
+              accessibilityRole="button"
+              style={styles.quickRideButton}
+              onPress={onCreateQuickRide}
+            >
+              <View style={styles.quickRideIconWrap}>
+                <Ionicons color={colors.brandPrimary} name="flame" size={18} />
+              </View>
+              <View style={styles.optionCopy}>
+                <Text style={styles.optionTitle}>Rolê rápido</Text>
+                <Text style={styles.optionDescription}>Chamar a galera pra hoje ou amanhã</Text>
+              </View>
+            </Pressable>
 
-          <Pressable accessibilityRole="button" style={styles.myRidesButton} onPress={onOpenMyQuickRides}>
-            <View style={styles.myRidesIconWrap}>
-              <Ionicons color={colors.brandDark} name="list-outline" size={18} />
-            </View>
-            <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>Meus rolês rápidos</Text>
-              <Text style={styles.optionDescription}>Rolês que você criou ou está participando</Text>
-            </View>
-          </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              style={styles.optionButton}
+              onPress={onOpenMyQuickRides}
+            >
+              <View style={styles.optionIconWrap}>
+                <Ionicons color={colors.brandDark} name="list-outline" size={18} />
+              </View>
+              <View style={styles.optionCopy}>
+                <Text style={styles.optionTitle}>Meus rolês rápidos</Text>
+                <Text style={styles.optionDescription}>
+                  Rolês que você criou ou está participando
+                </Text>
+              </View>
+            </Pressable>
 
-          <Pressable accessibilityRole="button" style={styles.eventButton} onPress={onCreateEvent}>
-            <View style={styles.eventIconWrap}>
-              <Ionicons color={colors.brandDark} name="calendar-outline" size={18} />
-            </View>
-            <View style={styles.optionCopy}>
-              <Text style={styles.optionTitle}>Evento completo</Text>
-              <Text style={styles.optionDescription}>
-                Criar um evento com data, rota e detalhes
-              </Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            accessibilityLabel="Fechar"
-            accessibilityRole="button"
-            hitSlop={8}
-            style={styles.closeButton}
-            onPress={onClose}
-          >
-            <Ionicons color="#9CA3AF" name="close" size={20} />
-          </Pressable>
-        </Pressable>
-      </Pressable>
+            <Pressable accessibilityRole="button" style={styles.optionButton} onPress={onCreateEvent}>
+              <View style={styles.optionIconWrap}>
+                <Ionicons color={colors.brandDark} name="calendar-outline" size={18} />
+              </View>
+              <View style={styles.optionCopy}>
+                <Text style={styles.optionTitle}>Evento completo</Text>
+                <Text style={styles.optionDescription}>
+                  Criar um evento com data, rota e detalhes
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  backdropWrap: {
     backgroundColor: "rgba(0,0,0,0.4)",
     flex: 1,
     justifyContent: "flex-end",
   },
   closeButton: {
-    position: "absolute",
-    right: 16,
-    top: 12,
-  },
-  eventButton: {
     alignItems: "center",
-    borderRadius: 18,
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  eventIconWrap: {
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 999,
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
     height: 40,
     justifyContent: "center",
     width: 40,
   },
   handle: {
-    alignSelf: "center",
     backgroundColor: "#E5E7EB",
     borderRadius: 999,
     height: 4,
-    marginBottom: 16,
     width: 40,
   },
-  myRidesButton: {
+  header: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  headerSpacer: {
+    height: 40,
+    width: 40,
+  },
+  optionButton: {
     alignItems: "center",
     borderRadius: 18,
     flexDirection: "row",
     gap: 12,
-    marginBottom: 8,
+    minHeight: 64,
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  myRidesIconWrap: {
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 999,
-    height: 40,
-    justifyContent: "center",
-    width: 40,
   },
   optionCopy: {
     flex: 1,
@@ -135,12 +153,24 @@ const styles = StyleSheet.create({
   optionDescription: {
     color: "#6B7280",
     fontSize: 12,
+    lineHeight: 16,
     marginTop: 2,
+  },
+  optionIconWrap: {
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 999,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
   },
   optionTitle: {
     color: colors.brandDark,
     fontSize: 14,
     fontWeight: "800",
+  },
+  options: {
+    gap: 4,
   },
   quickRideButton: {
     alignItems: "center",
@@ -148,7 +178,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     flexDirection: "row",
     gap: 12,
-    marginBottom: 8,
+    minHeight: 64,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -161,6 +191,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   sheet: {
+    alignSelf: "center",
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
