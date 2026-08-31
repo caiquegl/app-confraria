@@ -149,6 +149,7 @@ export function MyBikesView({ onBack }: MyBikesViewProps) {
         text1: "Erro ao excluir moto",
         text2: "Não foi possível remover essa moto.",
       });
+      throw new Error("Não foi possível remover essa moto.");
     }
   };
 
@@ -160,7 +161,7 @@ export function MyBikesView({ onBack }: MyBikesViewProps) {
         isSaving={isSaving}
         mode={detailMode === "edit" ? "edit" : "create"}
         onBack={closeDetail}
-        onDelete={detailMode === "edit" ? (bikeId) => void handleDeleteBike(bikeId) : undefined}
+        onDelete={detailMode === "edit" ? handleDeleteBike : undefined}
         onSave={(payload) => void handleSaveBike(payload)}
       />
     );

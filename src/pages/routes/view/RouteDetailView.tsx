@@ -3,7 +3,6 @@ import { router, useFocusEffect, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   ScrollView,
@@ -16,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
 import {
@@ -203,6 +203,12 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [showRatingAfterFinish, setShowRatingAfterFinish] = useState(false);
   const [showFreeRoutePaywall, setShowFreeRoutePaywall] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeletingRoute, setIsDeletingRoute] = useState(false);
+  const [stopToRemove, setStopToRemove] = useState<{ dayId: string; placeId: string } | null>(
+    null,
+  );
+  const [isRemovingStop, setIsRemovingStop] = useState(false);
 
   useEffect(() => {
     if (!showRatingAfterFinish) return;
@@ -596,58 +602,51 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const confirmDelete = () => {
     if (!route) return;
     setShowOptions(false);
+    setDeleteConfirmOpen(true);
+  };
 
-    Alert.alert(
-      "Excluir rota",
-      "Tem certeza que deseja excluir esta rota? Essa ação não pode ser desfeita.",
-      [
-        { style: "cancel", text: "Cancelar" },
-        {
-          style: "destructive",
-          text: "Excluir",
-          onPress: () => {
-            void (async () => {
-              try {
-                await deleteRoute(route.id);
-                Toast.show({ text1: "Rota excluída", type: "success" });
-                onBack();
-              } catch (error) {
-                Toast.show({
-                  text1: "Não foi possível excluir a rota",
-                  text2: getApiErrorMessage(error, "Tente novamente em instantes."),
-                  type: "error",
-                });
-              }
-            })();
-          },
-        },
-      ],
-    );
+  const handleConfirmDelete = async () => {
+    if (!route || isDeletingRoute) return;
+
+    setIsDeletingRoute(true);
+    try {
+      await deleteRoute(route.id);
+      Toast.show({ text1: "Rota excluída", type: "success" });
+      setDeleteConfirmOpen(false);
+      onBack();
+    } catch (error) {
+      Toast.show({
+        text1: "Não foi possível excluir a rota",
+        text2: getApiErrorMessage(error, "Tente novamente em instantes."),
+        type: "error",
+      });
+    } finally {
+      setIsDeletingRoute(false);
+    }
   };
 
   const handleRemoveStop = (dayId: string, placeId: string) => {
-    Alert.alert("Remover parada", "Deseja remover esta parada do dia?", [
-      { style: "cancel", text: "Cancelar" },
-      {
-        style: "destructive",
-        text: "Remover",
-        onPress: () => {
-          void (async () => {
-            try {
-              const updated = await removeRouteStop(dayId, placeId);
-              setRoute(updated);
-              Toast.show({ text1: "Parada removida", type: "success" });
-            } catch (error) {
-              Toast.show({
-                text1: "Não foi possível remover a parada",
-                text2: getApiErrorMessage(error, "Tente novamente em instantes."),
-                type: "error",
-              });
-            }
-          })();
-        },
-      },
-    ]);
+    setStopToRemove({ dayId, placeId });
+  };
+
+  const handleConfirmRemoveStop = async () => {
+    if (!stopToRemove || isRemovingStop) return;
+
+    setIsRemovingStop(true);
+    try {
+      const updated = await removeRouteStop(stopToRemove.dayId, stopToRemove.placeId);
+      setRoute(updated);
+      setStopToRemove(null);
+      Toast.show({ text1: "Parada removida", type: "success" });
+    } catch (error) {
+      Toast.show({
+        text1: "Não foi possível remover a parada",
+        text2: getApiErrorMessage(error, "Tente novamente em instantes."),
+        type: "error",
+      });
+    } finally {
+      setIsRemovingStop(false);
+    }
   };
 
   if (isLoading) {
@@ -1114,6 +1113,32 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
           setShowFreeRoutePaywall(false);
           router.push("/profile/subscription" as Href);
         }}
+      />
+
+      <ConfirmModal
+        confirmLabel="Excluir"
+        description={`A rota “${route.title}” será excluída. Essa ação não pode ser desfeita.`}
+        isLoading={isDeletingRoute}
+        title="Excluir rota"
+        variant="destructive"
+        visible={deleteConfirmOpen}
+        onClose={() => {
+          if (!isDeletingRoute) setDeleteConfirmOpen(false);
+        }}
+        onConfirm={handleConfirmDelete}
+      />
+
+      <ConfirmModal
+        confirmLabel="Remover"
+        description="A parada sai deste dia. Você pode adicioná-la de novo depois, se quiser."
+        isLoading={isRemovingStop}
+        title="Remover parada"
+        variant="destructive"
+        visible={stopToRemove != null}
+        onClose={() => {
+          if (!isRemovingStop) setStopToRemove(null);
+        }}
+        onConfirm={handleConfirmRemoveStop}
       />
     </View>
   );

@@ -13,7 +13,7 @@ import Toast from "react-native-toast-message";
 
 import { colors } from "@/theme/colors";
 
-import { SubscriptionConfirmModal } from "../components/SubscriptionConfirmModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import {
   cancelSubscription,
   changeSubscriptionPlan,
@@ -376,7 +376,8 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
         </ScrollView>
       )}
 
-      <SubscriptionConfirmModal
+      <ConfirmModal
+        cancelLabel={changePlanDialog ? "Cancelar" : "Manter"}
         confirmLabel={
           changePlanDialog
             ? `Confirmar ${changePlanLabel}`
@@ -396,17 +397,16 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
             ? `Trocar para o plano ${changePlanLabel}?`
             : "Cancelar a renovação do VIP?"
         }
-        variant={changePlanDialog ? "brand" : "danger"}
+        variant={changePlanDialog ? "default" : "destructive"}
         visible={confirmDialog !== null}
         onClose={() => {
           if (!isConfirmLoading) setConfirmDialog(null);
         }}
         onConfirm={() => {
           if (changePlanDialog) {
-            void handleChangePlan(changePlanDialog.code);
-            return;
+            return handleChangePlan(changePlanDialog.code);
           }
-          void handleCancel();
+          return handleCancel();
         }}
       />
     </View>

@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { getUpdateInfo } from "@/lib/updates";
 import { colors } from "@/theme/colors";
 
@@ -97,6 +98,7 @@ export function SettingsModal({
   if (!visible) return null;
 
   return (
+    <>
     <Modal animationType="fade" transparent visible={visible} statusBarTranslucent>
       <View style={styles.backdrop}>
         <Pressable style={styles.closeArea} onPress={onClose} />
@@ -174,19 +176,6 @@ export function SettingsModal({
           </ScrollView>
         </View>
 
-        {showLogoutConfirm ? (
-          <ConfirmationDialog
-            confirmLabel="Logout"
-            message="Você será desconectado e retornará à tela de login."
-            title="Fazer Logout?"
-            onCancel={() => setShowLogoutConfirm(false)}
-            onConfirm={() => {
-              setShowLogoutConfirm(false);
-              onLogout();
-            }}
-          />
-        ) : null}
-
         {showChangePassword ? (
           <ChangePasswordDialog
             isSaving={isChangingPassword}
@@ -197,24 +186,35 @@ export function SettingsModal({
             }}
           />
         ) : null}
-
-        {showDeleteConfirm ? (
-          <ConfirmationDialog
-            confirmLabel={isDeletingAccount ? "Deletando..." : "Deletar"}
-            destructive
-            disabled={isDeletingAccount}
-            message="Sua conta será marcada como inativa. Você será desconectado e não aparecerá mais no app."
-            title="Deletar Conta?"
-            onCancel={() => {
-              if (!isDeletingAccount) setShowDeleteConfirm(false);
-            }}
-            onConfirm={() => {
-              void onDeleteAccount();
-            }}
-          />
-        ) : null}
       </View>
     </Modal>
+
+        <ConfirmModal
+          confirmLabel="Logout"
+          description="Você será desconectado e retornará à tela de login. Nada é excluído da sua conta."
+          title="Fazer Logout?"
+          variant="destructive"
+          visible={showLogoutConfirm}
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={() => {
+            setShowLogoutConfirm(false);
+            onLogout();
+          }}
+        />
+
+        <ConfirmModal
+          confirmLabel="Deletar"
+          description="Sua conta será marcada como inativa. Você será desconectado e não aparecerá mais no app. Essa ação não restaura a conta automaticamente."
+          isLoading={isDeletingAccount}
+          title="Deletar Conta?"
+          variant="destructive"
+          visible={showDeleteConfirm}
+          onClose={() => {
+            if (!isDeletingAccount) setShowDeleteConfirm(false);
+          }}
+          onConfirm={() => onDeleteAccount()}
+        />
+    </>
   );
 }
 
@@ -369,43 +369,6 @@ function PasswordInput({
   );
 }
 
-function ConfirmationDialog({
-  confirmLabel,
-  destructive = false,
-  disabled = false,
-  message,
-  title,
-  onCancel,
-  onConfirm,
-}: {
-  confirmLabel: string;
-  destructive?: boolean;
-  disabled?: boolean;
-  message: string;
-  title: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <View style={styles.dialogBackdrop}>
-      <View style={styles.dialog}>
-        <Text style={[styles.dialogTitle, destructive && styles.dialogTitleDestructive]}>
-          {title}
-        </Text>
-        <Text style={styles.dialogMessage}>{message}</Text>
-        <View style={styles.dialogActions}>
-          <Button disabled={disabled} variant="secondary" style={styles.dialogButton} onPress={onCancel}>
-            Cancelar
-          </Button>
-          <Button disabled={disabled} variant="destructive" style={styles.dialogButton} onPress={onConfirm}>
-            {confirmLabel}
-          </Button>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
@@ -497,9 +460,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
     marginBottom: 10,
-  },
-  dialogTitleDestructive: {
-    color: "#DC2626",
   },
   header: {
     alignItems: "center",

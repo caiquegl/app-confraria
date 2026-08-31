@@ -1,4 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRef, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -11,19 +12,25 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
 
-type SubscriptionConfirmModalProps = {
+export type ConfirmModalVariant = "default" | "destructive";
+
+export type ConfirmModalProps = {
+  cancelLabel?: string;
+  children?: ReactNode;
   confirmLabel: string;
   description: string;
-  headerTitle: string;
+  headerTitle?: string;
   isLoading?: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
-  variant?: "brand" | "danger";
+  variant?: ConfirmModalVariant;
   visible: boolean;
 };
 
-export function SubscriptionConfirmModal({
+export function ConfirmModal({
+  cancelLabel,
+  children,
   confirmLabel,
   description,
   headerTitle,
@@ -31,11 +38,37 @@ export function SubscriptionConfirmModal({
   onClose,
   onConfirm,
   title,
-  variant = "brand",
+  variant = "default",
   visible,
-}: SubscriptionConfirmModalProps) {
+}: ConfirmModalProps) {
   const insets = useSafeAreaInsets();
-  const isDanger = variant === "danger";
+  const inFlightRef = useRef(false);
+  const [isPending, setIsPending] = useState(false);
+  const isDestructive = variant === "destructive";
+  const isBusy = isLoading || isPending;
+  const resolvedHeader = headerTitle ?? title;
+  const showInnerTitle = Boolean(headerTitle);
+  const resolvedCancelLabel = cancelLabel ?? "Cancelar";
+
+  const handleClose = () => {
+    if (isBusy) return;
+    onClose();
+  };
+
+  const handleConfirm = () => {
+    if (isBusy || inFlightRef.current) return;
+    inFlightRef.current = true;
+    setIsPending(true);
+
+    void (async () => {
+      try {
+        await onConfirm();
+      } finally {
+        inFlightRef.current = false;
+        setIsPending(false);
+      }
+    })();
+  };
 
   return (
     <Modal
@@ -43,19 +76,28 @@ export function SubscriptionConfirmModal({
       statusBarTranslucent
       transparent
       visible={visible}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
-      <View style={styles.backdropWrap}>
-        <Pressable disabled={isLoading} style={styles.backdrop} onPress={onClose} />
+      <View accessibilityViewIsModal={visible} style={styles.backdropWrap}>
+        <Pressable
+          accessibilityLabel="Fechar confirmação"
+          disabled={isBusy}
+          style={styles.backdrop}
+          onPress={handleClose}
+        />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 24 }]}>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>{headerTitle}</Text>
+            <Text accessibilityRole="header" style={styles.headerTitle}>
+              {resolvedHeader}
+            </Text>
             <Pressable
               accessibilityLabel="Fechar"
               accessibilityRole="button"
-              disabled={isLoading}
+              accessibilityState={{ disabled: isBusy }}
+              disabled={isBusy}
+              hitSlop={8}
               style={styles.closeButton}
-              onPress={onClose}
+              onPress={handleClose}
             >
               <Ionicons color="#9CA3AF" name="close" size={20} />
             </Pressable>
@@ -65,11 +107,11 @@ export function SubscriptionConfirmModal({
             <View
               style={[
                 styles.iconWrap,
-                isDanger ? styles.iconWrapDanger : styles.iconWrapBrand,
+                isDestructive ? styles.iconWrapDanger : styles.iconWrapBrand,
               ]}
             >
-              {isDanger ? (
-                <Ionicons color="#EF4444" name="close-circle-outline" size={28} />
+              {isDestructive ? (
+                <Ionicons color="#EF4444" name="warning-outline" size={28} />
               ) : (
                 <MaterialCommunityIcons
                   color={colors.brandDark}
@@ -78,27 +120,29 @@ export function SubscriptionConfirmModal({
                 />
               )}
             </View>
-            <Text style={styles.title}>{title}</Text>
+            {showInnerTitle ? <Text style={styles.title}>{title}</Text> : null}
             <Text style={styles.description}>{description}</Text>
+            {children}
           </View>
 
           <Pressable
             accessibilityRole="button"
-            disabled={isLoading}
+            accessibilityState={{ busy: isBusy, disabled: isBusy }}
+            disabled={isBusy}
             style={[
               styles.primaryButton,
-              isDanger ? styles.primaryButtonDanger : styles.primaryButtonBrand,
-              isLoading && styles.buttonDisabled,
+              isDestructive ? styles.primaryButtonDanger : styles.primaryButtonBrand,
+              isBusy && styles.buttonDisabled,
             ]}
-            onPress={onConfirm}
+            onPress={handleConfirm}
           >
-            {isLoading ? (
-              <ActivityIndicator color={isDanger ? "#FFFFFF" : colors.brandDark} />
+            {isBusy ? (
+              <ActivityIndicator color={isDestructive ? "#FFFFFF" : colors.brandDark} />
             ) : (
               <Text
                 style={[
                   styles.primaryButtonText,
-                  isDanger
+                  isDestructive
                     ? styles.primaryButtonTextDanger
                     : styles.primaryButtonTextBrand,
                 ]}
@@ -109,13 +153,12 @@ export function SubscriptionConfirmModal({
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            disabled={isLoading}
+            accessibilityState={{ disabled: isBusy }}
+            disabled={isBusy}
             style={styles.secondaryButton}
-            onPress={onClose}
+            onPress={handleClose}
           >
-            <Text style={styles.secondaryButtonText}>
-              {isDanger ? "Manter" : "Cancelar"}
-            </Text>
+            <Text style={styles.secondaryButtonText}>{resolvedCancelLabel}</Text>
           </Pressable>
         </View>
       </View>
@@ -168,8 +211,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: colors.brandDark,
+    flex: 1,
     fontSize: 20,
     fontWeight: "900",
+    paddingRight: 12,
   },
   iconWrap: {
     alignItems: "center",
@@ -214,6 +259,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
+    minHeight: 44,
     width: "100%",
   },
   secondaryButtonText: {

@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { SelectField } from "@/components/SelectField";
 import { colors } from "@/theme/colors";
 
@@ -27,7 +28,7 @@ type BikeDetailViewProps = {
   isSaving?: boolean;
   mode: "create" | "edit";
   onBack: () => void;
-  onDelete?: (bikeId: string) => void;
+  onDelete?: (bikeId: string) => void | Promise<void>;
   onSave: (payload: SaveUserBikePayload) => void;
 };
 
@@ -60,6 +61,7 @@ export function BikeDetailView({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [photoPickerOpen, setPhotoPickerOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const brandOptions = useMemo(
@@ -337,15 +339,27 @@ export function BikeDetailView({
         onGallery={() => void openGallery()}
       />
 
-      {deleteConfirmOpen && bike && onDelete ? (
-        <ConfirmDeleteSheet
-          onCancel={() => setDeleteConfirmOpen(false)}
-          onConfirm={() => {
+      <ConfirmModal
+        confirmLabel="Excluir"
+        description="Essa ação remove a moto da sua área e do planejamento de rotas. Você pode cadastrá-la de novo depois."
+        isLoading={isDeleting}
+        title="Apagar moto?"
+        variant="destructive"
+        visible={Boolean(deleteConfirmOpen && bike && onDelete)}
+        onClose={() => {
+          if (!isDeleting) setDeleteConfirmOpen(false);
+        }}
+        onConfirm={async () => {
+          if (!bike || !onDelete) return;
+          setIsDeleting(true);
+          try {
+            await onDelete(bike.id);
             setDeleteConfirmOpen(false);
-            onDelete(bike.id);
-          }}
-        />
-      ) : null}
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -439,35 +453,6 @@ function PhotoPickerSheet({
   );
 }
 
-function ConfirmDeleteSheet({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <Modal animationType="fade" transparent visible>
-      <View style={styles.modalBackdrop}>
-        <View style={styles.confirmSheet}>
-          <Text style={styles.confirmTitle}>Apagar moto?</Text>
-          <Text style={styles.confirmText}>
-            Essa ação remove a moto da sua área e do planejamento de rotas.
-          </Text>
-          <View style={styles.confirmActions}>
-            <Button variant="secondary" style={styles.confirmButton} onPress={onCancel}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" style={styles.confirmButton} onPress={onConfirm}>
-              Excluir
-            </Button>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 function parseDecimal(value: string): number | null {
   const normalized = value.replace(",", ".").replace(/[^\d.]/g, "");
   if (!normalized) return null;
@@ -537,31 +522,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 14,
     padding: 18,
-  },
-  confirmActions: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  confirmButton: {
-    flex: 1,
-  },
-  confirmSheet: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    margin: 18,
-    padding: 22,
-  },
-  confirmText: {
-    color: "#6B7280",
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  confirmTitle: {
-    color: colors.brandDark,
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 8,
   },
   content: {
     gap: 16,
