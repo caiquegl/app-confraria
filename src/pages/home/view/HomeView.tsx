@@ -47,10 +47,12 @@ export function HomeView() {
     isLoadingInitial,
     isLoadingMore,
     isRefreshing,
+    isRetrying,
     isPostSuccessVisible,
     isPublishingPost,
     listRef,
     loadComments,
+    loadError,
     loadMoreFeed,
     openComposerFromCamera,
     openComposerFromGallery,
@@ -59,6 +61,7 @@ export function HomeView() {
     publishPost,
     postUploadProgress,
     refreshFeed,
+    retryFeed,
     posts,
     removeComposerPhoto,
     reorderComposerPhotos,
@@ -120,6 +123,8 @@ export function HomeView() {
         isLoadingInitial={isLoadingInitial}
         isLoadingMore={isLoadingMore}
         isRefreshing={isRefreshing}
+        isRetrying={isRetrying}
+        loadError={loadError}
         listHeaderComponent={
           <StoriesBar
             currentUser={
@@ -149,6 +154,7 @@ export function HomeView() {
         onOpenUserProfile={openUserProfile}
         onPrefetch={handlePrefetch}
         onRefresh={handleRefresh}
+        onRetry={() => void retryFeed()}
         onToggleCommentLike={toggleCommentLike}
         onToggleLike={toggleLike}
       />

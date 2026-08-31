@@ -9,6 +9,7 @@ import {
   type ViewToken,
 } from "react-native";
 
+import { ErrorState } from "@/components/ErrorState";
 import { colors } from "@/theme/colors";
 
 import type { FeedPost } from "../types/feed.types";
@@ -22,8 +23,10 @@ type FeedListProps = {
   isLoadingInitial: boolean;
   isLoadingMore: boolean;
   isRefreshing?: boolean;
+  isRetrying?: boolean;
   listHeaderComponent?: ReactElement | null;
   listRef?: React.RefObject<FlatList<FeedPost> | null>;
+  loadError?: boolean;
   onAddComment: (postId: string, text: string) => void;
   onAddReply: (
     postId: string,
@@ -39,6 +42,7 @@ type FeedListProps = {
   onOpenUserProfile: (userId: string) => void;
   onPrefetch: (visibleIndex: number) => void;
   onRefresh?: () => void;
+  onRetry?: () => void;
   onToggleCommentLike: (postId: string, commentId: string) => void;
   onToggleLike: (postId: string) => void;
   posts: FeedPost[];
@@ -55,8 +59,10 @@ export function FeedList({
   isLoadingInitial,
   isLoadingMore,
   isRefreshing = false,
+  isRetrying = false,
   listHeaderComponent,
   listRef,
+  loadError = false,
   onAddComment,
   onAddReply,
   onDeleteComment,
@@ -67,6 +73,7 @@ export function FeedList({
   onOpenUserProfile,
   onPrefetch,
   onRefresh,
+  onRetry,
   onToggleCommentLike,
   onToggleLike,
   posts,
@@ -127,6 +134,21 @@ export function FeedList({
       <View style={styles.initialSkeleton}>
         <FeedCardSkeleton />
         <FeedCardSkeleton />
+      </View>
+    );
+  }
+
+  if (loadError && posts.length === 0) {
+    return (
+      <View style={styles.errorWrap}>
+        {listHeaderComponent}
+        <ErrorState
+          description="Verifique a conexão e tente novamente."
+          retrying={isRetrying}
+          style={styles.errorState}
+          title="Não foi possível carregar o feed"
+          onRetry={() => onRetry?.()}
+        />
       </View>
     );
   }
@@ -211,6 +233,14 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 20,
     fontWeight: "800",
+  },
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
+  },
+  errorWrap: {
+    flex: 1,
   },
   footerSkeleton: {
     marginTop: 14,

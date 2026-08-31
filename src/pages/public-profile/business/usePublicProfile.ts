@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Toast from "react-native-toast-message";
 
 import { fetchPublicProfile } from "../services/public-profile.service";
 import type {
@@ -9,25 +10,49 @@ import type {
 export function usePublicProfile(userId: string) {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const profileRef = useRef<PublicProfile | null>(null);
+  profileRef.current = profile;
 
   const loadProfile = useCallback(async () => {
     if (!userId) {
-      setError("Perfil inválido.");
+      setError("Não foi possível carregar o perfil.");
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const hasData = profileRef.current != null;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoading(true);
+    }
 
     try {
       const data = await fetchPublicProfile(userId);
       setProfile(data);
+      setError(null);
     } catch {
-      setError("Não foi possível carregar o perfil.");
+      if (hasData) {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar o perfil",
+          text2: "Mantivemos os dados anteriores.",
+        });
+      } else {
+        setError("Não foi possível carregar o perfil.");
+      }
     } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
       setIsLoading(false);
+      setIsRetrying(false);
     }
   }, [userId]);
 
@@ -55,6 +80,7 @@ export function usePublicProfile(userId: string) {
   return {
     error,
     isLoading,
+    isRetrying,
     profile,
     retry: loadProfile,
     updateFollowState,

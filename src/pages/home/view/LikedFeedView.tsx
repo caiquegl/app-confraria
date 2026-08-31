@@ -24,12 +24,15 @@ export function LikedFeedView() {
     isLoadingInitial,
     isLoadingMore,
     isRefreshing,
+    isRetrying,
     listRef,
     loadComments,
+    loadError,
     loadMoreFeed,
     openShare,
     posts,
     refreshFeed,
+    retryFeed,
     sentFriendId,
     sharePost,
     shareToFriend,
@@ -60,6 +63,8 @@ export function LikedFeedView() {
         isLoadingInitial={isLoadingInitial}
         isLoadingMore={isLoadingMore}
         isRefreshing={isRefreshing}
+        isRetrying={isRetrying}
+        loadError={loadError}
         onAddComment={addComment}
         onAddReply={addReply}
         onDeleteComment={deleteComment}
@@ -70,6 +75,7 @@ export function LikedFeedView() {
         onOpenUserProfile={openUserProfile}
         onPrefetch={handlePrefetch}
         onRefresh={() => void refreshFeed()}
+        onRetry={() => void retryFeed()}
         onToggleCommentLike={toggleCommentLike}
         onToggleLike={toggleLike}
       />

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
+import { ErrorState } from "@/components/ErrorState";
 import { UserAvatar } from "@/components/UserAvatar";
 import { getCurrentUserId } from "@/lib/auth";
 import { fetchUserBikes } from "@/pages/bikes/services/bikes.service";
@@ -66,7 +67,7 @@ export function PublicProfileView({
   const [isDeletingPost, setIsDeletingPost] = useState(false);
   const [bikeCount, setBikeCount] = useState(0);
   const [joinedEventsCount, setJoinedEventsCount] = useState(0);
-  const { error, isLoading, profile, retry, updateFollowState } =
+  const { error, isLoading, isRetrying, profile, retry, updateFollowState } =
     usePublicProfile(userId);
   const {
     createdEventIds,
@@ -351,18 +352,18 @@ export function PublicProfileView({
         </View>
       )}
 
-      {isLoading ? (
+      {isLoading && !profile ? (
         <View style={styles.centerState}>
           <ActivityIndicator color={colors.brandPrimary} />
         </View>
       ) : error || !profile ? (
-        <View style={styles.centerState}>
-          <Text style={styles.errorTitle}>Perfil não encontrado</Text>
-          <Text style={styles.errorText}>{error ?? "Tente novamente em instantes."}</Text>
-          <Pressable style={styles.retryButton} onPress={() => void retry()}>
-            <Text style={styles.retryText}>Tentar novamente</Text>
-          </Pressable>
-        </View>
+        <ErrorState
+          description="Verifique a conexão e tente novamente."
+          retrying={isRetrying}
+          style={styles.errorState}
+          title="Não foi possível carregar o perfil"
+          onRetry={() => void retry()}
+        />
       ) : (
         <ScrollView
           contentContainerStyle={styles.content}
@@ -798,6 +799,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
+  },
   content: {
     paddingBottom: 120,
   },
@@ -810,17 +816,6 @@ const styles = StyleSheet.create({
   contactText: {
     color: "#6B7280",
     fontSize: 13,
-  },
-  errorText: {
-    color: "#6B7280",
-    fontSize: 13,
-    marginTop: 6,
-    textAlign: "center",
-  },
-  errorTitle: {
-    color: colors.brandDark,
-    fontSize: 16,
-    fontWeight: "800",
   },
   followButton: {
     backgroundColor: colors.brandGreen,
@@ -883,18 +878,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 24,
     paddingVertical: 22,
-  },
-  retryButton: {
-    backgroundColor: colors.brandGreen,
-    borderRadius: 16,
-    marginTop: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  retryText: {
-    color: colors.brandDark,
-    fontSize: 13,
-    fontWeight: "700",
   },
   privateNotice: {
     alignItems: "center",

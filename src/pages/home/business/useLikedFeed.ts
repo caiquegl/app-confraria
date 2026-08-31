@@ -32,6 +32,9 @@ export function useLikedFeed() {
   const hasMoreRef = useRef(true);
   const mountedRef = useRef(true);
   const loadedCommentsRef = useRef<Set<string>>(new Set());
+  const postsRef = useRef<FeedPost[]>([]);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -47,6 +50,8 @@ export function useLikedFeed() {
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [commentsLoadingByPost, setCommentsLoadingByPost] = useState<Record<string, boolean>>({});
   const [sharePost, setSharePost] = useState<FeedPost | null>(null);
   const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
@@ -60,41 +65,59 @@ export function useLikedFeed() {
     hasMoreRef.current = hasMore;
   }, [hasMore]);
 
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+
   const updatePost = useCallback((postId: string, updater: (post: FeedPost) => FeedPost) => {
     setPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadFeed = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
 
-    void (async () => {
-      try {
-        const page = await fetchLikedFeedPosts({ limit: FEED_PAGE_SIZE });
-        if (cancelled || !mountedRef.current) return;
+    const hasData = postsRef.current.length > 0;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoadingInitial(true);
+    }
 
-        setPosts(page.data);
-        setNextCursor(page.nextCursor);
-        setHasMore(page.hasMore);
-        loadedCommentsRef.current = new Set();
-      } catch {
-        if (cancelled || !mountedRef.current) return;
+    try {
+      const page = await fetchLikedFeedPosts({ limit: FEED_PAGE_SIZE });
+      if (!mountedRef.current) return;
 
+      setPosts(page.data);
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+      loadedCommentsRef.current = new Set();
+      setLoadError(false);
+    } catch {
+      if (!mountedRef.current) return;
+
+      if (hasData) {
         Toast.show({
           type: "error",
-          text1: "Erro ao carregar curtidos",
-          text2: "Não foi possível buscar os posts curtidos.",
+          text1: "Erro ao atualizar curtidos",
+          text2: "Não foi possível recarregar os posts curtidos.",
         });
-      } finally {
-        if (!cancelled && mountedRef.current) {
-          setIsLoadingInitial(false);
-        }
+      } else {
+        setLoadError(true);
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
+      if (mountedRef.current) {
+        setIsLoadingInitial(false);
+        setIsRetrying(false);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    void loadFeed();
+  }, [loadFeed]);
 
   const loadMoreFeed = useCallback(async () => {
     if (loadingMoreRef.current || !hasMoreRef.current || !nextCursorRef.current) {
@@ -149,14 +172,19 @@ export function useLikedFeed() {
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
       loadedCommentsRef.current = new Set();
+      setLoadError(false);
     } catch {
       if (!mountedRef.current) return;
 
-      Toast.show({
-        type: "error",
-        text1: "Erro ao atualizar curtidos",
-        text2: "Não foi possível recarregar os posts curtidos.",
-      });
+      if (postsRef.current.length > 0) {
+        Toast.show({
+          type: "error",
+          text1: "Erro ao atualizar curtidos",
+          text2: "Não foi possível recarregar os posts curtidos.",
+        });
+      } else {
+        setLoadError(true);
+      }
     } finally {
       if (mountedRef.current) {
         setIsRefreshing(false);
@@ -453,12 +481,15 @@ export function useLikedFeed() {
     isLoadingInitial,
     isLoadingMore,
     isRefreshing,
+    isRetrying,
     listRef,
     loadComments,
+    loadError,
     loadMoreFeed,
     openShare,
     posts,
     refreshFeed,
+    retryFeed: loadFeed,
     sentFriendId,
     sharePost,
     shareToFriend,

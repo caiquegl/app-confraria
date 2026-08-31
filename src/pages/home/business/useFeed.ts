@@ -43,6 +43,8 @@ export function useFeed() {
   const mountedRef = useRef(true);
   const loadedCommentsRef = useRef<Set<string>>(new Set());
   const postsRef = useRef<FeedPost[]>([]);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -59,6 +61,8 @@ export function useFeed() {
   const isLoadingInitialRef = useRef(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [commentsLoadingByPost, setCommentsLoadingByPost] = useState<Record<string, boolean>>({});
   const [sharePost, setSharePost] = useState<FeedPost | null>(null);
   const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
@@ -183,6 +187,48 @@ export function useFeed() {
     }
   }, []);
 
+  const loadFeed = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const hasData = postsRef.current.length > 0;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoadingInitial(true);
+    }
+
+    try {
+      const page = await fetchFeedPosts({ limit: FEED_PAGE_SIZE });
+      if (!mountedRef.current) return;
+
+      setPosts(page.data);
+      setNextCursor(page.nextCursor);
+      setHasMore(page.hasMore);
+      loadedCommentsRef.current = new Set();
+      setLoadError(false);
+    } catch {
+      if (!mountedRef.current) return;
+
+      if (hasData) {
+        Toast.show({
+          type: "error",
+          text1: "Erro ao atualizar feed",
+          text2: "Não foi possível recarregar os posts.",
+        });
+      } else {
+        setLoadError(true);
+      }
+    } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
+      if (mountedRef.current) {
+        setIsLoadingInitial(false);
+        setIsRetrying(false);
+      }
+    }
+  }, []);
+
   const refreshFeed = useCallback(async () => {
     if (isRefreshing) return;
 
@@ -197,14 +243,19 @@ export function useFeed() {
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
       loadedCommentsRef.current = new Set();
+      setLoadError(false);
     } catch {
       if (!mountedRef.current) return;
 
-      Toast.show({
-        type: "error",
-        text1: "Erro ao atualizar feed",
-        text2: "Não foi possível recarregar os posts.",
-      });
+      if (postsRef.current.length > 0) {
+        Toast.show({
+          type: "error",
+          text1: "Erro ao atualizar feed",
+          text2: "Não foi possível recarregar os posts.",
+        });
+      } else {
+        setLoadError(true);
+      }
     } finally {
       if (mountedRef.current) {
         setIsRefreshing(false);
@@ -213,36 +264,8 @@ export function useFeed() {
   }, [isRefreshing]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const page = await fetchFeedPosts({ limit: FEED_PAGE_SIZE });
-        if (cancelled || !mountedRef.current) return;
-
-        setPosts(page.data);
-        setNextCursor(page.nextCursor);
-        setHasMore(page.hasMore);
-        loadedCommentsRef.current = new Set();
-      } catch {
-        if (cancelled || !mountedRef.current) return;
-
-        Toast.show({
-          type: "error",
-          text1: "Erro ao carregar feed",
-          text2: "Não foi possível buscar os posts.",
-        });
-      } finally {
-        if (!cancelled && mountedRef.current) {
-          setIsLoadingInitial(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    void loadFeed();
+  }, [loadFeed]);
 
   useFocusEffect(
     useCallback(() => {
@@ -744,10 +767,12 @@ export function useFeed() {
     isLoadingInitial,
     isLoadingMore,
     isRefreshing,
+    isRetrying,
     isPostSuccessVisible,
     isPublishingPost,
     listRef,
     loadComments,
+    loadError,
     loadMoreFeed,
     openComposerFromCamera,
     openComposerFromGallery,
@@ -757,6 +782,7 @@ export function useFeed() {
     publishPost,
     postUploadProgress,
     refreshFeed,
+    retryFeed: loadFeed,
     posts,
     removeComposerPhoto,
     reorderComposerPhotos,

@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import { ErrorState } from "@/components/ErrorState";
 import { UserAvatar } from "@/components/UserAvatar";
 import { colors } from "@/theme/colors";
 
@@ -50,6 +51,7 @@ export function PublicProfileFollowsView({
     followingCount,
     followingLoadingById,
     isLoading,
+    isRetrying,
     requestLoadingById,
     requestsCount,
     retry,
@@ -113,16 +115,17 @@ export function PublicProfileFollowsView({
         })}
       </View>
 
-      {isLoading ? (
+      {error && !isLoading ? (
+        <ErrorState
+          description="Verifique a conexão e tente novamente."
+          retrying={isRetrying}
+          style={styles.errorState}
+          title="Não foi possível carregar seguidores"
+          onRetry={() => void retry()}
+        />
+      ) : isLoading ? (
         <View style={styles.centerState}>
           <ActivityIndicator color={colors.brandPrimary} />
-        </View>
-      ) : error ? (
-        <View style={styles.centerState}>
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable style={styles.retryButton} onPress={() => void retry()}>
-            <Text style={styles.retryText}>Tentar novamente</Text>
-          </Pressable>
         </View>
       ) : activeTab === "requests" ? (
         <FlatList
@@ -330,10 +333,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
   },
-  errorText: {
-    color: "#6B7280",
-    fontSize: 13,
-    textAlign: "center",
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
   },
   followButton: {
     alignItems: "center",
@@ -383,18 +386,6 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 12,
     marginTop: 3,
-  },
-  retryButton: {
-    backgroundColor: colors.brandGreen,
-    borderRadius: 16,
-    marginTop: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  retryText: {
-    color: colors.brandDark,
-    fontSize: 13,
-    fontWeight: "800",
   },
   requestActions: {
     flexDirection: "row",

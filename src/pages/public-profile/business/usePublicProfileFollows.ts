@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Toast from "react-native-toast-message";
 
 import { getCurrentUserId } from "@/lib/auth";
@@ -30,17 +30,28 @@ export function usePublicProfileFollows(
   const [followingLoadingById, setFollowingLoadingById] = useState<Record<string, boolean>>({});
   const [requestLoadingById, setRequestLoadingById] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
+  const hasAttemptedRef = useRef(false);
+  const hasDataRef = useRef(false);
 
   const loadFollows = useCallback(async () => {
     if (!userId) {
-      setError("Perfil inválido.");
+      setError("Não foi possível carregar seguidores.");
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const hasData = hasDataRef.current;
+    if (hasAttemptedRef.current && !hasData) {
+      setIsRetrying(true);
+    } else if (!hasData) {
+      setIsLoading(true);
+    }
 
     try {
       const currentUserId = await getCurrentUserId();
@@ -55,10 +66,23 @@ export function usePublicProfileFollows(
       setFollowers(followersData);
       setFollowing(followingData);
       setRequests(requestsData);
+      setError(null);
+      hasDataRef.current = true;
     } catch {
-      setError("Não foi possível carregar seguidores.");
+      if (hasData) {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar",
+          text2: "Mantivemos a lista anterior.",
+        });
+      } else {
+        setError("Não foi possível carregar seguidores.");
+      }
     } finally {
+      hasAttemptedRef.current = true;
+      inFlightRef.current = false;
       setIsLoading(false);
+      setIsRetrying(false);
     }
   }, [userId]);
 
@@ -194,6 +218,7 @@ export function usePublicProfileFollows(
     followingCount: following.length,
     followingLoadingById,
     isLoading,
+    isRetrying,
     requestLoadingById,
     requestsCount: requests.length,
     retry: loadFollows,
