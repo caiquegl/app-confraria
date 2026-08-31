@@ -20,6 +20,7 @@ type UseQuickRouteDirectionsParams = {
   /** Incrementado ao limpar a rota — invalida fetch em voo e zera o traçado. */
   resetToken?: number;
   origin: QuickRoutePlace | null;
+  routeStyle?: "direct" | "winding" | "super_winding";
   stops: QuickRoutePlace[];
 };
 
@@ -46,6 +47,7 @@ export function useQuickRouteDirections({
   enabled,
   origin,
   resetToken = 0,
+  routeStyle = "direct",
   stops,
 }: UseQuickRouteDirectionsParams) {
   const [options, setOptions] = useState<RoutePathOption[]>([]);
@@ -106,7 +108,7 @@ export function useQuickRouteDirections({
     setError(null);
 
     const timer = setTimeout(() => {
-      void fetchPlaceDirections(waypoints, { avoidTolls })
+      void fetchPlaceDirections(waypoints, { avoidTolls, routeStyle })
         .then((response) => {
           if (requestId !== requestIdRef.current) return;
 
@@ -163,7 +165,7 @@ export function useQuickRouteDirections({
         requestIdRef.current += 1;
       }
     };
-  }, [avoidTolls, enabled, resetToken, stops.length, waypoints, waypointsKey]);
+  }, [avoidTolls, enabled, resetToken, routeStyle, stops.length, waypoints, waypointsKey]);
 
   const selectedOption = useMemo(
     () => options.find((option) => option.id === selectedOptionId) ?? null,

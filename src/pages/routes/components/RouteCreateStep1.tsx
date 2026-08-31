@@ -12,6 +12,7 @@ import { colors } from "@/theme/colors";
 
 import { RouteDayCarousel } from "./RouteDayCarousel";
 import type { RouteDraftDay } from "../types/route-create.types";
+import type { RouteStyle } from "../types/route-style";
 import type { RouteWaypointOrderItem } from "../utils/route-draft.utils";
 
 type RouteCreateStep1Props = {
@@ -34,6 +35,10 @@ type RouteCreateStep1Props = {
   onReorderWaypoints: (dayId: string, orderedItems: RouteWaypointOrderItem[]) => void;
   onSelectDay: (dayId: string) => void;
   onToggleDayOvernight: (dayId: string) => void;
+  isPremium: boolean;
+  onRequestPremium: () => void;
+  onSelectRouteStyle: (style: RouteStyle) => void;
+  routeStyle: RouteStyle;
 };
 
 export function RouteCreateStep1({
@@ -56,6 +61,10 @@ export function RouteCreateStep1({
   onReorderWaypoints,
   onSelectDay,
   onToggleDayOvernight,
+  isPremium,
+  onRequestPremium,
+  onSelectRouteStyle,
+  routeStyle,
 }: RouteCreateStep1Props) {
   // Evita NestableScrollContainer + NestableDraggableFlatList (warning measureLayout no RN novo).
   const [scrollEnabled, setScrollEnabled] = useState(true);
@@ -104,6 +113,10 @@ export function RouteCreateStep1({
         onReorderWaypoints={onReorderWaypoints}
         onSelectDay={onSelectDay}
         onToggleDayOvernight={onToggleDayOvernight}
+        isPremium={isPremium}
+        onRequestPremium={onRequestPremium}
+        onSelectRouteStyle={onSelectRouteStyle}
+        routeStyle={routeStyle}
       />
 
       <Pressable accessibilityRole="button" style={styles.addDayButton} onPress={onAddDay}>

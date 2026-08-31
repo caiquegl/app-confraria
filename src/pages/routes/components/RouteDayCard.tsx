@@ -15,7 +15,9 @@ import type {
 import { colors } from "@/theme/colors";
 
 import type { RouteDraftDay, RoutePlace } from "../types/route-create.types";
+import type { RouteStyle } from "../types/route-style";
 import { RouteDaySuggestions } from "./RouteDaySuggestions";
+import { RouteStyleChips } from "./RouteStyleChips";
 import { getDayColor } from "../utils/route-day.utils";
 import {
   DESTINATION_WAYPOINT_ID,
@@ -56,6 +58,10 @@ type RouteDayCardProps = {
   onSuggestionsScrollBegin?: () => void;
   onSuggestionsScrollEnd?: () => void;
   onToggleOvernight: () => void;
+  onRequestPremium: () => void;
+  onSelectRouteStyle: (style: RouteStyle) => void;
+  isPremium: boolean;
+  routeStyle: RouteStyle;
   width: number;
 };
 
@@ -148,6 +154,7 @@ export function RouteDayCard({
   isLoadingSuggestions,
   isLoadingMoreSuggestions,
   isSingleDay,
+  isPremium,
   onAddStop,
   onAddSuggestedStop,
   onLoadMoreSuggestions,
@@ -163,6 +170,9 @@ export function RouteDayCard({
   onSuggestionsScrollBegin,
   onSuggestionsScrollEnd,
   onToggleOvernight,
+  onRequestPremium,
+  onSelectRouteStyle,
+  routeStyle,
   width,
 }: RouteDayCardProps) {
   const dayColor = getDayColor(dayIndex);
@@ -376,6 +386,13 @@ export function RouteDayCard({
             </Pressable>
           ) : null}
         </View>
+
+        <RouteStyleChips
+          isPremium={isPremium}
+          value={routeStyle}
+          onRequestPremium={onRequestPremium}
+          onSelect={onSelectRouteStyle}
+        />
       </View>
     </View>
   );

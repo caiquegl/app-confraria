@@ -531,6 +531,13 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
             onReorderWaypoints={draft.reorderDayWaypoints}
             onSelectDay={draft.setActiveDayId}
             onToggleDayOvernight={draft.toggleDayOvernight}
+            isPremium={isPremium}
+            routeStyle={draft.preferences.routeStyle}
+            onRequestPremium={() => {
+              setPaywallReason("routeStyle");
+              setShowFreeRoutePaywall(true);
+            }}
+            onSelectRouteStyle={draft.setRouteStyle}
           />
         ) : null}
 
@@ -549,13 +556,7 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
 
         {draft.step === 3 ? (
           <RouteCreateStep3
-            isPremium={isPremium}
             preferences={draft.preferences}
-            onRequestPremium={() => {
-              setPaywallReason("routeStyle");
-              setShowFreeRoutePaywall(true);
-            }}
-            onSelectRouteStyle={draft.setRouteStyle}
             onTogglePreference={draft.togglePreference}
           />
         ) : null}

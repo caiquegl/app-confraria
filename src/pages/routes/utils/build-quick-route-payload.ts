@@ -22,6 +22,7 @@ type BuildQuickRoutePayloadParams = {
   fuelCost?: number | null;
   kind: RouteKind;
   origin: QuickRoutePlace;
+  routeStyle?: "direct" | "winding" | "super_winding";
   selectedOption: RoutePathOption | null;
   stops: QuickRoutePlace[];
   thumbnailType?: CreateRoutePayload["thumbnailType"];
@@ -37,6 +38,7 @@ export function buildQuickRoutePayload({
   fuelCost,
   kind,
   origin,
+  routeStyle = "direct",
   selectedOption,
   stops,
   thumbnailType,
@@ -61,6 +63,7 @@ export function buildQuickRoutePayload({
       avoidTolls,
       avoidUnpaved: true,
       optimizeFuel: true,
+      routeStyle,
     },
     thumbnailType: thumbnailType ?? "map",
     ...(thumbnailType === "image" && coverImageUri ? { coverImageUri } : {}),

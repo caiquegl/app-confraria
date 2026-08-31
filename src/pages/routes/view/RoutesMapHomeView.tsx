@@ -35,6 +35,7 @@ import { getApiErrorMessage } from "@/lib/password-reset";
 import { fetchMapGasStations, fetchNearbyPlaces } from "@/pages/services/services/nearby.service";
 import type { NearbyPlace } from "@/pages/services/types/services.types";
 import { useNotificationBadge } from "@/pages/notifications";
+import { fetchSubscriptionMe } from "@/pages/subscription/services/subscription.service";
 import { colors } from "@/theme/colors";
 
 import { QuickRouteSheet } from "../components/QuickRouteSheet";
@@ -62,9 +63,10 @@ import { useRouteBikes } from "../hooks/useRouteBikes";
 import { createRoute } from "../services/routes.service";
 import type { QuickRoutePlace } from "../types/quick-route.types";
 import type { RouteThumbnailType } from "../types/saved-route.types";
+import type { RouteStyle } from "../types/route-style";
 import { buildQuickRoutePayload } from "../utils/build-quick-route-payload";
 import { createDefaultRouteCover } from "../types/route-create.types";
-import { isFreeRouteLimitError } from "../utils/free-route-limit.utils";
+import { isFreeRouteLimitError, isPremiumRouteStyleError } from "../utils/free-route-limit.utils";
 import {
   dedupeNearbyPlaces,
   sortNearbyPlacesByPriority,
@@ -145,6 +147,9 @@ export function RoutesMapHomeView() {
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
   const [routeResetToken, setRouteResetToken] = useState(0);
   const [showFreeRoutePaywall, setShowFreeRoutePaywall] = useState(false);
+  const [paywallReason, setPaywallReason] = useState<"limit" | "routeStyle">("limit");
+  const [isPremium, setIsPremium] = useState(false);
+  const [routeStyle, setRouteStyle] = useState<RouteStyle>("direct");
 
   const hasCoords = location.latitude != null && location.longitude != null;
   const isLocationReady = location.status === "ready" && hasCoords;
@@ -175,6 +180,7 @@ export function RoutesMapHomeView() {
     enabled: isLocationReady && destination != null,
     origin,
     resetToken: routeResetToken,
+    routeStyle,
     stops,
   });
 
@@ -216,6 +222,22 @@ export function RoutesMapHomeView() {
       setUserAvatar(profile.avatar);
       setUserName(profile.name ?? "Perfil");
     });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchSubscriptionMe()
+      .then((subscription) => {
+        if (!cancelled) {
+          setIsPremium(subscription.isVip);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -403,6 +425,7 @@ export function RoutesMapHomeView() {
     setIsLoadingFuel(false);
     setIsPersisting(false);
     setRouteCover(createDefaultRouteCover());
+    setRouteStyle("direct");
     setSheetDetent("collapsed");
 
     if (hasCoords) {
@@ -558,6 +581,7 @@ export function RoutesMapHomeView() {
           fuelCost,
           kind: action === "start_now" ? "quick" : "planned",
           origin: origin!,
+          routeStyle,
           selectedOption: directions.selectedOption,
           stops,
           thumbnailType: routeCover.thumbnailType,
@@ -584,6 +608,13 @@ export function RoutesMapHomeView() {
       } catch (error) {
         if (isFreeRouteLimitError(error)) {
           trackRoutesEvent("free_route_limit_reached");
+          setPaywallReason("limit");
+          setShowFreeRoutePaywall(true);
+          return;
+        }
+
+        if (isPremiumRouteStyleError(error)) {
+          setPaywallReason("routeStyle");
           setShowFreeRoutePaywall(true);
           return;
         }
@@ -597,7 +628,7 @@ export function RoutesMapHomeView() {
         setIsPersisting(false);
       }
     },
-    [bikes, destination, directions.selectedOption, fuelCost, origin, routeCover, selectedBike, stops],
+    [bikes, destination, directions.selectedOption, fuelCost, origin, routeCover, routeStyle, selectedBike, stops],
   );
 
   const handlePlanRoute = useCallback(async () => {
@@ -608,12 +639,13 @@ export function RoutesMapHomeView() {
         selectedOptionId: directions.selectedOptionId,
         selectedRoute: directions.selectedOption,
         stops,
+        routeStyle,
       });
       trackRoutesEvent("quick_route_converted_to_planner");
     }
 
     router.push("/routes/create" as Href);
-  }, [destination, directions.selectedOption, directions.selectedOptionId, origin, stops]);
+  }, [destination, directions.selectedOption, directions.selectedOptionId, origin, routeStyle, stops]);
 
   const locationLabel =
     location.cityLabel ??
@@ -838,7 +870,9 @@ export function RoutesMapHomeView() {
                 isCalculating={directions.isLoading}
                 isLoadingFuel={isLoadingFuel}
                 isPersisting={isPersisting}
+                isPremium={isPremium}
                 routeError={directions.error}
+                routeStyle={routeStyle}
                 selectedBikeId={selectedBikeId}
                 selectedOption={directions.selectedOption}
                 stops={stops}
@@ -852,6 +886,11 @@ export function RoutesMapHomeView() {
                 onSaveRoute={() => void persistQuickRoute("save_for_later")}
                 onSelectBike={setSelectedBikeId}
                 onStartRoute={() => void persistQuickRoute("start_now")}
+                onRequestPremium={() => {
+                  setPaywallReason("routeStyle");
+                  setShowFreeRoutePaywall(true);
+                }}
+                onSelectRouteStyle={setRouteStyle}
                 onThumbnailTypeChange={(thumbnailType) =>
                   setRouteCover((current) => ({
                     ...current,
@@ -891,6 +930,12 @@ export function RoutesMapHomeView() {
       />
 
       <FreeRouteLimitPaywall
+        description={
+          paywallReason === "routeStyle"
+            ? "Sinuoso e Super-sinuoso são exclusivos do Premium. Assine para traçar rotas com mais curvas."
+            : "No plano gratuito você pode salvar até 5 roteiros privados. Assine o Premium para salvar rotas ilimitadas."
+        }
+        title={paywallReason === "routeStyle" ? "Rotas sinuosas no Premium" : "Limite de rotas salvas"}
         visible={showFreeRoutePaywall}
         onClose={() => setShowFreeRoutePaywall(false)}
         onSubscribe={() => {

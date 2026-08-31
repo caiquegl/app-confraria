@@ -24,7 +24,9 @@ import { formatRouteDistance, formatRouteDuration } from "../utils/route-format.
 import { trackRoutesEvent } from "../utils/track-routes-event";
 import { RouteCoverPicker } from "./RouteCoverPicker";
 import { RouteBikePickerSheet } from "./RouteBikePickerSheet";
+import { RouteStyleChips } from "./RouteStyleChips";
 import type { RouteThumbnailType } from "../types/saved-route.types";
+import type { RouteStyle } from "../types/route-style";
 
 const GARAGE_ROUTE = "/profile/bikes" as Href;
 const PLANNER_HINT_THRESHOLD = 2;
@@ -39,6 +41,7 @@ type QuickRouteSheetProps = {
   isCalculating: boolean;
   isLoadingFuel: boolean;
   isPersisting: boolean;
+  isPremium: boolean;
   onAddStop: (place: QuickRoutePlace) => void;
   onCoverImageChange: (uri: string) => void;
   onPlanRoute: () => void;
@@ -47,7 +50,10 @@ type QuickRouteSheetProps = {
   onSelectBike: (bikeId: string) => void;
   onStartRoute: () => void;
   onThumbnailTypeChange: (type: RouteThumbnailType) => void;
+  onRequestPremium: () => void;
+  onSelectRouteStyle: (style: RouteStyle) => void;
   routeError: string | null;
+  routeStyle: RouteStyle;
   selectedBikeId: string | null;
   selectedOption: RoutePathOption | null;
   stops: QuickRoutePlace[];
@@ -85,6 +91,7 @@ export function QuickRouteSheet({
   isCalculating,
   isLoadingFuel,
   isPersisting,
+  isPremium,
   onAddStop,
   onCoverImageChange,
   onPlanRoute,
@@ -93,7 +100,10 @@ export function QuickRouteSheet({
   onSelectBike,
   onStartRoute,
   onThumbnailTypeChange,
+  onRequestPremium,
+  onSelectRouteStyle,
   routeError,
+  routeStyle,
   selectedBikeId,
   selectedOption,
   stops,
@@ -159,6 +169,14 @@ export function QuickRouteSheet({
         <Text numberOfLines={2} style={styles.destination}>
           {destination.mainText || destination.description}
         </Text>
+
+        <RouteStyleChips
+          compact
+          isPremium={isPremium}
+          value={routeStyle}
+          onRequestPremium={onRequestPremium}
+          onSelect={onSelectRouteStyle}
+        />
 
         {isCalculating ? (
           <View style={styles.loadingRow}>

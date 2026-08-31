@@ -9,6 +9,7 @@ import type {
 
 import { RouteDayCard } from "./RouteDayCard";
 import type { RouteDraftDay } from "../types/route-create.types";
+import type { RouteStyle } from "../types/route-style";
 import type { RouteWaypointOrderItem } from "../utils/route-draft.utils";
 
 type RouteDayCarouselProps = {
@@ -30,6 +31,10 @@ type RouteDayCarouselProps = {
   onReorderWaypoints: (dayId: string, orderedItems: RouteWaypointOrderItem[]) => void;
   onSelectDay: (dayId: string) => void;
   onToggleDayOvernight: (dayId: string) => void;
+  isPremium: boolean;
+  onRequestPremium: () => void;
+  onSelectRouteStyle: (style: RouteStyle) => void;
+  routeStyle: RouteStyle;
 };
 
 const CARD_GAP = 16;
@@ -54,6 +59,10 @@ export function RouteDayCarousel({
   onReorderWaypoints,
   onSelectDay,
   onToggleDayOvernight,
+  isPremium,
+  onRequestPremium,
+  onSelectRouteStyle,
+  routeStyle,
 }: RouteDayCarouselProps) {
   const { width: screenWidth } = useWindowDimensions();
   const [lockDayCarousel, setLockDayCarousel] = useState(false);
@@ -104,6 +113,8 @@ export function RouteDayCarousel({
             isLoadingSuggestions={isLoadingSuggestions}
             isLoadingMoreSuggestions={isLoadingMoreForDay(item.id)}
             isSingleDay={isSingleDay}
+            isPremium={isPremium}
+            routeStyle={routeStyle}
             width={cardWidth}
             onAddStop={() => onAddStop(item.id)}
             onAddSuggestedStop={(suggestion) => onAddSuggestedStop(item.id, suggestion)}
@@ -120,6 +131,8 @@ export function RouteDayCarousel({
             onSuggestionsScrollBegin={handleSuggestionsScrollBegin}
             onSuggestionsScrollEnd={handleSuggestionsScrollEnd}
             onToggleOvernight={() => onToggleDayOvernight(item.id)}
+            onRequestPremium={onRequestPremium}
+            onSelectRouteStyle={onSelectRouteStyle}
           />
         )}
       />
