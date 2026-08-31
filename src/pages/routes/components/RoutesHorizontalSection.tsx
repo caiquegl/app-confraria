@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
@@ -13,6 +13,7 @@ type RoutesHorizontalSectionProps = {
   isLoadingMore: boolean;
   onLoadMore: () => void;
   onRoutePress: (routeId: string) => void;
+  paginationError?: boolean;
   routes: SavedRoute[];
   showAuthor?: boolean;
   subtitle: string;
@@ -26,6 +27,7 @@ export function RoutesHorizontalSection({
   isLoadingMore,
   onLoadMore,
   onRoutePress,
+  paginationError = false,
   routes,
   showAuthor = true,
   subtitle,
@@ -82,6 +84,14 @@ export function RoutesHorizontalSection({
             <View style={styles.footer}>
               <ActivityIndicator color={colors.brandDark} size="small" />
             </View>
+          ) : paginationError ? (
+            <Pressable
+              accessibilityRole="button"
+              style={styles.retryFooter}
+              onPress={onLoadMore}
+            >
+              <Text style={styles.retryFooterText}>Tentar novamente</Text>
+            </Pressable>
           ) : (
             <View style={styles.footerSpacer} />
           )
@@ -105,6 +115,18 @@ const styles = StyleSheet.create({
   },
   footerSpacer: {
     width: 12,
+  },
+  retryFooter: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    width: 120,
+  },
+  retryFooterText: {
+    color: colors.brandDark,
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
   },
   header: {
     marginBottom: 12,

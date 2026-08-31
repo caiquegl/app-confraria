@@ -2,6 +2,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Toast from "react-native-toast-message";
 
+import { nextListLoadError, type ListLoadError } from "@/lib/list-load-state";
 import {
   fetchNearPublishedRoutes,
   PUBLISHED_ROUTES_PAGE_SIZE,
@@ -31,6 +32,8 @@ export function useNearPublishedRoutes({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [error, setError] = useState<ListLoadError>(null);
+  const hasLoadedOnceRef = useRef(false);
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
   useEffect(() => {
@@ -61,10 +64,15 @@ export function useNearPublishedRoutes({
       setRoutes([]);
       setNextCursor(null);
       setHasMore(false);
+      setError(null);
+      hasLoadedOnceRef.current = false;
       return;
     }
 
-    setIsLoading(true);
+    const isRefresh = hasLoadedOnceRef.current;
+    if (!isRefresh) {
+      setIsLoading(true);
+    }
     try {
       const page = await fetchNearPublishedRoutes({
         city,
@@ -77,15 +85,22 @@ export function useNearPublishedRoutes({
       setRoutes(page.data.map(mapApiRouteToSavedRoute));
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
+      setError(null);
+      hasLoadedOnceRef.current = true;
     } catch {
       if (!mountedRef.current) return;
-      setRoutes([]);
-      setNextCursor(null);
-      setHasMore(false);
+      const nextError = nextListLoadError(hasLoadedOnceRef.current);
+      setError(nextError);
       Toast.show({
         type: "error",
-        text1: "Erro ao carregar rotas próximas",
-        text2: "Não foi possível buscar roteiros da sua região.",
+        text1:
+          nextError === "refresh"
+            ? "Não foi possível atualizar as rotas próximas"
+            : "Erro ao carregar rotas próximas",
+        text2:
+          nextError === "refresh"
+            ? "Mantivemos a lista anterior."
+            : "Não foi possível buscar roteiros da sua região.",
       });
     } finally {
       if (mountedRef.current) {
@@ -138,12 +153,11 @@ export function useNearPublishedRoutes({
       });
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
-    } catch {
-      if (!mountedRef.current) return;
+      setError(null);
       Toast.show({
         type: "error",
         text1: "Erro ao carregar mais rotas",
-        text2: "Tente novamente em instantes.",
+        text2: "Toque em tentar novamente no final da lista.",
       });
     } finally {
       loadingMoreRef.current = false;
@@ -154,6 +168,7 @@ export function useNearPublishedRoutes({
   }, [city, debouncedSearch, enabled, region]);
 
   return {
+    error,
     hasMore,
     isLoading,
     isLoadingMore,

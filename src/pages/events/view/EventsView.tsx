@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -7,6 +7,12 @@ import Toast from "react-native-toast-message";
 import { AppTopBar } from "@/components/AppTopBar";
 import { LocationGate } from "@/components/LocationGate";
 import { getCurrentUserId } from "@/lib/auth";
+import {
+  deriveListLoadKind,
+  nextListLoadError,
+  type ListLoadError,
+} from "@/lib/list-load-state";
+import { captureApiError } from "@/lib/sentry";
 import {
   getStoredCurrentProfile,
   subscribeStoredCurrentProfile,
@@ -45,8 +51,14 @@ import {
   buildDiscoverQueryFilters,
   getFilterCategoryFromPill,
   getPillFromFilterCategory,
+  hasAppliedFilters,
   matchesQuickRideDistanceFilter,
 } from "../utils/events-filters.utils";
+
+function reportEventsLoadError(error: unknown, action: string) {
+  console.warn(`[events] ${action}`, error);
+  captureApiError(error, { action, route: "events-discover" });
+}
 
 const DISCOVER_SECTION_PREVIEW_LIMIT = 10;
 
@@ -84,6 +96,11 @@ export function EventsView() {
   const [categorySections, setCategorySections] = useState<EventsDiscoverCategorySection[]>([]);
   const [categoryFilteredEvents, setCategoryFilteredEvents] = useState<PublicProfileEvent[]>([]);
   const [isLoadingCategoryEvents, setIsLoadingCategoryEvents] = useState(false);
+  const [isLoadingDiscover, setIsLoadingDiscover] = useState(true);
+  const [discoverError, setDiscoverError] = useState<ListLoadError>(null);
+  const [categoryEventsError, setCategoryEventsError] = useState<ListLoadError>(null);
+  const hasLoadedDiscoverRef = useRef(false);
+  const hasLoadedCategoryRef = useRef(false);
 
   const isCategoryFilterActive = selectedCategory !== "Tudo";
 
@@ -130,30 +147,54 @@ export function EventsView() {
 
           setQuickRides(filteredRides);
         })
-        .catch(() => {
-          setQuickRides([]);
+        .catch((error) => {
+          reportEventsLoadError(error, "load-quick-rides");
+          Toast.show({
+            type: "error",
+            text1: "Não foi possível atualizar os rolês rápidos",
+          });
         });
     },
     [filters, location.city, location.region, location.status, userCoords],
   );
 
   const loadDiscoverSections = useCallback(() => {
+    const isRefresh = hasLoadedDiscoverRef.current;
+    if (!isRefresh) {
+      setIsLoadingDiscover(true);
+    }
+
     void fetchEventsDiscoverSections(discoverQueryFilters)
       .then((sections) => {
         setThisWeekEvents(sections.thisWeek);
         setThisMonthEvents(sections.thisMonth);
         setCategorySections(sections.categories);
+        setDiscoverError(null);
+        hasLoadedDiscoverRef.current = true;
       })
-      .catch(() => {
-        setThisWeekEvents([]);
-        setThisMonthEvents([]);
-        setCategorySections([]);
+      .catch((error) => {
+        reportEventsLoadError(error, "load-discover-sections");
+        const nextError = nextListLoadError(hasLoadedDiscoverRef.current);
+        setDiscoverError(nextError);
+        if (nextError === "refresh") {
+          Toast.show({
+            type: "error",
+            text1: "Não foi possível atualizar os eventos",
+            text2: "Mantivemos a lista anterior.",
+          });
+        }
+      })
+      .finally(() => {
+        setIsLoadingDiscover(false);
       });
   }, [discoverQueryFilters]);
 
   const loadCategoryEvents = useCallback(
     (category: string) => {
-      setIsLoadingCategoryEvents(true);
+      const isRefresh = hasLoadedCategoryRef.current;
+      if (!isRefresh) {
+        setIsLoadingCategoryEvents(true);
+      }
 
       void fetchEventsDiscoverList({
         category,
@@ -162,9 +203,20 @@ export function EventsView() {
       })
         .then((events) => {
           setCategoryFilteredEvents(events);
+          setCategoryEventsError(null);
+          hasLoadedCategoryRef.current = true;
         })
-        .catch(() => {
-          setCategoryFilteredEvents([]);
+        .catch((error) => {
+          reportEventsLoadError(error, "load-category-events");
+          const nextError = nextListLoadError(hasLoadedCategoryRef.current);
+          setCategoryEventsError(nextError);
+          if (nextError === "refresh") {
+            Toast.show({
+              type: "error",
+              text1: "Não foi possível atualizar os eventos",
+              text2: "Mantivemos a lista anterior.",
+            });
+          }
         })
         .finally(() => {
           setIsLoadingCategoryEvents(false);
@@ -199,7 +251,14 @@ export function EventsView() {
   useEffect(() => {
     void fetchEventCategories()
       .then((items) => setCategories(items.map((item) => item.name)))
-      .catch(() => setCategories([]));
+      .catch((error) => {
+        reportEventsLoadError(error, "load-event-categories");
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível carregar as categorias",
+          text2: "Os filtros de tipo podem ficar incompletos.",
+        });
+      });
   }, []);
 
   useFocusEffect(
@@ -218,6 +277,9 @@ export function EventsView() {
       setFiltersSheetOpen(false);
 
       if (nextFilters.category !== "ALL") {
+        hasLoadedCategoryRef.current = false;
+        setCategoryFilteredEvents([]);
+        setCategoryEventsError(null);
         setIsLoadingCategoryEvents(true);
         void fetchEventsDiscoverList({
           category: nextFilters.category,
@@ -226,24 +288,34 @@ export function EventsView() {
         })
           .then((events) => {
             setCategoryFilteredEvents(events);
+            setCategoryEventsError(null);
+            hasLoadedCategoryRef.current = true;
           })
-          .catch(() => {
-            setCategoryFilteredEvents([]);
+          .catch((error) => {
+            reportEventsLoadError(error, "apply-filters-category");
+            setCategoryEventsError("initial");
           })
           .finally(() => {
             setIsLoadingCategoryEvents(false);
           });
       } else {
+        hasLoadedDiscoverRef.current = false;
+        setDiscoverError(null);
+        setIsLoadingDiscover(true);
         void fetchEventsDiscoverSections(nextQuery)
           .then((sections) => {
             setThisWeekEvents(sections.thisWeek);
             setThisMonthEvents(sections.thisMonth);
             setCategorySections(sections.categories);
+            setDiscoverError(null);
+            hasLoadedDiscoverRef.current = true;
           })
-          .catch(() => {
-            setThisWeekEvents([]);
-            setThisMonthEvents([]);
-            setCategorySections([]);
+          .catch((error) => {
+            reportEventsLoadError(error, "apply-filters-sections");
+            setDiscoverError("initial");
+          })
+          .finally(() => {
+            setIsLoadingDiscover(false);
           });
       }
 
@@ -265,20 +337,30 @@ export function EventsView() {
       setDraftFilters(nextFilters);
 
       if (category === "Tudo") {
+        hasLoadedDiscoverRef.current = false;
+        setDiscoverError(null);
+        setIsLoadingDiscover(true);
         void fetchEventsDiscoverSections(nextQuery)
           .then((sections) => {
             setThisWeekEvents(sections.thisWeek);
             setThisMonthEvents(sections.thisMonth);
             setCategorySections(sections.categories);
+            setDiscoverError(null);
+            hasLoadedDiscoverRef.current = true;
           })
-          .catch(() => {
-            setThisWeekEvents([]);
-            setThisMonthEvents([]);
-            setCategorySections([]);
+          .catch((error) => {
+            reportEventsLoadError(error, "change-category-sections");
+            setDiscoverError("initial");
+          })
+          .finally(() => {
+            setIsLoadingDiscover(false);
           });
         return;
       }
 
+      hasLoadedCategoryRef.current = false;
+      setCategoryFilteredEvents([]);
+      setCategoryEventsError(null);
       setIsLoadingCategoryEvents(true);
       void fetchEventsDiscoverList({
         category,
@@ -287,9 +369,12 @@ export function EventsView() {
       })
         .then((events) => {
           setCategoryFilteredEvents(events);
+          setCategoryEventsError(null);
+          hasLoadedCategoryRef.current = true;
         })
-        .catch(() => {
-          setCategoryFilteredEvents([]);
+        .catch((error) => {
+          reportEventsLoadError(error, "change-category-list");
+          setCategoryEventsError("initial");
         })
         .finally(() => {
           setIsLoadingCategoryEvents(false);
@@ -307,16 +392,25 @@ export function EventsView() {
     setSelectedCategory("Tudo");
     setCategoryFilteredEvents([]);
     setIsLoadingCategoryEvents(false);
+    setCategoryEventsError(null);
+    hasLoadedCategoryRef.current = false;
+    hasLoadedDiscoverRef.current = false;
+    setDiscoverError(null);
+    setIsLoadingDiscover(true);
     void fetchEventsDiscoverSections()
       .then((sections) => {
         setThisWeekEvents(sections.thisWeek);
         setThisMonthEvents(sections.thisMonth);
         setCategorySections(sections.categories);
+        setDiscoverError(null);
+        hasLoadedDiscoverRef.current = true;
       })
-      .catch(() => {
-        setThisWeekEvents([]);
-        setThisMonthEvents([]);
-        setCategorySections([]);
+      .catch((error) => {
+        reportEventsLoadError(error, "clear-filters-sections");
+        setDiscoverError("initial");
+      })
+      .finally(() => {
+        setIsLoadingDiscover(false);
       });
     loadQuickRides(DEFAULT_EVENTS_FILTERS);
   }, [loadQuickRides]);
@@ -464,6 +558,38 @@ export function EventsView() {
     displayedThisMonthEvents.length > 0 ||
     displayedCategorySections.some((section) => section.events.length > 0);
 
+  const hasEventFilters =
+    hasAppliedFilters(filters) ||
+    isCategoryFilterActive ||
+    searchQuery.trim().length > 0;
+
+  const rawDiscoverCount =
+    thisWeekEvents.length +
+    thisMonthEvents.length +
+    categorySections.reduce((total, section) => total + section.events.length, 0) +
+    quickRides.length;
+
+  const categoryListKind = deriveListLoadKind({
+    error: categoryEventsError,
+    filteredCount: displayedCategoryEvents.length,
+    hasFilters: hasEventFilters,
+    hasLoadedOnce:
+      categoryFilteredEvents.length > 0 ||
+      categoryEventsError != null ||
+      !isLoadingCategoryEvents,
+    isLoading: isLoadingCategoryEvents,
+    itemCount: categoryFilteredEvents.length,
+  });
+
+  const discoverListKind = deriveListLoadKind({
+    error: discoverError,
+    filteredCount: hasDiscoveryResults ? 1 : 0,
+    hasFilters: hasEventFilters,
+    hasLoadedOnce: rawDiscoverCount > 0 || discoverError != null || !isLoadingDiscover,
+    isLoading: isLoadingDiscover,
+    itemCount: rawDiscoverCount,
+  });
+
   if (location.status !== "ready" || !location.cityLabel) {
     return (
       <LocationGate
@@ -509,10 +635,18 @@ export function EventsView() {
         />
 
         {isCategoryFilterActive ? (
-          isLoadingCategoryEvents || displayedCategoryEvents.length === 0 ? (
+          categoryListKind === "loading" ? (
+            <EventsEmptyFiltersCard isLoading />
+          ) : categoryListKind === "initial-error" ? (
             <EventsEmptyFiltersCard
-              isLoading={isLoadingCategoryEvents}
-              onClearFilters={clearAllFilters}
+              variant="error"
+              onRetry={() => loadCategoryEvents(selectedCategory)}
+            />
+          ) : displayedCategoryEvents.length === 0 ? (
+            <EventsEmptyFiltersCard
+              variant={hasEventFilters ? "filtered" : "empty"}
+              onClearFilters={hasEventFilters ? clearAllFilters : undefined}
+              onRetry={hasEventFilters ? undefined : () => loadCategoryEvents(selectedCategory)}
             />
           ) : (
             <EventsSection
@@ -525,10 +659,15 @@ export function EventsView() {
               onToggleFavorite={handleToggleFavorite}
             />
           )
+        ) : discoverListKind === "loading" ? (
+          <EventsEmptyFiltersCard isLoading />
+        ) : discoverListKind === "initial-error" ? (
+          <EventsEmptyFiltersCard variant="error" onRetry={reloadDiscoverData} />
         ) : !hasDiscoveryResults ? (
           <EventsEmptyFiltersCard
-            isLoading={false}
-            onClearFilters={clearAllFilters}
+            variant={hasEventFilters ? "filtered" : "empty"}
+            onClearFilters={hasEventFilters ? clearAllFilters : undefined}
+            onRetry={hasEventFilters ? undefined : reloadDiscoverData}
           />
         ) : (
           <>

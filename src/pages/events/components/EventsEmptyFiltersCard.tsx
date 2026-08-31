@@ -4,12 +4,16 @@ import { colors } from "@/theme/colors";
 
 type EventsEmptyFiltersCardProps = {
   isLoading?: boolean;
-  onClearFilters: () => void;
+  onClearFilters?: () => void;
+  onRetry?: () => void;
+  variant?: "filtered" | "empty" | "error";
 };
 
 export function EventsEmptyFiltersCard({
   isLoading = false,
   onClearFilters,
+  onRetry,
+  variant = "filtered",
 }: EventsEmptyFiltersCardProps) {
   if (isLoading) {
     return (
@@ -19,13 +23,47 @@ export function EventsEmptyFiltersCard({
     );
   }
 
+  if (variant === "error") {
+    return (
+      <View style={styles.emptyWrap}>
+        <Text style={styles.emptyTitle}>Não foi possível carregar os eventos</Text>
+        <Text style={styles.emptyText}>
+          Verifique a conexão e tente novamente. Isso não significa que não há eventos.
+        </Text>
+        {onRetry ? (
+          <Pressable accessibilityRole="button" style={styles.clearButton} onPress={onRetry}>
+            <Text style={styles.clearButtonText}>Tentar novamente</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    );
+  }
+
+  if (variant === "empty") {
+    return (
+      <View style={styles.emptyWrap}>
+        <Text style={styles.emptyTitle}>Nenhum evento por aqui</Text>
+        <Text style={styles.emptyText}>
+          Ainda não há eventos nesta região. Volte mais tarde ou crie o primeiro.
+        </Text>
+        {onRetry ? (
+          <Pressable accessibilityRole="button" style={styles.clearButton} onPress={onRetry}>
+            <Text style={styles.clearButtonText}>Tentar novamente</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.emptyWrap}>
       <Text style={styles.emptyTitle}>Nenhum evento encontrado</Text>
       <Text style={styles.emptyText}>Tente ajustar os filtros para ver mais resultados.</Text>
-      <Pressable accessibilityRole="button" style={styles.clearButton} onPress={onClearFilters}>
-        <Text style={styles.clearButtonText}>Limpar filtros</Text>
-      </Pressable>
+      {onClearFilters ? (
+        <Pressable accessibilityRole="button" style={styles.clearButton} onPress={onClearFilters}>
+          <Text style={styles.clearButtonText}>Limpar filtros</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -43,7 +81,7 @@ const styles = StyleSheet.create({
   clearButtonText: {
     color: colors.brandDark,
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   emptyText: {
     color: "#6B7280",

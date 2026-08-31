@@ -95,6 +95,12 @@ export function RoutesExploreView() {
   const isCommunityLoading =
     (publishedRoutes.isLoading || nearRoutes.isLoading || friendsRoutes.isLoading) &&
     !hasCommunityContent;
+  const hasInitialListError =
+    !hasCommunityContent &&
+    !isCommunityLoading &&
+    (publishedRoutes.error === "initial" ||
+      nearRoutes.error === "initial" ||
+      friendsRoutes.error === "initial");
   const hasAppliedFilters = filters.minRating > 0;
   const hasSearchOrFilters = searchQuery.trim().length > 0 || hasAppliedFilters;
 
@@ -183,6 +189,7 @@ export function RoutesExploreView() {
             hasMore={publishedRoutes.hasMore}
             isLoading={publishedRoutes.isLoading}
             isLoadingMore={publishedRoutes.isLoadingMore}
+            paginationError={publishedRoutes.error === "pagination"}
             routes={filteredPublishedRoutes}
             subtitle="Suas rotas disponíveis para o Confraria"
             title="Publicadas por você"
@@ -195,6 +202,7 @@ export function RoutesExploreView() {
             hasMore={nearRoutes.hasMore}
             isLoading={nearRoutes.isLoading}
             isLoadingMore={nearRoutes.isLoadingMore}
+            paginationError={nearRoutes.error === "pagination"}
             routes={filteredNearRoutes}
             subtitle="Roteiros compartilhados perto da sua região"
             title="Rotas próximas de você"
@@ -207,6 +215,7 @@ export function RoutesExploreView() {
             hasMore={friendsRoutes.hasMore}
             isLoading={friendsRoutes.isLoading}
             isLoadingMore={friendsRoutes.isLoadingMore}
+            paginationError={friendsRoutes.error === "pagination"}
             routes={filteredFriendsRoutes}
             subtitle="Roteiros de quem você segue no Confraria"
             title="Rotas de amigos"
@@ -218,6 +227,26 @@ export function RoutesExploreView() {
             <View style={styles.loadingState}>
               <ActivityIndicator color={colors.brandDark} size="large" />
             </View>
+          ) : hasInitialListError ? (
+            <View style={styles.emptyStateWrap}>
+              <View style={styles.emptyStateCard}>
+                <Text style={styles.emptyStateTitle}>Não foi possível carregar as rotas</Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Verifique a conexão e tente novamente. Isso não significa que não há rotas.
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.emptyStateButton}
+                  onPress={() => {
+                    void publishedRoutes.refresh();
+                    void nearRoutes.refresh();
+                    void friendsRoutes.refresh();
+                  }}
+                >
+                  <Text style={styles.emptyStateButtonText}>Tentar novamente</Text>
+                </Pressable>
+              </View>
+            </View>
           ) : !hasCommunityContent ? (
             <View style={styles.emptyStateWrap}>
               <View style={styles.emptyStateCard}>
@@ -225,7 +254,9 @@ export function RoutesExploreView() {
                   {hasSearchOrFilters ? "Nenhuma rota encontrada" : "Nenhuma rota disponível"}
                 </Text>
                 <Text style={styles.emptyStateSubtitle}>
-                  Ajuste a busca ou os filtros para ver mais resultados.
+                  {hasSearchOrFilters
+                    ? "Ajuste a busca ou os filtros para ver mais resultados."
+                    : "Ainda não há rotas publicadas para mostrar."}
                 </Text>
                 {hasSearchOrFilters ? (
                   <Pressable
@@ -235,7 +266,20 @@ export function RoutesExploreView() {
                   >
                     <Text style={styles.emptyStateButtonText}>Limpar filtros</Text>
                   </Pressable>
-                ) : null}
+                ) : (
+                  <Pressable
+                    accessibilityRole="button"
+                    style={styles.emptyStateButton}
+                    onPress={() => {
+                      void publishedRoutes.refresh();
+                      void nearRoutes.refresh();
+                      void friendsRoutes.refresh();
+                    }}
+                  >
+                    <Text style={styles.emptyStateButtonText}>Tentar novamente</Text>
+                  </Pressable>
+                )}
+              </View>
               </View>
             </View>
           ) : null}

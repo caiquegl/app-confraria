@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -44,12 +44,16 @@ export function EventsDiscoverListView({
   const [events, setEvents] = useState<PublicProfileEvent[]>([]);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedOnceRef = useRef(false);
 
   const requestFilters = useMemo(() => filters, [filters]);
 
   const loadEvents = useCallback(async () => {
+    const isRefresh = hasLoadedOnceRef.current;
     setHasError(false);
-    setIsLoading(true);
+    if (!isRefresh) {
+      setIsLoading(true);
+    }
 
     try {
       const response = await fetchEventsDiscoverList({
@@ -58,9 +62,16 @@ export function EventsDiscoverListView({
         scope,
       });
       setEvents(response);
+      hasLoadedOnceRef.current = true;
     } catch {
-      setEvents([]);
       setHasError(true);
+      if (hasLoadedOnceRef.current) {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar os eventos",
+          text2: "Mantivemos a lista anterior.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -117,11 +128,11 @@ export function EventsDiscoverListView({
         <View style={styles.headerSpacer} />
       </View>
 
-      {isLoading ? (
+      {isLoading && events.length === 0 ? (
         <View style={styles.centered}>
           <ActivityIndicator color={colors.brandPrimary} size="large" />
         </View>
-      ) : hasError ? (
+      ) : hasError && events.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.errorTitle}>Não foi possível carregar os eventos</Text>
           <Pressable accessibilityRole="button" style={styles.retryButton} onPress={loadEvents}>

@@ -48,7 +48,7 @@ export function RoutesMineView() {
   const { hasUnread } = useNotificationBadge();
   const { location } = useGeolocation();
   const storedProfile = getStoredCurrentProfile();
-  const { error, isLoading, quota, routes } = useMyRoutes();
+  const { error, isLoading, quota, refresh, routes } = useMyRoutes();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<SavedRouteFilters>(DEFAULT_ROUTE_FILTERS);
@@ -338,13 +338,19 @@ export function RoutesMineView() {
             </View>
           ) : null}
 
-          {isLoading ? (
+          {isLoading && routes.length === 0 ? (
             <View style={styles.loadingState}>
               <ActivityIndicator color={colors.brandDark} size="large" />
             </View>
-          ) : error ? (
+          ) : error === "initial" && routes.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>{error}</Text>
+              <Text style={styles.emptyTitle}>Não foi possível carregar suas rotas</Text>
+              <Text style={styles.emptySubtitle}>
+                Verifique a conexão e tente novamente. Isso não significa que você não tem rotas.
+              </Text>
+              <Button size="lg" style={styles.emptyButton} onPress={() => void refresh()}>
+                Tentar novamente
+              </Button>
             </View>
           ) : routes.length === 0 ? (
             <View style={styles.emptyState}>

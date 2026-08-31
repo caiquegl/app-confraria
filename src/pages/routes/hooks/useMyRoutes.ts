@@ -1,7 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { useFocusEffect } from "expo-router";
+import Toast from "react-native-toast-message";
 
+import { nextListLoadError, type ListLoadError } from "@/lib/list-load-state";
 import { fetchMyRoutes } from "../services/routes.service";
 import type { MyRoutesQuota, SavedRoute } from "../types/saved-route.types";
 import { mapApiRouteToSavedRoute } from "../utils/saved-route.mapper";
@@ -18,11 +20,14 @@ export function useMyRoutes() {
   const [routes, setRoutes] = useState<SavedRoute[]>([]);
   const [quota, setQuota] = useState<MyRoutesQuota>(DEFAULT_QUOTA);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ListLoadError>(null);
+  const hasLoadedOnceRef = useRef(false);
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    const isRefresh = hasLoadedOnceRef.current;
+    if (!isRefresh) {
+      setIsLoading(true);
+    }
 
     try {
       const page = await fetchMyRoutes();
@@ -34,10 +39,18 @@ export function useMyRoutes() {
         savedPrivateCount: page.savedPrivateCount,
         savedPrivateLimit: page.savedPrivateLimit,
       });
+      setError(null);
+      hasLoadedOnceRef.current = true;
     } catch {
-      setError("Não foi possível carregar suas rotas.");
-      setRoutes([]);
-      setQuota(DEFAULT_QUOTA);
+      const nextError = nextListLoadError(hasLoadedOnceRef.current);
+      setError(nextError);
+      if (nextError === "refresh") {
+        Toast.show({
+          type: "error",
+          text1: "Não foi possível atualizar suas rotas",
+          text2: "Mantivemos a lista anterior.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@ import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Toast from "react-native-toast-message";
 
+import { nextListLoadError, type ListLoadError } from "@/lib/list-load-state";
 import {
   fetchFriendsRoutes,
   PUBLISHED_ROUTES_PAGE_SIZE,
@@ -24,6 +25,8 @@ export function useFriendsRoutes({ enabled, searchQuery }: UseFriendsRoutesOptio
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [error, setError] = useState<ListLoadError>(null);
+  const hasLoadedOnceRef = useRef(false);
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
   useEffect(() => {
@@ -52,7 +55,10 @@ export function useFriendsRoutes({ enabled, searchQuery }: UseFriendsRoutesOptio
   const loadInitial = useCallback(async () => {
     if (!enabled) return;
 
-    setIsLoading(true);
+    const isRefresh = hasLoadedOnceRef.current;
+    if (!isRefresh) {
+      setIsLoading(true);
+    }
     try {
       const page = await fetchFriendsRoutes({
         limit: PUBLISHED_ROUTES_PAGE_SIZE,
@@ -63,15 +69,22 @@ export function useFriendsRoutes({ enabled, searchQuery }: UseFriendsRoutesOptio
       setRoutes(page.data.map(mapApiRouteToSavedRoute));
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
+      setError(null);
+      hasLoadedOnceRef.current = true;
     } catch {
       if (!mountedRef.current) return;
-      setRoutes([]);
-      setNextCursor(null);
-      setHasMore(false);
+      const nextError = nextListLoadError(hasLoadedOnceRef.current);
+      setError(nextError);
       Toast.show({
         type: "error",
-        text1: "Erro ao carregar rotas de amigos",
-        text2: "Não foi possível buscar os roteiros de quem você segue.",
+        text1:
+          nextError === "refresh"
+            ? "Não foi possível atualizar as rotas de amigos"
+            : "Erro ao carregar rotas de amigos",
+        text2:
+          nextError === "refresh"
+            ? "Mantivemos a lista anterior."
+            : "Não foi possível buscar os roteiros de quem você segue.",
       });
     } finally {
       if (mountedRef.current) {
@@ -116,12 +129,14 @@ export function useFriendsRoutes({ enabled, searchQuery }: UseFriendsRoutesOptio
       });
       setNextCursor(page.nextCursor);
       setHasMore(page.hasMore);
+      setError(null);
     } catch {
       if (!mountedRef.current) return;
+      setError("pagination");
       Toast.show({
         type: "error",
         text1: "Erro ao carregar mais rotas",
-        text2: "Tente novamente em instantes.",
+        text2: "Toque em tentar novamente no final da lista.",
       });
     } finally {
       loadingMoreRef.current = false;
@@ -132,6 +147,7 @@ export function useFriendsRoutes({ enabled, searchQuery }: UseFriendsRoutesOptio
   }, [debouncedSearch, enabled]);
 
   return {
+    error,
     hasMore,
     isLoading,
     isLoadingMore,
