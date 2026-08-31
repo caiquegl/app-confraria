@@ -1,5 +1,8 @@
-import { getApiBaseUrl } from "@/lib/api-environment";
+import { isAxiosError } from "axios";
+
+import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
+import { getApiBaseUrl } from "@/lib/api-environment";
 import { getToken } from "@/lib/auth";
 import type {
   EventCreatePayload,
@@ -12,6 +15,17 @@ export async function updateEvent(
   eventId: string,
   payload: EventCreatePayload,
 ): Promise<EventDetail> {
+  if (!hasLocalImageFiles(payload)) {
+    try {
+      const { data } = await api.patch<EventDetail>(apiRoutes.events.update(eventId), {
+        payload: JSON.stringify(payload),
+      });
+      return data;
+    } catch (error) {
+      throw new Error(parseRequestError(error, "Não foi possível atualizar o evento."));
+    }
+  }
+
   const formData = createEventUpdateFormData(payload);
   const baseURL = await getApiBaseUrl();
   const token = await getToken();
@@ -21,7 +35,7 @@ export async function updateEvent(
     url: `${baseURL}${apiRoutes.events.update(eventId)}`,
   });
 
-  return JSON.parse(responseText) as EventDetail;
+  return parseEventUpdateResponse(responseText);
 }
 
 export function mapEventDetailToDraft(event: EventDetail): EventDraft {
@@ -52,6 +66,8 @@ export function mapEventDetailToDraft(event: EventDetail): EventDraft {
 function mapPlaceToReference(place: EventDetailPlace): EventPlaceReference {
   return {
     description: place.description,
+    latitude: place.latitude,
+    longitude: place.longitude,
     mainText: place.mainText,
     placeId: place.placeId,
     reference: place.placeId,
@@ -62,10 +78,22 @@ function mapPlaceToReference(place: EventDetailPlace): EventPlaceReference {
 
 function formatIsoDateToBrazilian(iso: string) {
   const date = new Date(iso);
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const year = date.getUTCFullYear();
-  return `${day}/${month}/${year}`;
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+  }).format(date);
+}
+
+function hasLocalImageFiles(payload: EventCreatePayload) {
+  const hasLocalCover = Boolean(
+    payload.coverImageUri && !isRemoteUri(payload.coverImageUri),
+  );
+  const hasLocalGallery = payload.galleryUris.some((uri) => !isRemoteUri(uri));
+  return hasLocalCover || hasLocalGallery;
 }
 
 function createEventUpdateFormData(payload: EventCreatePayload) {
@@ -96,7 +124,7 @@ function createEventUpdateFormData(payload: EventCreatePayload) {
 }
 
 function isRemoteUri(value: string) {
-  return value.startsWith("http://") || value.startsWith("https://");
+  return /^https?:\/\//i.test(value.trim());
 }
 
 function sendEventUpdateRequest(params: {
@@ -130,16 +158,49 @@ function sendEventUpdateRequest(params: {
   });
 }
 
-function parseErrorMessage(responseText: string): string {
+function parseEventUpdateResponse(responseText: string): EventDetail {
+  if (!responseText.trim()) {
+    throw new Error("Não foi possível atualizar o evento.");
+  }
+
+  try {
+    return JSON.parse(responseText) as EventDetail;
+  } catch {
+    throw new Error("Não foi possível atualizar o evento.");
+  }
+}
+
+function parseRequestError(error: unknown, fallback: string): string {
+  if (isAxiosError(error)) {
+    return parseErrorMessage(
+      typeof error.response?.data === "string"
+        ? error.response.data
+        : JSON.stringify(error.response?.data ?? {}),
+      fallback,
+    );
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function parseErrorMessage(responseText: string, fallback = "Não foi possível atualizar o evento."): string {
   try {
     const parsed = JSON.parse(responseText) as { message?: string | string[] };
-    if (Array.isArray(parsed.message)) return parsed.message.join("\n");
-    if (parsed.message) return parsed.message;
+    if (Array.isArray(parsed.message)) {
+      return parsed.message.filter((item) => typeof item === "string").join(" ");
+    }
+    if (typeof parsed.message === "string" && parsed.message.trim()) {
+      return parsed.message;
+    }
   } catch {
     // Keep generic message when backend response is not JSON.
   }
 
-  return "Não foi possível atualizar o evento.";
+  return fallback;
 }
 
 function getFileExtension(uri: string): string {

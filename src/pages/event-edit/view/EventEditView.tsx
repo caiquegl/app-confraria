@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
@@ -196,6 +196,7 @@ function EventEditForm({
   const handleSave = async () => {
     if (!canSave || isSaving) return;
 
+    Keyboard.dismiss();
     onSavingChange(true);
     try {
       await updateEvent(eventId, buildPayload());

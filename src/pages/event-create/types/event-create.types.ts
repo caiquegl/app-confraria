@@ -5,6 +5,8 @@ export type EventCategory = {
 
 export type EventPlaceReference = {
   description: string;
+  latitude?: number;
+  longitude?: number;
   mainText: string;
   placeId: string;
   reference: string;
