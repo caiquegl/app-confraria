@@ -280,7 +280,6 @@ export function RoutesExploreView() {
                   </Pressable>
                 )}
               </View>
-              </View>
             </View>
           ) : null}
         </View>
