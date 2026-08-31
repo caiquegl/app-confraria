@@ -14,6 +14,7 @@ import Toast from "react-native-toast-message";
 
 import { AppTopBar } from "@/components/AppTopBar";
 import { Button } from "@/components/Button";
+import { EmptyState } from "@/components/EmptyState";
 import {
   getStoredCurrentProfile,
   subscribeStoredCurrentProfile,
@@ -353,46 +354,34 @@ export function RoutesMineView() {
               </Button>
             </View>
           ) : routes.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Ionicons color="#D1D5DB" name="map-outline" size={48} />
-              </View>
-              <Text style={styles.emptyTitle}>Nenhuma rota criada</Text>
-              <Text style={styles.emptySubtitle}>
-                Planeje seu próximo roteiro e salve seus passeios para acompanhar datas e lembretes.
-              </Text>
-              <Button
-                size="lg"
-                style={styles.emptyButton}
-                onPress={() => router.push("/routes/create" as Href)}
-              >
-                Planejar roteiro
-              </Button>
-            </View>
+            <EmptyState
+              description="Planeje seu próximo roteiro e salve seus passeios para acompanhar datas e lembretes."
+              icon="map-outline"
+              title="Nenhuma rota criada"
+              action={{
+                accessibilityLabel: "Planejar roteiro",
+                label: "Planejar roteiro",
+                onPress: () => router.push("/routes/create" as Href),
+              }}
+            />
           ) : filteredRoutes.length === 0 ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Ionicons color="#D1D5DB" name="search-outline" size={40} />
-              </View>
-              <Text style={styles.emptyTitle}>
-                {searchQuery.trim()
+            <EmptyState
+              description="Ajuste a busca ou limpe os filtros para voltar a ver seus passeios."
+              icon="search-outline"
+              title={
+                searchQuery.trim()
                   ? "Nenhum resultado para a busca"
-                  : "Nenhuma rota encontrada com os filtros atuais"}
-              </Text>
-              <Text style={styles.emptySubtitle}>
-                Ajuste a busca ou limpe os filtros para voltar a ver seus passeios.
-              </Text>
-              <Button
-                size="lg"
-                style={styles.emptyButton}
-                onPress={() => {
+                  : "Nenhuma rota encontrada com os filtros atuais"
+              }
+              action={{
+                accessibilityLabel: "Limpar busca e filtros de rotas",
+                label: "Limpar filtros",
+                onPress: () => {
                   setSearchQuery("");
                   clearAllFilters();
-                }}
-              >
-                Limpar filtros
-              </Button>
-            </View>
+                },
+              }}
+            />
           ) : (
             <View style={styles.groups}>
               {groupedRoutes.map((group) => {
@@ -526,15 +515,6 @@ const styles = StyleSheet.create({
   emptyButton: {
     marginTop: 24,
     minWidth: 220,
-  },
-  emptyIcon: {
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 999,
-    height: 96,
-    justifyContent: "center",
-    marginBottom: 24,
-    width: 96,
   },
   emptyState: {
     alignItems: "center",

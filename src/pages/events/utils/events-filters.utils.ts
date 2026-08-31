@@ -145,3 +145,16 @@ export function hasAppliedFilters(filters: EventsFilters) {
     !isFullDistanceRange(filters.distanceRange)
   );
 }
+
+export function hasDiscoverQueryFilters(filters?: EventsDiscoverQueryFilters) {
+  if (!filters) {
+    return false;
+  }
+
+  return Boolean(
+    filters.category ||
+      filters.state ||
+      filters.maxDistanceKm != null ||
+      filters.minDistanceKm != null,
+  );
+}

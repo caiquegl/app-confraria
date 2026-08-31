@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { EmptyState } from "@/components/EmptyState";
 import { QuickRideCard } from "@/pages/events/components/QuickRideCard";
 import { fetchMyQuickRides } from "@/pages/quick-rides/services/quick-rides.service";
 import type { QuickRide, QuickRideListItem } from "@/pages/quick-rides/types/quick-ride.types";
@@ -103,12 +104,17 @@ export function MyQuickRidesView({ onBack }: MyQuickRidesViewProps) {
       ) : null}
 
       {!isLoading && !hasError && rides.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>Nenhum rolê ainda</Text>
-          <Text style={styles.emptyText}>
-            Crie um rolê rápido ou tope em um da aba Eventos para vê-lo aqui.
-          </Text>
-        </View>
+        <EmptyState
+          description="Crie um rolê rápido ou tope em um da aba Eventos para vê-lo aqui."
+          icon="bicycle-outline"
+          style={styles.emptyState}
+          title="Nenhum rolê ainda"
+          action={{
+            accessibilityLabel: "Criar rolê rápido",
+            label: "Criar rolê rápido",
+            onPress: () => router.push("/quick-rides/create" as Href),
+          }}
+        />
       ) : null}
 
       {!isLoading && !hasError && rides.length > 0 ? (
@@ -144,18 +150,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
-  emptyText: {
-    color: "#6B7280",
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
-    textAlign: "center",
-  },
-  emptyTitle: {
-    color: colors.brandDark,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "center",
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
   },
   errorText: {
     color: "#6B7280",

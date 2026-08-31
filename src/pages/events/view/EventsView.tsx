@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { AppTopBar } from "@/components/AppTopBar";
+import { EmptyState } from "@/components/EmptyState";
 import { LocationGate } from "@/components/LocationGate";
 import { getCurrentUserId } from "@/lib/auth";
 import {
@@ -72,6 +73,56 @@ function filterEventsBySearch(events: PublicProfileEvent[], searchQuery: string)
     [event.title, event.category, event.location, event.organizer, event.date].some((value) =>
       value.toLowerCase().includes(normalizedSearch),
     ),
+  );
+}
+
+function EventsContentEmpty({
+  hasFilters,
+  onClearFilters,
+  onRetry,
+}: {
+  hasFilters: boolean;
+  onClearFilters?: () => void;
+  onRetry?: () => void;
+}) {
+  if (hasFilters) {
+    return (
+      <EmptyState
+        description="Tente ajustar os filtros para ver mais resultados."
+        icon="search-outline"
+        layout="card"
+        style={styles.emptyCard}
+        title="Nenhum evento encontrado"
+        action={
+          onClearFilters
+            ? {
+                accessibilityLabel: "Limpar filtros de eventos",
+                label: "Limpar filtros",
+                onPress: onClearFilters,
+              }
+            : undefined
+        }
+      />
+    );
+  }
+
+  return (
+    <EmptyState
+      description="Ainda não há eventos nesta região. Volte mais tarde ou crie o primeiro."
+      icon="calendar-outline"
+      layout="card"
+      style={styles.emptyCard}
+      title="Nenhum evento por aqui"
+      action={
+        onRetry
+          ? {
+              accessibilityLabel: "Recarregar eventos",
+              label: "Tentar novamente",
+              onPress: onRetry,
+            }
+          : undefined
+      }
+    />
   );
 }
 
@@ -642,8 +693,8 @@ export function EventsView() {
               onRetry={() => loadCategoryEvents(selectedCategory)}
             />
           ) : displayedCategoryEvents.length === 0 ? (
-            <EventsEmptyFiltersCard
-              variant={hasEventFilters ? "filtered" : "empty"}
+            <EventsContentEmpty
+              hasFilters={hasEventFilters}
               onClearFilters={hasEventFilters ? clearAllFilters : undefined}
               onRetry={hasEventFilters ? undefined : () => loadCategoryEvents(selectedCategory)}
             />
@@ -663,8 +714,8 @@ export function EventsView() {
         ) : discoverListKind === "initial-error" ? (
           <EventsEmptyFiltersCard variant="error" onRetry={reloadDiscoverData} />
         ) : !hasDiscoveryResults ? (
-          <EventsEmptyFiltersCard
-            variant={hasEventFilters ? "filtered" : "empty"}
+          <EventsContentEmpty
+            hasFilters={hasEventFilters}
             onClearFilters={hasEventFilters ? clearAllFilters : undefined}
             onRetry={hasEventFilters ? undefined : reloadDiscoverData}
           />
@@ -729,6 +780,10 @@ export function EventsView() {
 }
 
 const styles = StyleSheet.create({
+  emptyCard: {
+    marginHorizontal: 16,
+    marginTop: 20,
+  },
   screen: {
     backgroundColor: colors.brandGray,
     flex: 1,

@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
+import { EmptyState } from "@/components/EmptyState";
 import { toggleFavoriteEvent } from "@/pages/favorites/services/favorites.service";
 import { PublicProfileEventCard } from "@/pages/public-profile-events/components/PublicProfileEventCard";
 import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
@@ -21,7 +22,10 @@ import {
   fetchEventsDiscoverList,
   type EventsDiscoverScope,
 } from "../services/events-discover.service";
-import type { EventsDiscoverQueryFilters } from "../utils/events-filters.utils";
+import {
+  hasDiscoverQueryFilters,
+  type EventsDiscoverQueryFilters,
+} from "../utils/events-filters.utils";
 
 type EventsDiscoverListViewProps = {
   category?: string;
@@ -140,9 +144,16 @@ export function EventsDiscoverListView({
           </Pressable>
         </View>
       ) : events.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>Nenhum evento encontrado</Text>
-        </View>
+        <EmptyState
+          description={
+            hasDiscoverQueryFilters(filters) || category
+              ? "Tente ajustar os filtros para ver mais resultados."
+              : "Ainda não há eventos nesta lista. Volte mais tarde ou explore outras categorias."
+          }
+          icon={hasDiscoverQueryFilters(filters) || category ? "search-outline" : "calendar-outline"}
+          style={styles.emptyState}
+          title="Nenhum evento encontrado"
+        />
       ) : (
         <ScrollView
           contentContainerStyle={[
@@ -172,11 +183,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
   },
-  emptyTitle: {
-    color: colors.brandDark,
-    fontSize: 15,
-    fontWeight: "700",
-    textAlign: "center",
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    paddingTop: 0,
   },
   errorTitle: {
     color: colors.brandDark,

@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppTopBar } from "@/components/AppTopBar";
+import { EmptyState } from "@/components/EmptyState";
 import {
   getStoredCurrentProfile,
   subscribeStoredCurrentProfile,
@@ -249,37 +250,33 @@ export function RoutesExploreView() {
             </View>
           ) : !hasCommunityContent ? (
             <View style={styles.emptyStateWrap}>
-              <View style={styles.emptyStateCard}>
-                <Text style={styles.emptyStateTitle}>
-                  {hasSearchOrFilters ? "Nenhuma rota encontrada" : "Nenhuma rota disponível"}
-                </Text>
-                <Text style={styles.emptyStateSubtitle}>
-                  {hasSearchOrFilters
+              <EmptyState
+                description={
+                  hasSearchOrFilters
                     ? "Ajuste a busca ou os filtros para ver mais resultados."
-                    : "Ainda não há rotas publicadas para mostrar."}
-                </Text>
-                {hasSearchOrFilters ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    style={styles.emptyStateButton}
-                    onPress={clearFilters}
-                  >
-                    <Text style={styles.emptyStateButtonText}>Limpar filtros</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    accessibilityRole="button"
-                    style={styles.emptyStateButton}
-                    onPress={() => {
-                      void publishedRoutes.refresh();
-                      void nearRoutes.refresh();
-                      void friendsRoutes.refresh();
-                    }}
-                  >
-                    <Text style={styles.emptyStateButtonText}>Tentar novamente</Text>
-                  </Pressable>
-                )}
-              </View>
+                    : "Ainda não há rotas publicadas para mostrar."
+                }
+                icon={hasSearchOrFilters ? "search-outline" : "map-outline"}
+                layout="card"
+                title={hasSearchOrFilters ? "Nenhuma rota encontrada" : "Nenhuma rota disponível"}
+                action={
+                  hasSearchOrFilters
+                    ? {
+                        accessibilityLabel: "Limpar busca e filtros de rotas da comunidade",
+                        label: "Limpar filtros",
+                        onPress: clearFilters,
+                      }
+                    : {
+                        accessibilityLabel: "Recarregar rotas da comunidade",
+                        label: "Tentar novamente",
+                        onPress: () => {
+                          void publishedRoutes.refresh();
+                          void nearRoutes.refresh();
+                          void friendsRoutes.refresh();
+                        },
+                      }
+                }
+              />
             </View>
           ) : null}
         </View>
