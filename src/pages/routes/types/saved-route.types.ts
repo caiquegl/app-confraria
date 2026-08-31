@@ -64,6 +64,7 @@ export type RouteMyReview = {
 
 export type SavedRoute = {
   avoidTolls: boolean;
+  avoidUnpaved?: boolean;
   bikeId: string;
   bikeName: string;
   coverImageUrl: string | null;
@@ -139,7 +140,9 @@ export type CreateRoutePayload = {
   };
   preferences: {
     avoidTolls: boolean;
+    avoidUnpaved?: boolean;
     optimizeFuel: boolean;
+    routeStyle?: "direct" | "winding" | "super_winding";
   };
   schedule?: {
     tripDate?: string;
@@ -182,6 +185,7 @@ export type RouteDayApiResponse = {
 
 export type RouteApiResponse = {
   avoidTolls: boolean;
+  avoidUnpaved?: boolean;
   bike: {
     id: string;
     imageUrl: string | null;
@@ -215,6 +219,7 @@ export type RouteApiResponse = {
   publishedAt: string | null;
   rating: number | null;
   reviewCount: number;
+  routeStyle?: "direct" | "winding" | "super_winding";
   startedAt: string | null;
   startsAt: string;
   status: RouteStatus;

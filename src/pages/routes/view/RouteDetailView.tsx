@@ -54,6 +54,7 @@ import { isFreeRouteLimitError } from "../utils/free-route-limit.utils";
 import { mapApiRouteToEditSnapshot } from "../utils/map-api-route-to-edit";
 import { trackRoutesEvent } from "../utils/track-routes-event";
 import { formatRouteDistance, formatRouteDuration } from "../utils/route-format.utils";
+import { ROUTE_STYLE_LABELS } from "../types/route-style";
 import {
   formatRouteDateTime,
   getRouteEffectiveStartedAt,
@@ -248,7 +249,9 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const directions = useRouteDirections({
     activeDayId: draftDays[0]?.id ?? "",
     avoidTolls: route?.avoidTolls ?? false,
+    avoidUnpaved: route?.avoidUnpaved ?? true,
     days: draftDays,
+    routeStyle: route?.routeStyle ?? "direct",
   });
 
   const mapMarkers = useMemo(() => buildMapMarkersFromDraft(draftDays), [draftDays]);
@@ -845,11 +848,26 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
                 {route.days.length} dia{route.days.length === 1 ? "" : "s"}
               </Text>
             </View>
-            {route.avoidTolls || route.optimizeFuel ? (
+            {route.avoidTolls ||
+            route.avoidUnpaved ||
+            route.optimizeFuel ||
+            (route.routeStyle != null && route.routeStyle !== "direct") ? (
               <View style={styles.preferenceRow}>
+                {route.routeStyle && route.routeStyle !== "direct" ? (
+                  <View style={styles.preferenceChip}>
+                    <Text style={styles.preferenceChipText}>
+                      {ROUTE_STYLE_LABELS[route.routeStyle]}
+                    </Text>
+                  </View>
+                ) : null}
                 {route.avoidTolls ? (
                   <View style={styles.preferenceChip}>
                     <Text style={styles.preferenceChipText}>Sem pedágio</Text>
+                  </View>
+                ) : null}
+                {route.avoidUnpaved ? (
+                  <View style={styles.preferenceChip}>
+                    <Text style={styles.preferenceChipText}>Sem terra</Text>
                   </View>
                 ) : null}
                 {route.optimizeFuel ? (

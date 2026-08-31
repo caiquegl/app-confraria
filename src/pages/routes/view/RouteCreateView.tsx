@@ -11,6 +11,7 @@ import { LocationGate } from "@/components/LocationGate";
 import type { GeolocationState } from "@/lib/location";
 import { useGeolocation } from "@/lib/location";
 import { getApiErrorMessage } from "@/lib/password-reset";
+import { fetchSubscriptionMe } from "@/pages/subscription/services/subscription.service";
 import { colors } from "@/theme/colors";
 
 import { RouteCreateStep1 } from "../components/RouteCreateStep1";
@@ -30,7 +31,7 @@ import { createRoute, fetchRoute, updateRoute } from "../services/routes.service
 import type { RouteCreateAction } from "../types/saved-route.types";
 import type { WizardStep } from "../types/route-create.types";
 import { buildCreateRoutePayload } from "../utils/build-create-route-payload";
-import { isFreeRouteLimitError } from "../utils/free-route-limit.utils";
+import { isFreeRouteLimitError, isPremiumRouteStyleError } from "../utils/free-route-limit.utils";
 import { mapApiRouteToEditSnapshot } from "../utils/map-api-route-to-edit";
 import { buildRouteCreateSnapshotFromQuickRoute } from "../utils/quick-route-create.utils";
 import {
@@ -92,7 +93,25 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   );
   const [loadedEditRouteId, setLoadedEditRouteId] = useState<string | null>(null);
   const [showFreeRoutePaywall, setShowFreeRoutePaywall] = useState(false);
+  const [paywallReason, setPaywallReason] = useState<"limit" | "routeStyle">("limit");
+  const [isPremium, setIsPremium] = useState(false);
   const isLoadingEdit = Boolean(editRouteId) && loadedEditRouteId !== editRouteId;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchSubscriptionMe()
+      .then((subscription) => {
+        if (!cancelled) {
+          setIsPremium(subscription.isVip);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (editRouteId) return;
@@ -162,7 +181,9 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
   const directions = useRouteDirections({
     activeDayId: draft.activeDayId,
     avoidTolls: draft.preferences.avoidTolls,
+    avoidUnpaved: draft.preferences.avoidUnpaved,
     days: draft.days,
+    routeStyle: draft.preferences.routeStyle,
   });
 
   const selectedBike = useMemo(
@@ -360,6 +381,13 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
     } catch (error) {
       if (isFreeRouteLimitError(error)) {
         trackRoutesEvent("free_route_limit_reached");
+        setPaywallReason("limit");
+        setShowFreeRoutePaywall(true);
+        return;
+      }
+
+      if (isPremiumRouteStyleError(error)) {
+        setPaywallReason("routeStyle");
         setShowFreeRoutePaywall(true);
         return;
       }
@@ -521,7 +549,13 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
 
         {draft.step === 3 ? (
           <RouteCreateStep3
+            isPremium={isPremium}
             preferences={draft.preferences}
+            onRequestPremium={() => {
+              setPaywallReason("routeStyle");
+              setShowFreeRoutePaywall(true);
+            }}
+            onSelectRouteStyle={draft.setRouteStyle}
             onTogglePreference={draft.togglePreference}
           />
         ) : null}
@@ -553,6 +587,12 @@ function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardPr
       </RoutePlannerSheet>
 
       <FreeRouteLimitPaywall
+        description={
+          paywallReason === "routeStyle"
+            ? "Sinuoso e Super-sinuoso são exclusivos do Premium. Assine para traçar rotas com mais curvas."
+            : "No plano gratuito você pode salvar até 5 roteiros privados. Assine o Premium para salvar rotas ilimitadas."
+        }
+        title={paywallReason === "routeStyle" ? "Rotas sinuosas no Premium" : "Limite de rotas salvas"}
         visible={showFreeRoutePaywall}
         onClose={() => setShowFreeRoutePaywall(false)}
         onSubscribe={() => {

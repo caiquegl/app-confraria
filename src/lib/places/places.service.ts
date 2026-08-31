@@ -43,9 +43,21 @@ export async function fetchPlaceDirections(
 ): Promise<PlaceDirectionsResponse> {
   const payload = {
     avoidTolls: options.avoidTolls ?? false,
+    avoidUnpaved: options.avoidUnpaved ?? true,
     includeSteps: options.includeSteps ?? false,
+    routeStyle: options.routeStyle ?? "direct",
     waypoints,
   };
+
+  const baseUrl = await getApiBaseUrl();
+  console.log("[CON-49] directions request", {
+    avoidTolls: payload.avoidTolls,
+    avoidUnpaved: payload.avoidUnpaved,
+    baseUrl,
+    includeSteps: payload.includeSteps,
+    routeStyle: payload.routeStyle,
+    waypoints: waypoints.length,
+  });
 
   let lastError: unknown;
 
@@ -55,6 +67,14 @@ export async function fetchPlaceDirections(
         apiRoutes.places.directions,
         payload,
       );
+      const route = data.routes[0];
+      console.log("[CON-49] directions response", {
+        distanceMeters: route?.distanceMeters,
+        durationSeconds: route?.durationSeconds,
+        polylineChars: route?.encodedPolyline?.length ?? 0,
+        routeStyle: payload.routeStyle,
+        routes: data.routes.length,
+      });
       return data;
     } catch (error) {
       lastError = error;

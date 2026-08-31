@@ -27,7 +27,9 @@ export function buildRouteCreateSnapshotFromQuickRoute(
       },
       preferences: {
         avoidTolls: false,
+        avoidUnpaved: true,
         optimizeFuel: true,
+        routeStyle: "direct",
       },
     },
     sheetState: "normal",

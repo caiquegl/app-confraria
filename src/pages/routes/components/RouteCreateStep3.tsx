@@ -3,10 +3,18 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { colors } from "@/theme/colors";
 
-import type { RoutePreferencesDraft } from "../types/route-create.types";
+import type { RoutePreferenceToggleKey, RoutePreferencesDraft } from "../types/route-create.types";
+import {
+  isPremiumRouteStyle,
+  ROUTE_STYLE_LABELS,
+  type RouteStyle,
+} from "../types/route-style";
 
 type RouteCreateStep3Props = {
-  onTogglePreference: (key: keyof RoutePreferencesDraft) => void;
+  isPremium: boolean;
+  onRequestPremium: () => void;
+  onSelectRouteStyle: (style: RouteStyle) => void;
+  onTogglePreference: (key: RoutePreferenceToggleKey) => void;
   preferences: RoutePreferencesDraft;
 };
 
@@ -15,8 +23,16 @@ type PreferenceOption = {
   icon: keyof typeof Ionicons.glyphMap;
   iconBackground: string;
   iconColor: string;
-  key: keyof RoutePreferencesDraft;
+  key: RoutePreferenceToggleKey;
   title: string;
+};
+
+type RouteStyleOption = {
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  iconBackground: string;
+  iconColor: string;
+  value: RouteStyle;
 };
 
 const PREFERENCE_OPTIONS: PreferenceOption[] = [
@@ -29,6 +45,14 @@ const PREFERENCE_OPTIONS: PreferenceOption[] = [
     title: "Evitar Pedágios",
   },
   {
+    description: "Prefere asfalto sempre que existir alternativa",
+    icon: "earth-outline",
+    iconBackground: "#FEF3C7",
+    iconColor: "#B45309",
+    key: "avoidUnpaved",
+    title: "Evitar estrada de terra",
+  },
+  {
     description: "Rota mais econômica",
     icon: "water-outline",
     iconBackground: "#DCFCE7",
@@ -38,7 +62,54 @@ const PREFERENCE_OPTIONS: PreferenceOption[] = [
   },
 ];
 
-export function RouteCreateStep3({ onTogglePreference, preferences }: RouteCreateStep3Props) {
+const ROUTE_STYLE_OPTIONS: RouteStyleOption[] = [
+  {
+    description: "Mais rápida, prioriza rodovia",
+    icon: "navigate-outline",
+    iconBackground: "#E8F0FE",
+    iconColor: "#2563EB",
+    value: "direct",
+  },
+  {
+    description: "Prefere curvas e estradas menores",
+    icon: "git-compare-outline",
+    iconBackground: "#ECFCCB",
+    iconColor: "#4D7C0F",
+    value: "winding",
+  },
+  {
+    description: "Máximo de serra e curvas",
+    icon: "shuffle-outline",
+    iconBackground: "#DCFCE7",
+    iconColor: "#16A34A",
+    value: "super_winding",
+  },
+];
+
+export function RouteCreateStep3({
+  isPremium,
+  onRequestPremium,
+  onSelectRouteStyle,
+  onTogglePreference,
+  preferences,
+}: RouteCreateStep3Props) {
+  const handleToggleStyle = (style: RouteStyle) => {
+    const next = preferences.routeStyle === style ? "direct" : style;
+
+    console.log("[CON-49] select style", {
+      current: preferences.routeStyle,
+      isPremium,
+      next,
+    });
+
+    if (isPremiumRouteStyle(next) && !isPremium) {
+      onRequestPremium();
+      return;
+    }
+
+    onSelectRouteStyle(next);
+  };
+
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
@@ -49,6 +120,44 @@ export function RouteCreateStep3({ onTogglePreference, preferences }: RouteCreat
       <Text style={styles.subtitle}>
         As preferências mudam o jeito como o mapa interpreta o seu passeio.
       </Text>
+
+      <Text style={styles.sectionLabel}>Perfil da rota</Text>
+      <View accessibilityRole="radiogroup" style={styles.list}>
+        {ROUTE_STYLE_OPTIONS.map((option) => {
+          const isEnabled = preferences.routeStyle === option.value;
+          const locked = isPremiumRouteStyle(option.value) && !isPremium;
+
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: isEnabled, disabled: false }}
+              style={styles.card}
+              onPress={() => handleToggleStyle(option.value)}
+            >
+              <View style={styles.cardContent}>
+                <View style={[styles.iconWrap, { backgroundColor: option.iconBackground }]}>
+                  <Ionicons color={option.iconColor} name={option.icon} size={20} />
+                </View>
+
+                <View style={styles.copy}>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.cardTitle}>{ROUTE_STYLE_LABELS[option.value]}</Text>
+                    {locked ? (
+                      <Ionicons color="#9CA3AF" name="lock-closed" size={12} />
+                    ) : null}
+                  </View>
+                  <Text style={styles.cardDescription}>{option.description}</Text>
+                </View>
+              </View>
+
+              <View style={[styles.toggleTrack, isEnabled && styles.toggleTrackOn]}>
+                <View style={[styles.toggleThumb, isEnabled && styles.toggleThumbOn]} />
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
 
       <View style={styles.list}>
         {PREFERENCE_OPTIONS.map((option) => {
@@ -126,7 +235,7 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 16,
-    marginTop: 20,
+    marginTop: 12,
   },
   scroll: {
     flex: 1,
@@ -135,6 +244,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingHorizontal: 24,
     paddingTop: 20,
+  },
+  sectionLabel: {
+    color: colors.brandDark,
+    fontSize: 13,
+    fontWeight: "700",
+    marginTop: 20,
   },
   subtitle: {
     color: "#6B7280",
@@ -146,6 +261,11 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
     fontSize: 28,
     fontWeight: "800",
+  },
+  titleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   toggleThumb: {
     backgroundColor: "#FFFFFF",

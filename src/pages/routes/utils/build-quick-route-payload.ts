@@ -59,6 +59,7 @@ export function buildQuickRoutePayload({
     motorcycle: { bikeId },
     preferences: {
       avoidTolls,
+      avoidUnpaved: true,
       optimizeFuel: true,
     },
     thumbnailType: thumbnailType ?? "map",

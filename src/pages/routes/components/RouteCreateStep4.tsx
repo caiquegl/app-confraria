@@ -17,6 +17,7 @@ import { colors } from "@/theme/colors";
 import { RouteCoverPicker } from "../components/RouteCoverPicker";
 import type { RouteCostEstimate } from "../types/route-cost.types";
 import type { RouteDraftDay, RoutePreferencesDraft, TripIntent } from "../types/route-create.types";
+import { ROUTE_STYLE_LABELS } from "../types/route-style";
 import type { RouteThumbnailType } from "../types/saved-route.types";
 import { formatRouteDistance, formatRouteDuration, getPlaceLabel } from "../utils/route-format.utils";
 import {
@@ -148,7 +149,11 @@ export function RouteCreateStep4({
     );
   };
 
-  const hasPreferences = preferences.avoidTolls || preferences.optimizeFuel;
+  const hasPreferences =
+    preferences.avoidTolls ||
+    preferences.avoidUnpaved ||
+    preferences.optimizeFuel ||
+    preferences.routeStyle !== "direct";
 
   return (
     <ScrollView
@@ -229,9 +234,21 @@ export function RouteCreateStep4({
           <View style={styles.heroDivider} />
 
           <View style={styles.preferenceRow}>
+            {preferences.routeStyle !== "direct" ? (
+              <View style={styles.preferenceBadge}>
+                <Text style={styles.preferenceBadgeText}>
+                  {ROUTE_STYLE_LABELS[preferences.routeStyle]}
+                </Text>
+              </View>
+            ) : null}
             {preferences.avoidTolls ? (
               <View style={styles.preferenceBadge}>
                 <Text style={styles.preferenceBadgeText}>Sem pedágios</Text>
+              </View>
+            ) : null}
+            {preferences.avoidUnpaved ? (
+              <View style={styles.preferenceBadge}>
+                <Text style={styles.preferenceBadgeText}>Sem terra</Text>
               </View>
             ) : null}
             {preferences.optimizeFuel ? (

@@ -52,7 +52,9 @@ export type PlaceDirectionsRouteOption = {
 
 export type PlaceDirectionsRequestOptions = {
   avoidTolls?: boolean;
+  avoidUnpaved?: boolean;
   includeSteps?: boolean;
+  routeStyle?: "direct" | "winding" | "super_winding";
 };
 
 export type PlaceDirectionsResponse = {

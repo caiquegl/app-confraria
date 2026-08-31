@@ -1,3 +1,7 @@
+import type { RouteStyle } from "./route-style";
+
+export type { RouteStyle } from "./route-style";
+
 export type SheetState = "compact" | "normal" | "full";
 
 export type WizardStep = 1 | 2 | 3 | 4;
@@ -31,8 +35,12 @@ export type RouteMotorcycleDraft = {
 
 export type RoutePreferencesDraft = {
   avoidTolls: boolean;
+  avoidUnpaved: boolean;
   optimizeFuel: boolean;
+  routeStyle: RouteStyle;
 };
+
+export type RoutePreferenceToggleKey = keyof Omit<RoutePreferencesDraft, "routeStyle">;
 
 export type RouteCreateDraft = {
   itinerary: {

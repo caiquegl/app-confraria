@@ -140,7 +140,9 @@ export function createInitialRouteCreateDraft(
     },
     preferences: {
       avoidTolls: false,
+      avoidUnpaved: true,
       optimizeFuel: true,
+      routeStyle: "direct",
     },
   };
 }

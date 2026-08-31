@@ -11,6 +11,7 @@ import type {
   RouteCoverDraft,
   RouteDraftDay,
   RouteMotorcycleDraft,
+  RoutePreferenceToggleKey,
   RoutePreferencesDraft,
   SheetState,
   TripIntent,
@@ -392,12 +393,22 @@ export function useRouteCreateDraft({
     }));
   }, []);
 
-  const togglePreference = useCallback((key: keyof RoutePreferencesDraft) => {
+  const togglePreference = useCallback((key: RoutePreferenceToggleKey) => {
     setDraft((current) => ({
       ...current,
       preferences: {
         ...current.preferences,
         [key]: !current.preferences[key],
+      },
+    }));
+  }, []);
+
+  const setRouteStyle = useCallback((routeStyle: RoutePreferencesDraft["routeStyle"]) => {
+    setDraft((current) => ({
+      ...current,
+      preferences: {
+        ...current.preferences,
+        routeStyle,
       },
     }));
   }, []);
@@ -512,6 +523,7 @@ export function useRouteCreateDraft({
     setDayOrigin,
     setMotorcycleDraft,
     setPreferencesDraft,
+    setRouteStyle,
     setSelectedBikeId,
     setSheetState,
     setStep,

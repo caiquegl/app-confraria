@@ -31,6 +31,7 @@ export function mapApiRouteToSavedRoute(route: import("../types/saved-route.type
 
   return {
     avoidTolls: route.avoidTolls,
+    avoidUnpaved: route.avoidUnpaved ?? true,
     bikeId: route.bike.id,
     bikeName: route.bike.name,
     coverImageUrl: route.coverImageUrl ?? null,

@@ -65,7 +65,18 @@ function isRouteCreateDraft(value: unknown): value is RouteCreateDraft {
   if (!itinerary.days.every(isRouteDraftDay)) return false;
   if (typeof motorcycle.bikeId !== "string" && motorcycle.bikeId !== null) return false;
   if (typeof preferences.avoidTolls !== "boolean") return false;
+  if (preferences.avoidUnpaved != null && typeof preferences.avoidUnpaved !== "boolean") {
+    return false;
+  }
   if (typeof preferences.optimizeFuel !== "boolean") return false;
+  if (
+    preferences.routeStyle != null &&
+    preferences.routeStyle !== "direct" &&
+    preferences.routeStyle !== "winding" &&
+    preferences.routeStyle !== "super_winding"
+  ) {
+    return false;
+  }
 
   return true;
 }
@@ -99,6 +110,11 @@ export function parseRouteCreateCacheSnapshot(raw: string): RouteCreateCacheSnap
             ...day,
             overnight: day.overnight ?? false,
           })),
+        },
+        preferences: {
+          ...parsed.draft.preferences,
+          avoidUnpaved: parsed.draft.preferences.avoidUnpaved ?? true,
+          routeStyle: parsed.draft.preferences.routeStyle ?? "direct",
         },
       },
       sheetState: parsed.sheetState,

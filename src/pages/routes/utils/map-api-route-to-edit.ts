@@ -83,10 +83,12 @@ export function mapApiRouteToEditSnapshot(route: RouteApiResponse): RouteCreateC
       motorcycle: {
         bikeId: route.userBikeId,
       },
-      preferences: {
-        avoidTolls: route.avoidTolls,
-        optimizeFuel: route.optimizeFuel,
-      },
+    preferences: {
+      avoidTolls: route.avoidTolls,
+        avoidUnpaved: route.avoidUnpaved ?? true,
+      optimizeFuel: route.optimizeFuel,
+      routeStyle: route.routeStyle ?? "direct",
+    },
     },
     routeCover: {
       coverImageUri: route.coverImageUrl ?? "",

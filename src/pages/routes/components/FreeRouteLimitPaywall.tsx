@@ -6,14 +6,18 @@ import { Button } from "@/components/Button";
 import { colors } from "@/theme/colors";
 
 type FreeRouteLimitPaywallProps = {
+  description?: string;
   onClose: () => void;
   onSubscribe: () => void;
+  title?: string;
   visible: boolean;
 };
 
 export function FreeRouteLimitPaywall({
+  description = "No plano gratuito você pode salvar até 5 roteiros privados. Assine o Premium para salvar rotas ilimitadas.",
   onClose,
   onSubscribe,
+  title = "Limite de rotas salvas",
   visible,
 }: FreeRouteLimitPaywallProps) {
   const insets = useSafeAreaInsets();
@@ -35,11 +39,8 @@ export function FreeRouteLimitPaywall({
             <Ionicons color={colors.brandDark} name="lock-closed" size={28} />
           </View>
 
-          <Text style={styles.title}>Limite de rotas salvas</Text>
-          <Text style={styles.description}>
-            No plano gratuito você pode salvar até 5 roteiros privados. Assine o Premium para
-            salvar rotas ilimitadas.
-          </Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
 
           <Button size="lg" style={styles.primaryButton} onPress={onSubscribe}>
             Assinar Premium

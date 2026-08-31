@@ -29,6 +29,7 @@ type DayRoutePlan = {
   dayId: string;
   dayIndex: number;
   options: RoutePathOption[];
+  prefsKey: string;
   selectedOptionId: string | null;
   waypointsKey: string;
 };
@@ -110,15 +111,19 @@ function yieldToUi(): Promise<void> {
 type UseRouteDirectionsParams = {
   activeDayId: string;
   avoidTolls?: boolean;
+  avoidUnpaved?: boolean;
   days: RouteDraftDay[];
   enabled?: boolean;
+  routeStyle?: "direct" | "winding" | "super_winding";
 };
 
 export function useRouteDirections({
   activeDayId,
   avoidTolls = false,
+  avoidUnpaved = true,
   days,
   enabled = true,
+  routeStyle = "direct",
 }: UseRouteDirectionsParams) {
   const [dayPlans, setDayPlans] = useState<DayRoutePlan[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,10 +144,11 @@ export function useRouteDirections({
     [days],
   );
 
+  const prefsKey = `avoidTolls:${avoidTolls}|avoidUnpaved:${avoidUnpaved}|routeStyle:${routeStyle}`;
   const plansKey = useMemo(
     () =>
-      `${dayWaypointPlans.map((plan) => `${plan.dayId}:${plan.waypointsKey}`).join("|")}|avoidTolls:${avoidTolls}`,
-    [avoidTolls, dayWaypointPlans],
+      `${dayWaypointPlans.map((plan) => `${plan.dayId}:${plan.waypointsKey}`).join("|")}|${prefsKey}`,
+    [dayWaypointPlans, prefsKey],
   );
 
   useEffect(() => {
@@ -166,7 +172,7 @@ export function useRouteDirections({
 
     const plansToFetch = validPlans.filter((plan) => {
       const existing = dayPlansRef.current.find((item) => item.dayId === plan.dayId);
-      return !existing || existing.waypointsKey !== plan.waypointsKey;
+      return !existing || existing.waypointsKey !== plan.waypointsKey || existing.prefsKey !== prefsKey;
     });
 
     // Drop days that no longer have enough waypoints; keep the rest (stale-while-revalidate).
@@ -182,10 +188,21 @@ export function useRouteDirections({
 
     const timer = setTimeout(() => {
       setIsLoading(true);
+      console.log("[CON-49] wizard refetch", {
+        avoidTolls,
+        avoidUnpaved,
+        days: plansToFetch.length,
+        prefsKey,
+        routeStyle,
+      });
 
       void Promise.all(
         plansToFetch.map(async (plan) => {
-          const response = await fetchPlaceDirections(plan.waypoints, { avoidTolls });
+          const response = await fetchPlaceDirections(plan.waypoints, {
+            avoidTolls,
+            avoidUnpaved,
+            routeStyle,
+          });
           await yieldToUi();
 
           const options: RoutePathOption[] = [];
@@ -227,6 +244,7 @@ export function useRouteDirections({
             dayId: plan.dayId,
             dayIndex: plan.dayIndex,
             options,
+            prefsKey,
             selectedOptionId: options.find((option) => option.isDefault)?.id ?? options[0]?.id ?? null,
             waypointsKey: plan.waypointsKey,
           } satisfies DayRoutePlan;
@@ -255,7 +273,7 @@ export function useRouteDirections({
                 });
               });
 
-              return validPlans.map((plan) => {
+              const next = validPlans.map((plan) => {
                 const existing = byId.get(plan.dayId);
                 if (existing && existing.waypointsKey === plan.waypointsKey) {
                   return { ...existing, dayIndex: plan.dayIndex };
@@ -265,11 +283,25 @@ export function useRouteDirections({
                     dayId: plan.dayId,
                     dayIndex: plan.dayIndex,
                     options: [],
+                    prefsKey,
                     selectedOptionId: null,
                     waypointsKey: plan.waypointsKey,
                   }
                 );
               });
+
+              const selected = next[0]?.options.find(
+                (option) => option.id === next[0]?.selectedOptionId,
+              );
+              console.log("[CON-49] wizard applied", {
+                distanceMeters: selected?.distanceMeters,
+                durationSeconds: selected?.durationSeconds,
+                prefsKey: next[0]?.prefsKey,
+                polylinePoints: selected?.coordinates.length ?? 0,
+                routeStyle,
+              });
+
+              return next;
             });
 
             setIsLoading(false);
@@ -288,7 +320,7 @@ export function useRouteDirections({
       clearTimeout(timer);
       interactionHandle?.cancel();
     };
-  }, [avoidTolls, dayWaypointPlans, enabled, plansKey]);
+  }, [avoidTolls, avoidUnpaved, dayWaypointPlans, enabled, plansKey, prefsKey, routeStyle]);
 
   const selectRouteOption = useCallback((optionId: string) => {
     setDayPlans((current) =>

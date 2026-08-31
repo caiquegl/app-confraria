@@ -36,7 +36,9 @@ export function buildCommunityRouteCopyPayload(
     motorcycle: { bikeId },
     preferences: {
       avoidTolls: route.avoidTolls,
+      avoidUnpaved: route.avoidUnpaved ?? true,
       optimizeFuel: route.optimizeFuel,
+      routeStyle: route.routeStyle ?? "direct",
     },
     totals: {
       distanceMeters: route.distanceMeters ?? undefined,

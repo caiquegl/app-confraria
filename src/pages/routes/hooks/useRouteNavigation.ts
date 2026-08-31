@@ -141,6 +141,8 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
   const waypointsRef = useRef<Coordinate[]>([]);
   const nextWaypointIndexRef = useRef(1);
   const avoidTollsRef = useRef(false);
+  const avoidUnpavedRef = useRef(true);
+  const routeStyleRef = useRef<"direct" | "winding" | "super_winding">("direct");
   const headingRef = useRef(0);
   /** Heading da bússola do aparelho (orientação fundida). */
   const compassHeadingRef = useRef<number | null>(null);
@@ -271,7 +273,9 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
       try {
         const directions = await fetchPlaceDirections(rerouteWaypoints, {
           avoidTolls: avoidTollsRef.current,
+          avoidUnpaved: avoidUnpavedRef.current,
           includeSteps: true,
+          routeStyle: routeStyleRef.current,
         });
 
         const selectedRoute =
@@ -380,11 +384,15 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
       waypointsRef.current = waypoints;
       nextWaypointIndexRef.current = 1;
       avoidTollsRef.current = route.avoidTolls;
+      avoidUnpavedRef.current = route.avoidUnpaved ?? true;
+      routeStyleRef.current = route.routeStyle ?? "direct";
       isArrivedRef.current = false;
 
       const directions = await fetchPlaceDirections(waypoints, {
         avoidTolls: route.avoidTolls,
+        avoidUnpaved: route.avoidUnpaved ?? true,
         includeSteps: true,
+        routeStyle: route.routeStyle ?? "direct",
       });
 
       const selectedRoute =
