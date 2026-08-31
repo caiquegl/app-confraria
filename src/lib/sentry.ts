@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react-native";
 import Constants from "expo-constants";
+import * as Updates from "expo-updates";
 import { Platform } from "react-native";
 
 import {
@@ -7,6 +8,12 @@ import {
   subscribeApiEnvironment,
   type ApiEnvironment,
 } from "./api-environment";
+import { OTA_VERSION } from "./ota-version";
+import {
+  scrubSensitiveText,
+  scrubSentryBreadcrumb,
+  scrubSentryEvent,
+} from "./sentry-scrub";
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() ?? "";
 
@@ -109,7 +116,53 @@ function sanitizeValue(key: string, value: unknown): unknown {
     return truncateValue(nested);
   }
 
+  if (typeof value === "string") {
+    return truncateValue(scrubSensitiveText(value));
+  }
+
   return truncateValue(value);
+}
+
+const TRANSIENT_API_STATUSES = new Set([429, 502, 503]);
+const EXPECTED_CLIENT_STATUSES = new Set([400]);
+const NETWORK_ERROR_CODES = new Set([
+  "ERR_NETWORK",
+  "ERR_INTERNET_DISCONNECTED",
+  "ECONNABORTED",
+  "ENOTFOUND",
+  "ETIMEDOUT",
+  "ECONNRESET",
+]);
+const NETWORK_ERROR_MESSAGES = [
+  /network error/i,
+  /network request failed/i,
+  /failed to fetch/i,
+  /fetch failed/i,
+];
+
+function resolveSentryEnvironment(): string {
+  const channel = Updates.channel?.trim();
+  if (channel === "preview" || channel === "production") {
+    return channel;
+  }
+  return "production";
+}
+
+function getEventErrorMessage(event: Sentry.ErrorEvent): string {
+  const exceptionValue = event.exception?.values?.[0]?.value;
+  if (typeof exceptionValue === "string" && exceptionValue.trim()) {
+    return exceptionValue;
+  }
+
+  if (typeof event.message === "string") {
+    return event.message;
+  }
+
+  return "";
+}
+
+function isNetworkEventMessage(message: string): boolean {
+  return NETWORK_ERROR_MESSAGES.some((pattern) => pattern.test(message));
 }
 
 function applyApiEnvironmentToSentry(environment: ApiEnvironment) {
@@ -136,11 +189,14 @@ export function initSentry(): void {
     return;
   }
 
+  const sentryEnvironment = resolveSentryEnvironment();
+
   Sentry.init({
     dsn: SENTRY_DSN,
     debug: false,
-    environment: "production",
+    environment: sentryEnvironment,
     release: `${Constants.expoConfig?.slug ?? "app-confraria"}@${Constants.expoConfig?.version ?? "0.0.0"}`,
+    sendDefaultPii: false,
     integrations: expoRouterTracingIntegration
       ? [expoRouterTracingIntegration]
       : undefined,
@@ -157,24 +213,39 @@ export function initSentry(): void {
       /^Request failed with status code 400$/,
       /^Falha ao enviar localização em background \(40[034]\)$/,
     ],
+    beforeBreadcrumb(breadcrumb) {
+      return scrubSentryBreadcrumb(breadcrumb);
+    },
     beforeSend(event) {
       if (!shouldSendToSentry()) {
         return null;
       }
 
-      if (event.request?.headers) {
-        const headers = { ...event.request.headers };
-        for (const key of Object.keys(headers)) {
-          if (key.toLowerCase() === "authorization") {
-            headers[key] = "[Redacted]";
-          }
-        }
-        event.request.headers = headers;
+      event.environment = event.environment?.trim() || sentryEnvironment;
+
+      const errorMessage = getEventErrorMessage(event);
+      if (isNetworkEventMessage(errorMessage)) {
+        event.fingerprint = ["network-error"];
+        return null;
       }
 
+      if (!event.fingerprint?.length) {
+        const exception = event.exception?.values?.[0];
+        if (exception?.type === "AxiosError") {
+          event.fingerprint = [
+            "axios-error",
+            exception.value?.trim() || "unknown",
+          ];
+        }
+      }
+
+      scrubSentryEvent(event);
       return event;
     },
   });
+
+  Sentry.setTag("ota_channel", Updates.channel?.trim() || sentryEnvironment);
+  Sentry.setTag("ota_version", String(OTA_VERSION));
 
   void getApiEnvironment().then((environment) => {
     applyApiEnvironmentToSentry(environment);
@@ -190,23 +261,6 @@ export function initSentry(): void {
     }
   });
 }
-
-const TRANSIENT_API_STATUSES = new Set([429, 502, 503]);
-const EXPECTED_CLIENT_STATUSES = new Set([400]);
-const NETWORK_ERROR_CODES = new Set([
-  "ERR_NETWORK",
-  "ERR_INTERNET_DISCONNECTED",
-  "ECONNABORTED",
-  "ENOTFOUND",
-  "ETIMEDOUT",
-  "ECONNRESET",
-]);
-const NETWORK_ERROR_MESSAGES = [
-  /network error/i,
-  /network request failed/i,
-  /failed to fetch/i,
-  /fetch failed/i,
-];
 
 export function getApiHttpStatus(error: unknown): number | null {
   if (!error || typeof error !== "object") return null;
@@ -261,10 +315,12 @@ export function captureApiError(
     if (route) scope.setTag("http.route", route);
     if (status) scope.setTag("http.status_code", status);
 
-    // Agrupa erros por método + rota no Sentry.
-    if (method && route) {
-      scope.setFingerprint(["api-error", method, route, status ?? "network"]);
-    }
+    scope.setFingerprint([
+      "api-error",
+      method ?? "unknown-method",
+      route ?? "unknown-route",
+      status ?? "unknown-status",
+    ]);
 
     if (context) {
       scope.setContext("api", sanitizeContext(context));
