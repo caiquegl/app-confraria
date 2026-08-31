@@ -221,8 +221,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   contentWrap: {
-    alignSelf: "center",
-    maxWidth: 390,
     width: "100%",
   },
   deleteButton: {

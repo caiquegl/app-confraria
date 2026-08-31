@@ -5,12 +5,11 @@ import { colors } from "@/theme/colors";
 
 type FavoritesHeaderProps = {
   onBack: () => void;
-  topInset: number;
 };
 
-export function FavoritesHeader({ onBack, topInset }: FavoritesHeaderProps) {
+export function FavoritesHeader({ onBack }: FavoritesHeaderProps) {
   return (
-    <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+    <View style={[styles.header, { paddingTop: 12 }]}>
       <Pressable accessibilityRole="button" style={styles.backButton} onPress={onBack}>
         <Ionicons color={colors.brandDark} name="chevron-back" size={24} />
       </Pressable>

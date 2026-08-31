@@ -203,7 +203,6 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
     <View style={styles.screen}>
       <EventAnalyticsHeader
         participantsCount={event?.participantsCount ?? 0}
-        topInset={insets.top}
         onBack={onBack}
         onDeleteEvent={handleDeletePress}
         onEditEvent={handleEditEvent}

@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { colors } from "@/theme/colors";
@@ -15,12 +14,11 @@ export function NotificationsView({
   onOpenPost,
   onOpenQuickRide,
 }: NotificationsViewProps) {
-  const insets = useSafeAreaInsets();
   const { error, isLoading, newNotifications, oldNotifications } = useNotifications();
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <Text style={styles.title}>Notificações</Text>
 
         <Pressable

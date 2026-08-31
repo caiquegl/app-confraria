@@ -8,7 +8,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
 
@@ -17,7 +16,6 @@ import { SearchUserCard } from "../components/SearchUserCard";
 import type { UserSearchViewProps } from "../types/search.types";
 
 export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
-  const insets = useSafeAreaInsets();
   const { error, hasSearched, isSearching, results, searchQuery, setSearchQuery } =
     useUserSearch();
 
@@ -26,7 +24,7 @@ export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <Pressable accessibilityLabel="Voltar" style={styles.backButton} onPress={onBack}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
         </Pressable>

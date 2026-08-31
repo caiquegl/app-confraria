@@ -163,7 +163,6 @@ export function PublicProfileEventsView({
       <PublicProfileEventsHeader
         avatarUrl={avatarUrl}
         searchQuery={searchQuery}
-        topInset={insets.top}
         onAvatarPress={onAvatarPress}
         onBack={onBack}
         onSearchChange={setSearchQuery}

@@ -61,7 +61,7 @@ export function LocationGate({
       : copy.loadingDescription;
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
+    <View style={[styles.screen, { paddingTop: 24, paddingBottom: insets.bottom + 24 }]}>
       <View style={styles.content}>
         {isLoading ? (
           <ActivityIndicator color={colors.brandPrimary} size="large" />

@@ -90,7 +90,7 @@ export function QuickRideCreateView() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: 8 }]}>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={24} />
         </Pressable>

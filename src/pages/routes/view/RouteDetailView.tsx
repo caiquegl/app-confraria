@@ -687,7 +687,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: 8 }]}>
         <Pressable accessibilityRole="button" style={styles.headerButton} onPress={onBack}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={18} />
         </Pressable>

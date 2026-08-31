@@ -119,7 +119,7 @@ export function EventsDiscoverListView({
   }, []);
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <View style={styles.screen}>
       <View style={styles.header}>
         <Pressable accessibilityRole="button" onPress={onBack}>
           <Ionicons color={colors.brandDark} name="arrow-back" size={22} />

@@ -23,7 +23,7 @@ export function EventEditLayout({ children, footer, onBack }: EventEditLayoutPro
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <Pressable accessibilityRole="button" style={styles.backButton} onPress={onBack}>
           <Ionicons color={colors.brandDark} name="chevron-back" size={24} />
         </Pressable>

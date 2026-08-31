@@ -172,11 +172,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   sheet: {
-    alignSelf: "center",
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
-    maxWidth: 390,
     paddingHorizontal: 24,
     paddingTop: 24,
     width: "100%",

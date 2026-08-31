@@ -41,7 +41,7 @@ export function EventWizardLayout({
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
-            { paddingBottom: Math.max(insets.bottom, 20) + 18, paddingTop: insets.top + 24 },
+            { paddingBottom: Math.max(insets.bottom, 20) + 18, paddingTop: 24 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

@@ -10,7 +10,6 @@ type PublicProfileEventsHeaderProps = {
   onAvatarPress: () => void;
   onSearchChange: (value: string) => void;
   searchQuery: string;
-  topInset: number;
 };
 
 export function PublicProfileEventsHeader({
@@ -19,10 +18,9 @@ export function PublicProfileEventsHeader({
   onAvatarPress,
   onSearchChange,
   searchQuery,
-  topInset,
 }: PublicProfileEventsHeaderProps) {
   return (
-    <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+    <View style={[styles.header, { paddingTop: 12 }]}>
       <Pressable accessibilityRole="button" style={styles.backButton} onPress={onBack}>
         <Ionicons color={colors.brandDark} name="chevron-back" size={24} />
       </Pressable>

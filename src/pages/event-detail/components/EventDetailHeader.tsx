@@ -5,10 +5,9 @@ import { colors } from "@/theme/colors";
 
 type EventDetailHeaderProps = {
   onBack: () => void;
-  topInset: number;
 };
 
-export function EventDetailHeader({ onBack, topInset }: EventDetailHeaderProps) {
+export function EventDetailHeader({ onBack }: EventDetailHeaderProps) {
   return (
     <View style={[styles.header]}>
       <Pressable accessibilityRole="button" style={styles.backButton} onPress={onBack}>

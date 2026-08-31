@@ -9,7 +9,6 @@ type EventAnalyticsHeaderProps = {
   onDeleteEvent: () => void;
   onEditEvent: () => void;
   participantsCount: number;
-  topInset: number;
 };
 
 export function EventAnalyticsHeader({
@@ -17,7 +16,6 @@ export function EventAnalyticsHeader({
   onDeleteEvent,
   onEditEvent,
   participantsCount,
-  topInset,
 }: EventAnalyticsHeaderProps) {
   const [menuVisible, setMenuVisible] = useState(false);
   const hasRegistrants = participantsCount > 0;

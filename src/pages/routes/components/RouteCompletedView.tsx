@@ -60,7 +60,7 @@ export function RouteCompletedView({
 
   if (isSubmitted) {
     return (
-      <View style={[styles.screen, { paddingBottom: insets.bottom + 24, paddingTop: insets.top + 24 }]}>
+      <View style={[styles.screen, { paddingBottom: insets.bottom + 24, paddingTop: 24 }]}>
         <View style={styles.iconWrap}>
           <Ionicons color={colors.brandDark} name="checkmark-circle" size={48} />
         </View>
@@ -84,7 +84,7 @@ export function RouteCompletedView({
   }
 
   return (
-    <View style={[styles.screen, { paddingBottom: insets.bottom + 24, paddingTop: insets.top + 24 }]}>
+    <View style={[styles.screen, { paddingBottom: insets.bottom + 24, paddingTop: 24 }]}>
       <View style={styles.iconWrap}>
         <Ionicons color={colors.brandDark} name="flag" size={48} />
       </View>

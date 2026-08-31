@@ -222,7 +222,7 @@ export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
 
   return (
     <View style={styles.screen}>
-      <EventDetailHeader topInset={insets.top} onBack={onBack} />
+      <EventDetailHeader onBack={onBack} />
 
       {isLoading ? (
         <FeedbackState loading message="Carregando evento..." />

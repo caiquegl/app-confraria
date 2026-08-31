@@ -97,7 +97,7 @@ export function FavoritesView({ onBack, onOpenEvent }: FavoritesViewProps) {
 
   return (
     <View style={styles.screen}>
-      <FavoritesHeader topInset={insets.top} onBack={onBack} />
+      <FavoritesHeader onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={[
