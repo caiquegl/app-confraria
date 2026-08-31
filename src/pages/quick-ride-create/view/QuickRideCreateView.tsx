@@ -2,14 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -60,6 +59,7 @@ export function QuickRideCreateView() {
 
     if (!canSubmit) return;
 
+    Keyboard.dismiss();
     setIsSubmitting(true);
     try {
       await createQuickRide({
@@ -97,39 +97,36 @@ export function QuickRideCreateView() {
         <Text style={styles.headerTitle}>Rolê rápido</Text>
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      <KeyboardAwareScrollView
+        bottomOffset={24}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, 16) + 96 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         style={styles.flex}
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: Math.max(insets.bottom, 16) + 96 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <QuickRideFormFields
-            day={day}
-            description={description}
-            destination={destination}
-            disabled={isSubmitting}
-            hasLimit={hasLimit}
-            maxParticipants={maxParticipants}
-            origin={origin}
-            time={time}
-            title={title}
-            onDayChange={setDay}
-            onDescriptionChange={setDescription}
-            onDestinationChange={setDestination}
-            onHasLimitChange={setHasLimit}
-            onMaxParticipantsChange={setMaxParticipants}
-            onOriginChange={setOrigin}
-            onTimeChange={setTime}
-            onTitleChange={setTitle}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <QuickRideFormFields
+          day={day}
+          description={description}
+          destination={destination}
+          disabled={isSubmitting}
+          hasLimit={hasLimit}
+          maxParticipants={maxParticipants}
+          origin={origin}
+          time={time}
+          title={title}
+          onDayChange={setDay}
+          onDescriptionChange={setDescription}
+          onDestinationChange={setDestination}
+          onHasLimitChange={setHasLimit}
+          onMaxParticipantsChange={setMaxParticipants}
+          onOriginChange={setOrigin}
+          onTimeChange={setTime}
+          onTitleChange={setTitle}
+        />
+      </KeyboardAwareScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <Button disabled={!canSubmit} size="lg" style={styles.submitButton} onPress={() => void handleSubmit()}>

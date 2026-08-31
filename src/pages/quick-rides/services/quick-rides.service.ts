@@ -1,3 +1,5 @@
+import { isAxiosError } from "axios";
+
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
 
@@ -12,12 +14,16 @@ import type {
 
 export function mapQuickRidePlaceToReference(place: {
   description: string;
+  latitude?: number;
+  longitude?: number;
   mainText: string;
   placeId: string;
   secondaryText: string | null;
 }): EventPlaceReference {
   return {
     description: place.description,
+    latitude: place.latitude,
+    longitude: place.longitude,
     mainText: place.mainText,
     placeId: place.placeId,
     reference: place.description,
@@ -82,11 +88,15 @@ export async function updateQuickRide(
   quickRideId: string,
   payload: CreateQuickRidePayload,
 ): Promise<QuickRideDetail> {
-  const { data } = await api.patch<QuickRideDetail>(
-    apiRoutes.quickRides.update(quickRideId),
-    payload,
-  );
-  return data;
+  try {
+    const { data } = await api.patch<QuickRideDetail>(
+      apiRoutes.quickRides.update(quickRideId),
+      payload,
+    );
+    return data;
+  } catch (error) {
+    throw new Error(parseQuickRideError(error, "Não foi possível atualizar o rolê."));
+  }
 }
 
 export async function cancelQuickRide(quickRideId: string, reason?: string): Promise<void> {
@@ -103,18 +113,20 @@ export function parseQuickRideSchedule(startsAt: string): {
 } {
   const date = new Date(startsAt);
   const now = new Date();
-  const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
+  const rideDay = formatDayInBrazil(date);
+  const today = formatDayInBrazil(now);
+  const tomorrow = formatDayInBrazil(addDays(now, 1));
 
-  const hour = String(date.getHours()).padStart(2, "0");
-  const minute = String(date.getMinutes()).padStart(2, "0");
-  const day: QuickRideDay = sameDay(date, tomorrow) ? "tomorrow" : "today";
+  const time = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    timeZone: BRAZIL_TIMEZONE,
+  }).format(date);
 
-  return { day, time: `${hour}:${minute}` };
+  const day: QuickRideDay = rideDay === tomorrow ? "tomorrow" : "today";
+
+  return { day, time };
 }
 
 export function buildQuickRideStartsAt(day: "today" | "tomorrow", time: string): string {
@@ -125,6 +137,21 @@ export function buildQuickRideStartsAt(day: "today" | "tomorrow", time: string):
   }
   date.setHours(hour ?? 0, minute ?? 0, 0, 0);
   return date.toISOString();
+}
+
+export function resolveQuickRideStartsAt(
+  day: QuickRideDay,
+  time: string,
+  originalStartsAt?: string,
+): string {
+  if (originalStartsAt) {
+    const originalSchedule = parseQuickRideSchedule(originalStartsAt);
+    if (originalSchedule.day === day && originalSchedule.time === time) {
+      return originalStartsAt;
+    }
+  }
+
+  return buildQuickRideStartsAt(day, time);
 }
 
 export function isQuickRideTimePast(
@@ -144,4 +171,40 @@ export function isQuickRideTimePast(
   const scheduled = new Date();
   scheduled.setHours(hour, minute, 0, 0);
   return scheduled.getTime() <= now.getTime();
+}
+
+const BRAZIL_TIMEZONE = "America/Sao_Paulo";
+
+function formatDayInBrazil(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BRAZIL_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function addDays(date: Date, amount: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+}
+
+function parseQuickRideError(error: unknown, fallback: string) {
+  if (isAxiosError(error)) {
+    const payload = error.response?.data as { message?: string | string[] } | undefined;
+    const message = payload?.message;
+    if (Array.isArray(message)) {
+      return message.filter((item) => typeof item === "string").join(" ");
+    }
+    if (typeof message === "string" && message.trim()) {
+      return message;
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
 }

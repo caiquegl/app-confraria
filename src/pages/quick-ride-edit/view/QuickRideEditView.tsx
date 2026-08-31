@@ -1,16 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -20,11 +18,11 @@ import type { EventPlaceReference } from "@/pages/event-create/types/event-creat
 import { QuickRideFormFields } from "@/pages/quick-rides/components/QuickRideFormFields";
 import { resolveMaxParticipants } from "@/pages/quick-rides/lib/quick-ride-form";
 import {
-  buildQuickRideStartsAt,
   fetchQuickRideDetail,
   isQuickRideTimePast,
   mapQuickRidePlaceToReference,
   parseQuickRideSchedule,
+  resolveQuickRideStartsAt,
   updateQuickRide,
   type QuickRideDay,
 } from "@/pages/quick-rides/services/quick-rides.service";
@@ -43,6 +41,7 @@ export function QuickRideEditView({ onBack, onSaved, quickRideId }: QuickRideEdi
   const [destination, setDestination] = useState<EventPlaceReference | null>(null);
   const [day, setDay] = useState<QuickRideDay>("today");
   const [time, setTime] = useState("");
+  const [originalStartsAt, setOriginalStartsAt] = useState("");
   const [description, setDescription] = useState("");
   const [hasLimit, setHasLimit] = useState(false);
   const [maxParticipants, setMaxParticipants] = useState("8");
@@ -69,6 +68,7 @@ export function QuickRideEditView({ onBack, onSaved, quickRideId }: QuickRideEdi
       setDestination(mapQuickRidePlaceToReference(ride.destination));
       setDay(schedule.day);
       setTime(schedule.time);
+      setOriginalStartsAt(ride.startsAt);
       setDescription(ride.description ?? "");
       setHasLimit(ride.maxParticipants != null);
       setMaxParticipants(
@@ -81,15 +81,15 @@ export function QuickRideEditView({ onBack, onSaved, quickRideId }: QuickRideEdi
     }
   }, [quickRideId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      void loadRide();
-    }, [loadRide]),
-  );
+  useEffect(() => {
+    void loadRide();
+  }, [loadRide]);
 
   const timeIsValid = isValidTime(time);
-  const timeIsPast = timeIsValid && isQuickRideTimePast(day, time);
-  const startsAt = timeIsValid ? buildQuickRideStartsAt(day, time) : "";
+  const startsAt = timeIsValid ? resolveQuickRideStartsAt(day, time, originalStartsAt) : "";
+  const keepingOriginalSchedule = Boolean(originalStartsAt) && startsAt === originalStartsAt;
+  const timeIsPast =
+    timeIsValid && isQuickRideTimePast(day, time) && !keepingOriginalSchedule;
   const canSubmit =
     title.trim().length > 0 &&
     description.trim().length > 0 &&
@@ -103,6 +103,7 @@ export function QuickRideEditView({ onBack, onSaved, quickRideId }: QuickRideEdi
   const handleSubmit = async () => {
     if (!origin || !destination || !timeIsValid || !startsAt || !canSubmit) return;
 
+    Keyboard.dismiss();
     setIsSubmitting(true);
     try {
       await updateQuickRide(quickRideId, {
@@ -153,39 +154,36 @@ export function QuickRideEditView({ onBack, onSaved, quickRideId }: QuickRideEdi
 
       {!isLoading && !hasError ? (
         <>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          <KeyboardAwareScrollView
+            bottomOffset={24}
+            contentContainerStyle={[
+              styles.content,
+              { paddingBottom: Math.max(insets.bottom, 16) + 96 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
             style={styles.flex}
           >
-            <ScrollView
-              contentContainerStyle={[
-                styles.content,
-                { paddingBottom: Math.max(insets.bottom, 16) + 96 },
-              ]}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              <QuickRideFormFields
-                day={day}
-                description={description}
-                destination={destination}
-                disabled={isSubmitting}
-                hasLimit={hasLimit}
-                maxParticipants={maxParticipants}
-                origin={origin}
-                time={time}
-                title={title}
-                onDayChange={setDay}
-                onDescriptionChange={setDescription}
-                onDestinationChange={setDestination}
-                onHasLimitChange={setHasLimit}
-                onMaxParticipantsChange={setMaxParticipants}
-                onOriginChange={setOrigin}
-                onTimeChange={setTime}
-                onTitleChange={setTitle}
-              />
-            </ScrollView>
-          </KeyboardAvoidingView>
+            <QuickRideFormFields
+              day={day}
+              description={description}
+              destination={destination}
+              disabled={isSubmitting}
+              hasLimit={hasLimit}
+              maxParticipants={maxParticipants}
+              origin={origin}
+              time={time}
+              title={title}
+              onDayChange={setDay}
+              onDescriptionChange={setDescription}
+              onDestinationChange={setDestination}
+              onHasLimitChange={setHasLimit}
+              onMaxParticipantsChange={setMaxParticipants}
+              onOriginChange={setOrigin}
+              onTimeChange={setTime}
+              onTitleChange={setTitle}
+            />
+          </KeyboardAwareScrollView>
 
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
             <Button
