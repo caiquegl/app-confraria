@@ -281,17 +281,11 @@ async function patchLocationToApi(
 
     if ([400, 403, 404].includes(response.status)) {
       const responseBody = await response.text().catch(() => "");
-      captureRouteError(
-        new Error(`Falha ao enviar localização em background (${response.status})`),
-        {
-          latitude: payload.latitude,
-          longitude: payload.longitude,
-          responseBody: responseBody.slice(0, 500),
-          routeId: session.routeId,
-          source: "sendLocationToApi",
-          status: response.status,
-        },
-      );
+      routeTrackingLog.warn("sendLocationToApi:stop", {
+        responseBody: responseBody.slice(0, 200),
+        routeId: session.routeId,
+        status: response.status,
+      });
       return "stop";
     }
 

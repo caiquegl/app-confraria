@@ -136,11 +136,25 @@ export async function updateRouteStatus(
   routeId: string,
   status: "in_progress" | "finished",
 ): Promise<RouteApiResponse> {
-  const { data } = await api.patch<RouteApiResponse>(
-    apiRoutes.routes.updateStatus(routeId),
-    { status },
-  );
-  return data;
+  try {
+    const { data } = await api.patch<RouteApiResponse>(
+      apiRoutes.routes.updateStatus(routeId),
+      { status },
+    );
+    return data;
+  } catch (error) {
+    const httpStatus = (error as { response?: { status?: number } })?.response?.status;
+    if (httpStatus !== 400) {
+      throw error;
+    }
+
+    const current = await fetchRoute(routeId);
+    if (current.status === status) {
+      return current;
+    }
+
+    throw error;
+  }
 }
 
 export async function deleteRoute(routeId: string): Promise<void> {

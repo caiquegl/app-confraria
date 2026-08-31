@@ -2,7 +2,7 @@ import { create } from "axios";
 
 import { getApiBaseUrl } from "./api-environment";
 import { getToken } from "./auth";
-import { captureApiError, isTransientApiError } from "./sentry";
+import { captureApiError, isIgnorableApiError } from "./sentry";
 
 export const api = create({
   timeout: 60000,
@@ -73,7 +73,7 @@ api.interceptors.response.use(
         ? config.url.trim()
         : "(unknown)";
 
-    if (!isTransientApiError(error)) {
+    if (!isIgnorableApiError(error)) {
       captureApiError(error, {
         baseURL: config?.baseURL ?? null,
         method: (config?.method ?? "get").toUpperCase(),

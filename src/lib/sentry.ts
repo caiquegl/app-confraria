@@ -150,6 +150,13 @@ export function initSentry(): void {
     enableTombstone: true,
     tracesSampleRate: 0.2,
     attachStacktrace: true,
+    ignoreErrors: [
+      "Network Error",
+      "Network request failed",
+      "Failed to fetch",
+      /^Request failed with status code 400$/,
+      /^Falha ao enviar localização em background \(40[034]\)$/,
+    ],
     beforeSend(event) {
       if (!shouldSendToSentry()) {
         return null;
@@ -185,13 +192,53 @@ export function initSentry(): void {
 }
 
 const TRANSIENT_API_STATUSES = new Set([429, 502, 503]);
+const EXPECTED_CLIENT_STATUSES = new Set([400]);
+const NETWORK_ERROR_CODES = new Set([
+  "ERR_NETWORK",
+  "ERR_INTERNET_DISCONNECTED",
+  "ECONNABORTED",
+  "ENOTFOUND",
+  "ETIMEDOUT",
+  "ECONNRESET",
+]);
+const NETWORK_ERROR_MESSAGES = [
+  /network error/i,
+  /network request failed/i,
+  /failed to fetch/i,
+  /fetch failed/i,
+];
 
-export function isTransientApiError(error: unknown): boolean {
+export function getApiHttpStatus(error: unknown): number | null {
+  if (!error || typeof error !== "object") return null;
+  const status = (error as { response?: { status?: number } }).response?.status;
+  return typeof status === "number" ? status : null;
+}
+
+export function isNetworkApiError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
 
-  const response = (error as { response?: { status?: number } }).response;
-  const status = response?.status;
-  return typeof status === "number" && TRANSIENT_API_STATUSES.has(status);
+  const status = getApiHttpStatus(error);
+  if (status === 0) return true;
+
+  const code = (error as { code?: unknown }).code;
+  if (typeof code === "string" && NETWORK_ERROR_CODES.has(code)) return true;
+
+  const message = error instanceof Error ? error.message : String(error);
+  return NETWORK_ERROR_MESSAGES.some((pattern) => pattern.test(message));
+}
+
+export function isTransientApiError(error: unknown): boolean {
+  const status = getApiHttpStatus(error);
+  return status != null && TRANSIENT_API_STATUSES.has(status);
+}
+
+/** Falhas esperadas: sem rede, 429/502/503, ou 400 de regra de negócio. */
+export function isIgnorableApiError(error: unknown): boolean {
+  if (isNetworkApiError(error)) return true;
+  if (isTransientApiError(error)) return true;
+
+  const status = getApiHttpStatus(error);
+  return status != null && EXPECTED_CLIENT_STATUSES.has(status);
 }
 
 export function captureApiError(
@@ -199,7 +246,7 @@ export function captureApiError(
   context?: Record<string, unknown>,
 ): void {
   if (!shouldSendToSentry()) return;
-  if (isTransientApiError(error)) return;
+  if (isIgnorableApiError(error)) return;
 
   Sentry.withScope((scope) => {
     scope.setTag("feature", "api");
@@ -238,7 +285,7 @@ export function captureRouteError(
   context?: Record<string, unknown>,
 ): void {
   if (!shouldSendToSentry()) return;
-  if (isTransientApiError(error)) return;
+  if (isIgnorableApiError(error)) return;
 
   Sentry.withScope((scope) => {
     scope.setTag("feature", "routes");

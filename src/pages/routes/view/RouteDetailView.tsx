@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, type Href } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -195,6 +195,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [sentFriendId, setSentFriendId] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const isUpdatingStatusRef = useRef(false);
   const [isPublishingRoute, setIsPublishingRoute] = useState(false);
   const [publishNoticeMode, setPublishNoticeMode] = useState<
     "published" | "unpublished" | null
@@ -333,10 +334,20 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
     [route, shareFriends],
   );
 
-  const handleRespondInvitation = async (accept: boolean) => {
-    if (!route || isUpdatingStatus) return;
-
+  const beginStatusUpdate = () => {
+    if (isUpdatingStatusRef.current) return false;
+    isUpdatingStatusRef.current = true;
     setIsUpdatingStatus(true);
+    return true;
+  };
+
+  const endStatusUpdate = () => {
+    isUpdatingStatusRef.current = false;
+    setIsUpdatingStatus(false);
+  };
+
+  const handleRespondInvitation = async (accept: boolean) => {
+    if (!route || !beginStatusUpdate()) return;
     try {
       const updated = await respondToRouteInvitation(route.id, accept);
       setRoute(updated);
@@ -351,7 +362,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         type: "error",
       });
     } finally {
-      setIsUpdatingStatus(false);
+      endStatusUpdate();
     }
   };
 
@@ -403,7 +414,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   );
 
   const handleResumeNavigation = async () => {
-    if (!route || isUpdatingStatus) return;
+    if (!route || isUpdatingStatusRef.current) return;
 
     routeTrackingLog.info("RouteDetailView:resume-navigation-pressed", {
       routeId: route.id,
@@ -435,14 +446,12 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   };
 
   const handleStartRoute = async () => {
-    if (!route || isUpdatingStatus) return;
+    if (!route || !beginStatusUpdate()) return;
 
     routeTrackingLog.info("RouteDetailView:start-route-pressed", {
       routeId: route.id,
       title: route.title,
     });
-
-    setIsUpdatingStatus(true);
 
     try {
       const updated = await updateRouteStatus(route.id, "in_progress");
@@ -476,14 +485,13 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         type: "error",
       });
     } finally {
-      setIsUpdatingStatus(false);
+      endStatusUpdate();
     }
   };
 
   const handleFinishRoute = async () => {
-    if (!route || isUpdatingStatus || !isOwner) return;
+    if (!route || !isOwner || !beginStatusUpdate()) return;
 
-    setIsUpdatingStatus(true);
     try {
       const updated = await updateRouteStatus(route.id, "finished");
       setRoute(updated);
@@ -496,12 +504,12 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         type: "error",
       });
     } finally {
-      setIsUpdatingStatus(false);
+      endStatusUpdate();
     }
   };
 
   const handleCommunityCopy = async (action: "start_now" | "save_for_later" | "save_draft") => {
-    if (!route || isUpdatingStatus) return;
+    if (!route || isUpdatingStatusRef.current) return;
 
     const bikeId = bikes[0]?.id;
     if (!bikeId) {
@@ -514,7 +522,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
       return;
     }
 
-    setIsUpdatingStatus(true);
+    if (!beginStatusUpdate()) return;
     try {
       const copied = await copyPublishedRoute(
         route.id,
@@ -552,12 +560,12 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
         type: "error",
       });
     } finally {
-      setIsUpdatingStatus(false);
+      endStatusUpdate();
     }
   };
 
   const handlePrimaryAction = () => {
-    if (!route || isUpdatingStatus) return;
+    if (!route || isUpdatingStatusRef.current) return;
 
     routeTrackingLog.info("RouteDetailView:primary-action-pressed", {
       isInProgress,

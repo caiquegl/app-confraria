@@ -67,6 +67,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<NavigationPhase>("navigating");
   const [isFinishing, setIsFinishing] = useState(false);
+  const isFinishingRef = useRef(false);
   const [showStopConfirm, setShowStopConfirm] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [tripDurationSeconds, setTripDurationSeconds] = useState(0);
@@ -154,9 +155,9 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   }, [route?.id, route?.status, route?.title]);
 
   const finishRoute = useCallback(async () => {
-    if (isFinishing || !isOwner) return;
+    if (isFinishingRef.current || !isOwner) return;
 
-    // Para recalculo/GPS imediatamente para não travar a finalização fora da rota.
+    isFinishingRef.current = true;
     navigation.stopNavigationUpdates();
     setIsFinishing(true);
 
@@ -179,10 +180,10 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
         type: "error",
       });
     } finally {
+      isFinishingRef.current = false;
       setIsFinishing(false);
     }
   }, [
-    isFinishing,
     isOwner,
     navigation,
     routeId,
