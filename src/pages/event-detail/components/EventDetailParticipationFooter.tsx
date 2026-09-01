@@ -41,7 +41,7 @@ export function EventDetailParticipationFooter({
           {isParticipant ? (
             <Ionicons color={colors.brandDark} name="checkmark-circle-outline" size={18} />
           ) : null}
-          <Text style={styles.buttonText}>
+          <Text style={[styles.buttonText, isParticipant && styles.buttonTextConfirmed]}>
             {isParticipant ? "Presença confirmada" : "Participar do Evento"}
           </Text>
         </Pressable>
@@ -58,7 +58,7 @@ export function EventDetailParticipationFooter({
 const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     flexDirection: "row",
     gap: 8,
@@ -69,9 +69,12 @@ const createStyles = (colors: AppColors) => ({
     backgroundColor: colors.surface.brandSubtle,
   },
   buttonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 16,
     fontWeight: "900",
+  },
+  buttonTextConfirmed: {
+    color: colors.brandDark,
   },
   card: {
     backgroundColor: colors.surface.primary,

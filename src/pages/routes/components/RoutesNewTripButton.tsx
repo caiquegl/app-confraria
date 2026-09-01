@@ -28,7 +28,7 @@ export function RoutesNewTripButton({ onPress }: RoutesNewTripButtonProps) {
 const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     elevation: 6,
     flexDirection: "row",

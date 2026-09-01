@@ -249,14 +249,14 @@ const createStyles = (colors: AppColors) => ({
     marginTop: 3,
   },
   retryButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     marginTop: 16,
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
   retryText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 13,
     fontWeight: "800",
   },

@@ -120,7 +120,7 @@ const createStyles = (colors: AppColors) => ({
     },
   },
   variantText: {
-    default: { color: colors.text.primary },
+    default: { color: colors.text.onBrand },
     destructive: { color: colors.feedback.dangerForeground },
     ghost: { color: colors.text.secondary },
     outline: { color: colors.text.primary },

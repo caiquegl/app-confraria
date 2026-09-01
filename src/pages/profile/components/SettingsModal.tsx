@@ -40,7 +40,7 @@ export function SettingsModal({
   onLogout,
   onSavePrivacy,
 }: SettingsModalProps) {
-  const { colors, isDark, setColorScheme } = useTheme();
+  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const updateInfo = getUpdateInfo();
@@ -114,20 +114,6 @@ export function SettingsModal({
           </View>
 
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Aparência</Text>
-              <SettingSwitch
-                label="Tema escuro"
-                value={isDark}
-                onValueChange={(value) => {
-                  void setColorScheme(value ? "dark" : "light");
-                }}
-              />
-              <Text style={styles.helperText}>
-                Ajusta as cores do app para o modo noturno.
-              </Text>
-            </View>
-
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Privacidade</Text>
               <SettingSwitch

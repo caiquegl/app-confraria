@@ -130,7 +130,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "800",
   },
   categoryTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   footer: {
     marginTop: 28,

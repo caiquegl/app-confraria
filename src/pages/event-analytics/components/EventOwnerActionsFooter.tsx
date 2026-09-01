@@ -40,7 +40,7 @@ export function EventOwnerActionsFooter({
             style={styles.primaryAction}
             onPress={onShareWithFollower}
           >
-            <Ionicons color={colors.brandDark} name="people-outline" size={18} />
+            <Ionicons color={colors.text.onBrand} name="people-outline" size={18} />
             <Text style={styles.primaryActionText}>Mande para um seguidor</Text>
           </Pressable>
 
@@ -89,7 +89,7 @@ const createStyles = (colors: AppColors) => ({
   },
   primaryAction: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     flex: 1,
     flexDirection: "row",
@@ -99,7 +99,7 @@ const createStyles = (colors: AppColors) => ({
     paddingHorizontal: 12,
   },
   primaryActionText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "900",
   },

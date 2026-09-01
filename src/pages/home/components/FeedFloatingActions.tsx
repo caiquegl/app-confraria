@@ -36,7 +36,7 @@ export function FeedFloatingActions({
             onPress={onOpenLiked}
           >
             <Ionicons
-              color={isLikedTabActive ? colors.brandDark : "#6B7280"}
+              color={isLikedTabActive ? colors.text.onBrand : colors.text.muted}
               name="heart-outline"
               size={18}
             />
@@ -69,7 +69,7 @@ export function FeedFloatingActions({
         style={styles.newPostButton}
         onPress={onOpenNewPost}
       >
-        <Ionicons color={colors.brandDark} name="add" size={22} />
+        <Ionicons color={colors.text.onBrand} name="add" size={22} />
       </TouchableOpacity>
     </View>
   );
@@ -88,7 +88,7 @@ const createStyles = (colors: AppColors) => ({
   },
   newPostButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     elevation: 8,
     height: 48,
@@ -125,7 +125,7 @@ const createStyles = (colors: AppColors) => ({
     position: "relative",
   },
   tabActive: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     shadowColor: "#9FC132",
     shadowOffset: { height: 6, width: 0 },
     shadowOpacity: 0.35,

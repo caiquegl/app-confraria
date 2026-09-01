@@ -203,7 +203,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "600",
   },
   typeOptionTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "800",
   },
   typeSwitch: {

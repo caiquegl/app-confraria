@@ -72,7 +72,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "600",
   },
   tabTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "700",
   },
 });

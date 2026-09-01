@@ -48,7 +48,7 @@ const createStyles = (colors: AppColors) => ({
   },
   button: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     flexDirection: "row",
     gap: 4,
@@ -61,7 +61,7 @@ const createStyles = (colors: AppColors) => ({
     opacity: 0.85,
   },
   buttonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 16,
     fontWeight: "600",
   },

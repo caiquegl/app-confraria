@@ -67,7 +67,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "700",
   },
   pillTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   scroll: {
     marginBottom: 24,

@@ -1661,6 +1661,6 @@ const createStyles = (colors: AppColors) => ({
     textTransform: "capitalize",
   },
   tabTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
 });

@@ -124,7 +124,7 @@ const createStyles = (colors: AppColors) => ({
   },
   confirmButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
@@ -133,7 +133,7 @@ const createStyles = (colors: AppColors) => ({
     opacity: 0.7,
   },
   confirmButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 16,
     fontWeight: "900",
   },

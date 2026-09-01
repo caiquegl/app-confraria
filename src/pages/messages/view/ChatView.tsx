@@ -311,7 +311,7 @@ export function ChatView({
               onPress={handleSend}
             >
               <Ionicons
-                color={draft.trim() ? colors.brandDark : colors.text.muted}
+                color={draft.trim() ? colors.text.onBrand : colors.text.muted}
                 name="send"
                 size={18}
               />
@@ -837,7 +837,7 @@ const createStyles = (colors: AppColors) => ({
     lineHeight: 20,
   },
   messageTextMine: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   messagesContent: {
     flexGrow: 1,
@@ -863,14 +863,14 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "900",
   },
   retryButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     marginTop: 16,
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
   retryText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -1023,7 +1023,7 @@ const createStyles = (colors: AppColors) => ({
   },
   sendButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     height: 46,
     justifyContent: "center",

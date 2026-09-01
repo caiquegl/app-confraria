@@ -1026,7 +1026,7 @@ const createStyles = (colors: AppColors) => ({
   },
   planButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     elevation: 6,
     flexDirection: "row",
@@ -1039,7 +1039,7 @@ const createStyles = (colors: AppColors) => ({
     shadowRadius: 16,
   },
   planButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "700",
   },

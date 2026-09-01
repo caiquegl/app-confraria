@@ -127,7 +127,7 @@ const createStyles = (colors: AppColors) => ({
   },
   submitButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     minWidth: 150,
     paddingHorizontal: 20,

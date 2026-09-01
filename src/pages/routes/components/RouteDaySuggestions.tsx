@@ -358,7 +358,7 @@ export function RouteDaySuggestions({
 
 const createStyles = (colors: AppColors) => ({
   addButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -367,7 +367,7 @@ const createStyles = (colors: AppColors) => ({
     backgroundColor: colors.surface.successSubtle,
   },
   addButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 10,
     fontWeight: "700",
   },
@@ -495,14 +495,14 @@ const createStyles = (colors: AppColors) => ({
     marginTop: 20,
   },
   modalAddButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   modalAddButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "700",
     textAlign: "center",

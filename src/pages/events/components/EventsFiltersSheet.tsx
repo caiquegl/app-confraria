@@ -155,13 +155,13 @@ export { DEFAULT_EVENTS_FILTERS };
 const createStyles = (colors: AppColors) => ({
   applyButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     flex: 1,
     paddingVertical: 12,
   },
   applyButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -231,7 +231,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "700",
   },
   pillTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   pillWrap: {
     flexDirection: "row",

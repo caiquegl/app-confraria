@@ -25,7 +25,7 @@ export function EventsCreateFab({ onPress }: EventsCreateFabProps) {
 const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     bottom: 18,
     elevation: 8,

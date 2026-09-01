@@ -70,7 +70,7 @@ export function StoriesBar({
               onAddStory();
             }}
           >
-            <Ionicons color={colors.brandDark} name="add" size={13} />
+            <Ionicons color={colors.text.onBrand} name="add" size={13} />
           </Pressable>
           <Text numberOfLines={1} style={styles.storyLabel}>
             Seu story

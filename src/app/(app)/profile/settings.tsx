@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
+import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 import { getCurrentUserId, removeToken } from "@/lib/auth";
 import { setStoredCurrentProfile } from "@/lib/current-profile-store";
 import { unregisterPushNotificationsAsync } from "@/lib/push-notifications";
@@ -33,7 +34,7 @@ type SettingsCard = {
 };
 
 export default function ProfileSettingsScreen() {
-  const { colors, isDark, setColorScheme } = useTheme();
+  const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const updateInfo = getUpdateInfo();
   const easUpdateLabel = isAppliedEasUpdate(updateInfo.label) ? updateInfo.label : null;
@@ -280,25 +281,10 @@ export default function ProfileSettingsScreen() {
           <Ionicons color={colors.text.primary} name="chevron-back" size={22} />
         </TouchableOpacity>
         <Text style={styles.title}>Configurações</Text>
+        <ThemeToggleButton iconSize={22} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.appearanceCard}>
-          <View style={styles.appearanceTextWrap}>
-            <Text style={styles.appearanceTitle}>Tema escuro</Text>
-            <Text style={styles.appearanceSubtitle}>
-              Ajusta as cores do app para o modo noturno.
-            </Text>
-          </View>
-          <Switch
-            accessibilityLabel="Ativar tema escuro"
-            value={isDark}
-            onValueChange={(value) => {
-              void setColorScheme(value ? "dark" : "light");
-            }}
-          />
-        </View>
-
         <View style={styles.grid}>
           {cards.map((card) => (
             <TouchableOpacity
@@ -410,31 +396,6 @@ function isAppliedEasUpdate(label: string) {
 }
 
 const createStyles = (colors: AppColors) => ({
-  appearanceCard: {
-    alignItems: "center",
-    backgroundColor: colors.surface.primary,
-    borderColor: colors.border.subtle,
-    borderRadius: 18,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-    marginBottom: 16,
-    padding: 16,
-  },
-  appearanceSubtitle: {
-    color: colors.text.secondary,
-    fontSize: 12,
-    marginTop: 4,
-  },
-  appearanceTextWrap: {
-    flex: 1,
-  },
-  appearanceTitle: {
-    color: colors.text.primary,
-    fontSize: 15,
-    fontWeight: "700",
-  },
   backButton: {
     alignItems: "center",
     backgroundColor: colors.surface.primary,
@@ -494,6 +455,7 @@ const createStyles = (colors: AppColors) => ({
   },
   title: {
     color: colors.text.primary,
+    flex: 1,
     fontSize: 18,
     fontWeight: "800",
   },

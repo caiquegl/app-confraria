@@ -291,14 +291,14 @@ const createStyles = (colors: AppColors) => ({
   },
   acceptButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 12,
     minWidth: 74,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
   acceptText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 12,
     fontWeight: "800",
   },
@@ -347,7 +347,7 @@ const createStyles = (colors: AppColors) => ({
   },
   followButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     height: 40,
     justifyContent: "center",
@@ -359,7 +359,7 @@ const createStyles = (colors: AppColors) => ({
     borderWidth: 1,
   },
   followText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -447,7 +447,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "700",
   },
   tabTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "900",
   },
   userInfo: {

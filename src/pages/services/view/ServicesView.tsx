@@ -318,13 +318,13 @@ const createStyles = (colors: AppColors) => ({
     zIndex: 50,
   },
   retryButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
   retryText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "700",
   },

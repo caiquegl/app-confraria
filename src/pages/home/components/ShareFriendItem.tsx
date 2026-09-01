@@ -55,13 +55,13 @@ const createStyles = (colors: AppColors) => ({
     paddingVertical: 9,
   },
   buttonDefault: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
   },
   buttonSent: {
     backgroundColor: colors.surface.brandSubtle,
   },
   buttonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 13,
     fontWeight: "700",
   },

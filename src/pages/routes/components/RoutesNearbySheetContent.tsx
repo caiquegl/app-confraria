@@ -294,7 +294,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "600",
   },
   filterChipTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "700",
   },
   filtersRow: {
@@ -332,14 +332,14 @@ const createStyles = (colors: AppColors) => ({
     textAlign: "center",
   },
   locationButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 12,
     marginTop: 14,
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   locationButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 13,
     fontWeight: "700",
   },

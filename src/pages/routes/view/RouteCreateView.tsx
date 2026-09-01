@@ -657,7 +657,7 @@ const createStyles = (colors: AppColors) => ({
   },
   saveTripButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     flexDirection: "row",
     gap: 8,
@@ -670,7 +670,7 @@ const createStyles = (colors: AppColors) => ({
     opacity: 0.6,
   },
   saveTripButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 16,
     fontWeight: "600",
   },

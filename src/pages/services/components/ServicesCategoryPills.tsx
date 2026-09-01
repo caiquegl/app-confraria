@@ -93,7 +93,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "500",
   },
   pillTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "700",
   },
 });

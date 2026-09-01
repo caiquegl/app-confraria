@@ -127,7 +127,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "800",
   },
   bubbleTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   bubbleTextCompleted: {
     color: colors.brandActive,

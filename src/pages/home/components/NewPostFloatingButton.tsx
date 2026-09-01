@@ -25,7 +25,7 @@ export function NewPostFloatingButton({ onPress }: NewPostFloatingButtonProps) {
 const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 16,
     bottom: 18,
     elevation: 8,

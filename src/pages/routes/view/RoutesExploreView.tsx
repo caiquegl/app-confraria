@@ -344,7 +344,7 @@ const createStyles = (colors: AppColors) => ({
     paddingHorizontal: 4,
   },
   filtersBadgeText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 11,
     fontWeight: "800",
   },

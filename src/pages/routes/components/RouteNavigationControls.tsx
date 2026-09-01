@@ -64,7 +64,7 @@ const createStyles = (colors: AppColors) => ({
     elevation: 6,
   },
   photoButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderColor: colors.surface.primary,
     borderWidth: 2,
   },

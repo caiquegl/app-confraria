@@ -111,7 +111,7 @@ const createStyles = (colors: AppColors) => ({
     fontSize: 15,
   },
   optionTextSelected: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "600",
   },
   placeholder: {

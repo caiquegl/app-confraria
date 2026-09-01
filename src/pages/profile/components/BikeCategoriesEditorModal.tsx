@@ -400,7 +400,7 @@ const createStyles = (colors: AppColors) => ({
     textAlign: "center",
   },
   optionTextSelected: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   section: {
     gap: 10,

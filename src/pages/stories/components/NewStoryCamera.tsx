@@ -388,7 +388,7 @@ const createStyles = (colors: AppColors) => ({
   },
   checkButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     height: 42,
     justifyContent: "center",
@@ -449,7 +449,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "900",
   },
   modeButtonTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   permissionButton: {
     marginTop: 24,

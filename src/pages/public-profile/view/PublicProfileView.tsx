@@ -472,11 +472,22 @@ export function PublicProfileView({
                 onPress={() => void handleToggleFollow()}
               >
                 <Ionicons
-                  color={colors.brandDark}
+                  color={
+                    profile.isFollowing || isFollowPending
+                      ? colors.brandDark
+                      : colors.text.onBrand
+                  }
                   name={followButtonIcon}
                   size={16}
                 />
-                <Text style={styles.actionText}>{followButtonLabel}</Text>
+                <Text
+                  style={[
+                    styles.actionText,
+                    !(profile.isFollowing || isFollowPending) && styles.actionTextOnBrand,
+                  ]}
+                >
+                  {followButtonLabel}
+                </Text>
               </Pressable>
 
               <Pressable
@@ -757,6 +768,9 @@ const createStyles = (colors: AppColors) => ({
     fontSize: 14,
     fontWeight: "700",
   },
+  actionTextOnBrand: {
+    color: colors.text.onBrand,
+  },
   actionTextDisabled: {
     color: colors.text.muted,
   },
@@ -826,7 +840,7 @@ const createStyles = (colors: AppColors) => ({
     fontSize: 13,
   },
   followButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
   },
   followingButton: {
     backgroundColor: colors.surface.primary,

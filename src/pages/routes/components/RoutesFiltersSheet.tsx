@@ -292,7 +292,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "600",
   },
   bikeOptionTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   chip: {
     borderColor: colors.border.subtle,
@@ -311,7 +311,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "600",
   },
   chipTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   clearButton: {
     alignItems: "center",

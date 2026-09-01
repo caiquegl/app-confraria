@@ -866,7 +866,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "800",
   },
   effectButtonTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   effectOverlay: {
     bottom: 0,
@@ -899,13 +899,13 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "800",
   },
   saveButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   saveButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "900",
   },
@@ -969,7 +969,7 @@ const createStyles = (colors: AppColors) => ({
   },
   stickerSearchButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 14,
     height: 40,
     justifyContent: "center",

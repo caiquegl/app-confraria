@@ -19,6 +19,7 @@ export type AppColors = {
     info: string;
     overnight: string;
     success: string;
+    onBrand: string;
   };
   surface: {
     primary: string;

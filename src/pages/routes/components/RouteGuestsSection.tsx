@@ -43,7 +43,7 @@ export function RouteGuestsSection({
       <View style={styles.headerRow}>
         <Text style={styles.sectionTitle}>Convidados</Text>
         <Pressable accessibilityRole="button" style={styles.inviteChip} onPress={onInvite}>
-          <Ionicons color={colors.brandDark} name="person-add-outline" size={14} />
+          <Ionicons color={colors.text.onBrand} name="person-add-outline" size={14} />
           <Text style={styles.inviteChipText}>Convidar</Text>
         </Pressable>
       </View>
@@ -150,7 +150,7 @@ const createStyles = (colors: AppColors) => ({
   },
   inviteChip: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     flexDirection: "row",
     gap: 6,
@@ -158,7 +158,7 @@ const createStyles = (colors: AppColors) => ({
     paddingVertical: 8,
   },
   inviteChipText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 12,
     fontWeight: "800",
   },

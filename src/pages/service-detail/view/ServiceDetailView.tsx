@@ -149,7 +149,7 @@ export function ServiceDetailView({ serviceId }: ServiceDetailViewProps) {
               style={styles.callButton}
               onPress={handleCall}
             >
-              <Ionicons color={colors.brandDark} name="call" size={16} />
+              <Ionicons color={colors.text.onBrand} name="call" size={16} />
               <Text style={styles.callText}>{service.phone}</Text>
             </Pressable>
           ) : null}
@@ -191,7 +191,7 @@ const createStyles = (colors: AppColors) => ({
   callButton: {
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     flexDirection: "row",
     gap: 8,
@@ -200,7 +200,7 @@ const createStyles = (colors: AppColors) => ({
     paddingVertical: 11,
   },
   callText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -277,13 +277,13 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "700",
   },
   retryButton: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
   retryText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "700",
   },

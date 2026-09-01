@@ -21,6 +21,7 @@ export const lightColors: AppColors = {
     info: "#4338CA",
     overnight: "#4E73D9",
     success: "#166534",
+    onBrand: "#576D1E",
   },
 
   surface: {

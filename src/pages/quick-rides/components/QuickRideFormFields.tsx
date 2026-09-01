@@ -207,7 +207,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "700",
   },
   dayChipTextSelected: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   dayRow: {
     flexDirection: "row",

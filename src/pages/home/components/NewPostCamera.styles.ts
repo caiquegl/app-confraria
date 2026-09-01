@@ -48,7 +48,7 @@ export const styles = StyleSheet.create({
   },
   checkButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     height: 42,
     justifyContent: "center",
@@ -139,7 +139,7 @@ export const styles = StyleSheet.create({
     fontWeight: "900",
   },
   modeButtonTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   permissionButton: {
     marginTop: 24,

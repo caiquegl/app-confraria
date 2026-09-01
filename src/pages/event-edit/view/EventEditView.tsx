@@ -482,7 +482,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "700",
   },
   categoryTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
   },
   errorText: {
     color: colors.feedback.danger,

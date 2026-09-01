@@ -385,7 +385,7 @@ export function FeedComments({
             hitSlop={8}
             onPress={() => void handleSubmit()}
           >
-            <Ionicons name="arrow-up" size={16} color={colors.text.inverse} />
+            <Ionicons name="arrow-up" size={16} color={colors.text.onBrand} />
           </Pressable>
         ) : null}
       </View>
@@ -555,7 +555,7 @@ const createStyles = (colors: AppColors) => ({
   },
   sendButtonInside: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     height: 28,
     justifyContent: "center",

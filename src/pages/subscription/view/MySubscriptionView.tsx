@@ -613,7 +613,7 @@ const createStyles = (colors: AppColors) => ({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 14,
     justifyContent: "center",
     minHeight: 48,
@@ -621,7 +621,7 @@ const createStyles = (colors: AppColors) => ({
     paddingVertical: 12,
   },
   primaryButtonText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 15,
     fontWeight: "700",
   },

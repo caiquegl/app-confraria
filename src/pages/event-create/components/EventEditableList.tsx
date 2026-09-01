@@ -69,7 +69,7 @@ export function EventEditableList({
 const createStyles = (colors: AppColors) => ({
   addButton: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     height: 50,
     justifyContent: "center",

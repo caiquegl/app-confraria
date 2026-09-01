@@ -131,7 +131,7 @@ const createStyles = (colors: AppColors) => ({
   },
   primaryAction: {
     alignItems: "center",
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 18,
     flex: 1,
     flexDirection: "row",
@@ -141,7 +141,7 @@ const createStyles = (colors: AppColors) => ({
     paddingHorizontal: 12,
   },
   primaryActionText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 13,
     fontWeight: "900",
   },

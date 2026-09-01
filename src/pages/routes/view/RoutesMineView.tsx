@@ -529,7 +529,7 @@ const createStyles = (colors: AppColors) => ({
     paddingHorizontal: 6,
   },
   filtersBadgeText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 11,
     fontWeight: "800",
   },
@@ -654,13 +654,13 @@ const createStyles = (colors: AppColors) => ({
     paddingVertical: 48,
   },
   navigationAction: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   navigationActionText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -721,7 +721,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "600",
   },
   quickChipTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "700",
   },
   quickDivider: {

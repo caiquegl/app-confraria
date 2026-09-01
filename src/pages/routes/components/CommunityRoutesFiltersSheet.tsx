@@ -146,7 +146,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "600",
   },
   chipTextActive: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontWeight: "800",
   },
   closeButton: {
