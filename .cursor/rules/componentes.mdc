@@ -50,13 +50,29 @@ export function MinhaTela() {
 
 ## Cores e tokens de design
 
-Usar as constantes centralizadas em `src/theme/colors.ts` — nunca hardcodar hex inline.
+Usar **sempre** os tokens centralizados em `src/theme/` — nunca hardcodar valores visuais no componente ou na página.
 
 ```tsx
 // ✅
-import { colors } from "@/theme/colors";
-backgroundColor: colors.brandGreen
+import { colors, radii, spacing, typography } from "@/theme";
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
+    borderRadius: radii.md,
+    padding: spacing["2xl"],
+  },
+  title: {
+    ...typography.bodyStrong,
+    color: colors.text.primary,
+  },
+});
 
 // ❌
-backgroundColor: "#C8F763"
+backgroundColor: "#FFFFFF"
+paddingHorizontal: 16
+fontSize: 14
 ```
+
+Se o token não existir, adicione em `src/theme/` (por função semântica) antes de usar. Ver skill `confraria-theme` em `.cursor/skills/confraria-theme/SKILL.md`.
