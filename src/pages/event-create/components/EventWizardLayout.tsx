@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProgressBar } from "@/components/ProgressBar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventWizardLayoutProps = {
   children: React.ReactNode;
@@ -30,6 +30,8 @@ export function EventWizardLayout({
   title,
   totalSteps,
 }: EventWizardLayoutProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -69,11 +71,11 @@ export function EventWizardLayout({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   closeButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -101,12 +103,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   stepLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,

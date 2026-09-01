@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
 import type { GeolocationStatus } from "@/lib/location";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type LocationGatePurpose = "events" | "routes" | "services";
 
@@ -42,6 +42,8 @@ export function LocationGate({
   purpose = "events",
   status,
 }: LocationGateProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const isLoading = status === "idle" || status === "loading";
   const isDenied = status === "denied";
@@ -95,7 +97,7 @@ export function LocationGate({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   button: {
     marginTop: 24,
     minWidth: 220,
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,
@@ -114,8 +116,8 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     height: 88,

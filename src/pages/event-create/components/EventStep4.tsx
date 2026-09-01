@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventGalleryImagePicker } from "./EventGalleryImagePicker";
 import { EventWizardLayout } from "./EventWizardLayout";
@@ -27,6 +27,8 @@ export function EventStep4({
   onPublish,
   updateDraft,
 }: EventStep4Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <EventWizardLayout
       step={4}
@@ -47,7 +49,7 @@ export function EventStep4({
             />
           ) : (
             <View style={styles.reviewImageFallback}>
-              <Ionicons color="#9CA3AF" name="image-outline" size={26} />
+              <Ionicons color={colors.text.muted} name="image-outline" size={26} />
             </View>
           )}
 
@@ -94,7 +96,7 @@ export function EventStep4({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   footer: {
     gap: 12,
     marginTop: 28,
@@ -106,8 +108,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   reviewCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     overflow: "hidden",
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   reviewDescription: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 4,
@@ -128,13 +130,13 @@ const styles = StyleSheet.create({
   },
   reviewImageFallback: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     height: 150,
     justifyContent: "center",
     width: "100%",
   },
   reviewMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
   },

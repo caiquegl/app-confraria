@@ -4,13 +4,15 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/Button";
 import { OptionSelect } from "@/components/OptionSelect";
 import { SelectField } from "@/components/SelectField";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { WizardLayout } from "../WizardLayout";
 import { fetchBikeCategories, fetchTripStyles } from "../../services/wizard.service";
 import type { BikeCategory, Step4Data, StepProps, TripStyle } from "../../types/wizard.types";
 
 export function Step4({ defaultValues, onBack, onNext }: StepProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [bikeCategories, setBikeCategories] = useState<BikeCategory[]>([]);
   const [tripStyles, setTripStyles] = useState<TripStyle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,13 +103,13 @@ export function Step4({ defaultValues, onBack, onNext }: StepProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actions: {
     gap: 12,
     marginTop: 32,
   },
   divider: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     marginVertical: 8,
   },
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   sectionLabelSecondary: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
   },
 });

@@ -10,7 +10,7 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { NavigationManeuverPreview } from "../utils/navigation-steps.utils";
 
@@ -23,6 +23,8 @@ export function RouteNavigationInstructionCard({
   activeStepIndex,
   items,
 }: RouteNavigationInstructionCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = screenWidth - 32;
   const listRef = useRef<FlatList<NavigationManeuverPreview>>(null);
@@ -110,7 +112,7 @@ export function RouteNavigationInstructionCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
     alignItems: "center",
     backgroundColor: colors.brandDark,
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 6, width: 0 },
     shadowOpacity: 0.18,
     shadowRadius: 12,
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   distance: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 22,
     fontWeight: "800",
     lineHeight: 26,
@@ -172,7 +174,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   upcomingLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.4,

@@ -2,11 +2,11 @@ import { memo, useEffect, useMemo, useRef } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { MapMarkerPoint } from "../types/route-create.types";
 import { SHEET_HEIGHT_RATIO } from "../utils/route-day.utils";
-import { ROUTE_PLANNER_MAP_STYLE } from "../utils/route-map-style";
+import { getRoutePlannerMapStyle } from "../utils/route-map-style";
 import { RouteMapMarker } from "./RouteMapMarker";
 
 type RouteCoordinate = {
@@ -80,6 +80,8 @@ function areCanvasPropsEqual(
   prev: RoutePlannerMapCanvasProps,
   next: RoutePlannerMapCanvasProps,
 ): boolean {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     prev.onSelectRouteOption === next.onSelectRouteOption &&
     prev.userLocation === next.userLocation &&
@@ -96,6 +98,9 @@ const RoutePlannerMapCanvas = memo(function RoutePlannerMapCanvas({
   selectedCoordinates,
   userLocation,
 }: RoutePlannerMapCanvasProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const plannerMapStyle = useMemo(() => getRoutePlannerMapStyle(colors), [colors]);
   const mapRef = useRef<MapView | null>(null);
   const lastFitSignatureRef = useRef<string | null>(null);
 
@@ -147,7 +152,7 @@ const RoutePlannerMapCanvas = memo(function RoutePlannerMapCanvas({
   return (
     <MapView
       ref={mapRef}
-      customMapStyle={ROUTE_PLANNER_MAP_STYLE}
+      customMapStyle={plannerMapStyle}
       initialRegion={initialRegion}
       provider={PROVIDER_GOOGLE}
       rotateEnabled={false}
@@ -211,6 +216,8 @@ function RoutePlannerMapComponent({
   selectedCoordinates,
   userLocation,
 }: RoutePlannerMapProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <RoutePlannerMapCanvas
@@ -235,7 +242,7 @@ function RoutePlannerMapComponent({
 
 export const RoutePlannerMap = memo(RoutePlannerMapComponent);
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     ...StyleSheet.absoluteFill,
     backgroundColor: "#EEF1E8",
@@ -247,7 +254,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
     backgroundColor: "rgba(255, 255, 255, 0.94)",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",

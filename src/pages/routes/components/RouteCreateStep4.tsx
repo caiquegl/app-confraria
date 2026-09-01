@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import type { UserBike } from "@/pages/bikes/types/bikes.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { RouteCoverPicker } from "../components/RouteCoverPicker";
 import type { RouteCostEstimate } from "../types/route-cost.types";
@@ -78,6 +78,8 @@ export function RouteCreateStep4({
   tripTime,
   thumbnailType,
 }: RouteCreateStep4Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [expandedDayIds, setExpandedDayIds] = useState<string[]>([]);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -204,7 +206,7 @@ export function RouteCreateStep4({
               />
             ) : (
               <View style={styles.bikeImageFallback}>
-                <Ionicons color="#9CA3AF" name="bicycle-outline" size={16} />
+                <Ionicons color={colors.text.muted} name="bicycle-outline" size={16} />
               </View>
             )}
             <Text numberOfLines={1} style={styles.bikeName}>
@@ -355,7 +357,7 @@ export function RouteCreateStep4({
                     </Text>
                   </View>
                   <Ionicons
-                    color="#9CA3AF"
+                    color={colors.text.muted}
                     name="chevron-down"
                     size={16}
                     style={isExpanded ? styles.dayChevronExpanded : undefined}
@@ -434,7 +436,7 @@ export function RouteCreateStep4({
                 keyboardType="number-pad"
                 maxLength={10}
                 placeholder="DD/MM/AAAA"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.placeholder}
                 style={[
                   styles.fieldInput,
                   scheduleValidation?.dateError ? styles.fieldInputError : null,
@@ -453,7 +455,7 @@ export function RouteCreateStep4({
                 keyboardType="number-pad"
                 maxLength={5}
                 placeholder="08:00"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.placeholder}
                 style={[
                   styles.fieldInput,
                   scheduleValidation?.timeError ? styles.fieldInputError : null,
@@ -475,7 +477,7 @@ export function RouteCreateStep4({
             multiline
             maxLength={280}
             placeholder="Ex: Saída cedo, café no Dia 1 e jantar em grupo na chegada."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.text.placeholder}
             style={[styles.fieldInput, styles.noteInput]}
             textAlignVertical="top"
             value={tripNote}
@@ -489,7 +491,7 @@ export function RouteCreateStep4({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   bikeImage: {
     borderRadius: 8,
     height: 24,
@@ -504,7 +506,7 @@ const styles = StyleSheet.create({
     width: 32,
   },
   bikeName: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     flex: 1,
     fontSize: 14,
     fontWeight: "800",
@@ -524,12 +526,12 @@ const styles = StyleSheet.create({
     width: 1,
   },
   bikeStatLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 10,
     marginTop: 2,
   },
   bikeStatValue: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "800",
   },
@@ -546,8 +548,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   costCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
@@ -562,7 +564,7 @@ const styles = StyleSheet.create({
     paddingRight: 24,
   },
   costHint: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 8,
   },
@@ -582,12 +584,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(200, 247, 99, 0.2)",
   },
   costLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 10,
     marginBottom: 4,
   },
   costLabelMuted: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     marginBottom: 4,
   },
@@ -597,14 +599,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   dayCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
   },
   dayCardBody: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     gap: 12,
     paddingBottom: 16,
@@ -623,7 +625,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   dayCardMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 4,
   },
@@ -649,12 +651,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   dayEmptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
   },
   fieldInput: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.brandDark,
@@ -663,15 +665,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   fieldInputError: {
-    borderColor: "#EF4444",
+    borderColor: colors.feedback.danger,
   },
   fieldLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginBottom: 4,
   },
   fieldError: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     marginTop: 4,
   },
@@ -685,7 +687,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   finalDestinationText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
@@ -710,7 +712,7 @@ const styles = StyleSheet.create({
     width: "42%",
   },
   heroDestination: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 18,
     fontWeight: "800",
     marginTop: 8,
@@ -731,12 +733,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   heroMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 4,
   },
   heroPath: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 14,
     marginTop: 2,
   },
@@ -750,7 +752,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   intentOptionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -759,8 +761,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   intentSwitch: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -768,8 +770,8 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   itineraryCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     marginTop: 16,
@@ -785,7 +787,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   noteCounter: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 4,
     textAlign: "right",
@@ -830,8 +832,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   scheduleCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     marginTop: 16,
@@ -861,7 +863,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionHint: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
   },
   sectionTitle: {
@@ -883,7 +885,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   stopName: {
-    color: "#4B5563",
+    color: colors.text.comment,
     flex: 1,
     fontSize: 14,
   },
@@ -893,7 +895,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 4,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LayoutChangeEvent, PanResponder, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import {
   DISTANCE_MAX_STEP,
@@ -18,6 +18,8 @@ type DistanceRangeSliderProps = {
 };
 
 export function DistanceRangeSlider({ onChange, value }: DistanceRangeSliderProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const trackWidthRef = useRef(0);
   const trackPageXRef = useRef(0);
   const trackRef = useRef<View>(null);
@@ -163,7 +165,7 @@ export function DistanceRangeSlider({ onChange, value }: DistanceRangeSliderProp
 
 export { formatDistanceStep };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     paddingBottom: 8,
     paddingTop: 4,
@@ -176,7 +178,7 @@ const styles = StyleSheet.create({
     top: 9,
   },
   label: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "500",
   },
@@ -187,7 +189,7 @@ const styles = StyleSheet.create({
     marginLeft: 10
   },
   thumb: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderColor: colors.brandGreen,
     borderRadius: 999,
     borderWidth: 2,
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
     width: THUMB_SIZE + THUMB_HIT_SLOP * 2,
   },
   track: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 6,
     marginTop: 9,

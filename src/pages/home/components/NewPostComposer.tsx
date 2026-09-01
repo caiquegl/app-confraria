@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { ComposeAudience, ComposeFeedMedia } from "../types/feed.types";
 
@@ -64,6 +64,8 @@ export function NewPostComposer({
   restrictToFollowers = false,
   visible,
 }: NewPostComposerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
@@ -147,7 +149,7 @@ export function NewPostComposer({
                 style={styles.removePreviewButton}
                 onPress={() => onRemovePhoto(activePhotoIndex)}
               >
-                <Ionicons name="close" size={20} color="#FFFFFF" />
+                <Ionicons name="close" size={20} color={colors.text.inverse} />
               </Pressable>
             </View>
           )}
@@ -176,7 +178,7 @@ export function NewPostComposer({
             multiline
             value={caption}
             placeholder="Adicione uma legenda obrigatória..."
-            placeholderTextColor="#7B8493"
+            placeholderTextColor={colors.text.placeholderMuted}
             style={styles.captionInput}
             onFocus={handleCaptionFocus}
             onChangeText={onChangeCaption}
@@ -261,6 +263,8 @@ function DraggableThumbnail({
   media,
   total,
 }: DraggableThumbnailProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [translateX] = useState(() => new Animated.Value(0));
 
   const panResponder = useMemo(
@@ -319,7 +323,7 @@ function DraggableThumbnail({
           />
         ) : (
           <View style={styles.thumbnailVideo}>
-            <Ionicons name="play" size={18} color="#FFFFFF" />
+            <Ionicons name="play" size={18} color={colors.text.inverse} />
           </View>
         )}
       </Pressable>
@@ -328,6 +332,7 @@ function DraggableThumbnail({
 }
 
 function ComposerMediaPreview({ media }: { media: ComposeFeedMedia }) {
+  const styles = useThemedStyles(createStyles);
   if (media.mediaType === "video") {
     return <ComposerVideoPreview uri={media.uri} />;
   }
@@ -344,6 +349,8 @@ function ComposerMediaPreview({ media }: { media: ComposeFeedMedia }) {
 }
 
 function ComposerVideoPreview({ uri }: { uri: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
 
   useEffect(() => {
@@ -382,17 +389,17 @@ function ComposerVideoPreview({ uri }: { uri: string }) {
       ) : null}
       <View style={styles.videoPreviewScrim} />
       <View style={styles.videoPreviewIcon}>
-        <Ionicons name="play" size={30} color="#FFFFFF" />
+        <Ionicons name="play" size={30} color={colors.text.inverse} />
       </View>
       <Text style={styles.videoPreviewTitle}>Vídeo adicionado</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   audienceButton: {
     alignItems: "center",
-    backgroundColor: "#F3F4EF",
+    backgroundColor: colors.surface.brandMuted,
     borderRadius: 16,
     flexDirection: "row",
     gap: 8,
@@ -400,7 +407,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   audienceButtonActive: {
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
   },
   audienceRow: {
     flexDirection: "row",
@@ -436,7 +443,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   footer: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopColor: "#ECEDE8",
     borderTopWidth: 1,
     paddingHorizontal: 24,
@@ -447,7 +454,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderBottomColor: "#E7E9E4",
     borderBottomWidth: 1,
     flexDirection: "row",
@@ -459,12 +466,12 @@ const styles = StyleSheet.create({
     width: 40,
   },
   headerTitle: {
-    color: "#111827",
+    color: colors.text.emphasis,
     fontSize: 24,
     fontWeight: "800",
   },
   previewCard: {
-    backgroundColor: "#F3F4EF",
+    backgroundColor: colors.surface.brandMuted,
     borderRadius: 28,
     elevation: 4,
     overflow: "hidden",
@@ -489,7 +496,7 @@ const styles = StyleSheet.create({
   videoPreviewPlaceholder: {
     alignItems: "center",
     aspectRatio: 4 / 5,
-    backgroundColor: "#111827",
+    backgroundColor: colors.surface.videoFallback,
     gap: 10,
     justifyContent: "center",
     overflow: "hidden",
@@ -497,7 +504,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   videoPreviewScrim: {
-    backgroundColor: "rgba(0,0,0,0.42)",
+    backgroundColor: colors.overlay.videoScrim,
     bottom: 0,
     left: 0,
     position: "absolute",
@@ -520,7 +527,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   videoPreviewTitle: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: "900",
     zIndex: 2,
@@ -529,12 +536,12 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   screen: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
   },
   removePreviewButton: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderRadius: 18,
     height: 36,
     justifyContent: "center",
@@ -582,7 +589,7 @@ const styles = StyleSheet.create({
   },
   uploadOverlay: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     bottom: 0,
     justifyContent: "center",
     left: 0,
@@ -592,7 +599,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   uploadPercent: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "800",
     marginTop: 8,
@@ -618,7 +625,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   uploadTitle: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 17,
     fontWeight: "800",
     marginTop: 16,

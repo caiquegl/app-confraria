@@ -9,6 +9,7 @@ import {
 import { StyleSheet, Text, View } from "react-native";
 
 import { useApiEnvironment } from "@/hooks/useApiEnvironment";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 export const ENVIRONMENT_BANNER_BODY_HEIGHT = 38;
 
@@ -64,6 +65,7 @@ export function useEnvironmentBannerInset(): number {
 export function EnvironmentBanner() {
   const { apiUrl, isHomolog } = useApiEnvironment();
   const { suppressed } = useEnvironmentBannerSuppression();
+  const styles = useThemedStyles(createStyles);
 
   if (!isHomolog) {
     return null;
@@ -82,31 +84,33 @@ export function EnvironmentBanner() {
   );
 }
 
-const styles = StyleSheet.create({
-  banner: {
-    alignItems: "center",
-    backgroundColor: "#DC2626",
-    elevation: 100,
-    left: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 100,
-  },
-  spacer: {
-    height: ENVIRONMENT_BANNER_BODY_HEIGHT,
-  },
-  text: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-  },
-  url: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: 10,
-    marginTop: 2,
-  },
-});
+const createStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    banner: {
+      alignItems: "center",
+      backgroundColor: colors.feedback.dangerStrong,
+      elevation: 100,
+      left: 0,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      position: "absolute",
+      right: 0,
+      top: 0,
+      zIndex: 100,
+    },
+    spacer: {
+      height: ENVIRONMENT_BANNER_BODY_HEIGHT,
+    },
+    text: {
+      color: colors.text.inverse,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 0.8,
+    },
+    url: {
+      color: colors.text.inverse,
+      fontSize: 10,
+      marginTop: 2,
+      opacity: 0.85,
+    },
+  });

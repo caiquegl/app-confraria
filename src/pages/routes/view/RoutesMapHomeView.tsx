@@ -36,7 +36,7 @@ import { fetchMapGasStations, fetchNearbyPlaces } from "@/pages/services/service
 import type { NearbyPlace } from "@/pages/services/types/services.types";
 import { useNotificationBadge } from "@/pages/notifications";
 import { fetchSubscriptionMe } from "@/pages/subscription/services/subscription.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { QuickRouteSheet } from "../components/QuickRouteSheet";
 import { FreeRouteLimitPaywall } from "../components/FreeRouteLimitPaywall";
@@ -72,7 +72,7 @@ import {
   sortNearbyPlacesByPriority,
 } from "../utils/nearby-places.utils";
 import { saveQuickRoutePlannerSnapshot } from "../utils/quick-route-planner.storage";
-import { ROUTE_PLANNER_MAP_STYLE } from "../utils/route-map-style";
+import { getRoutePlannerMapStyle } from "../utils/route-map-style";
 import { trackRoutesEvent } from "../utils/track-routes-event";
 
 const FALLBACK_REGION: Region = {
@@ -107,6 +107,8 @@ function buildGpsPlace(
   longitude: number,
   label: string,
 ): QuickRoutePlace {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const placeId = `gps:${latitude}:${longitude}`;
   return {
     description: label,
@@ -121,6 +123,9 @@ function buildGpsPlace(
 }
 
 export function RoutesMapHomeView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const plannerMapStyle = useMemo(() => getRoutePlannerMapStyle(colors), [colors]);
   const { height: windowHeight } = useWindowDimensions();
   const mapRef = useRef<MapView>(null);
   const mapAreaHeightRef = useRef(0);
@@ -660,7 +665,7 @@ export function RoutesMapHomeView() {
       <View style={styles.header}>
         <View style={styles.topRow}>
           <View style={styles.locationRow}>
-            <Ionicons color="#6B7280" name="location-outline" size={14} />
+            <Ionicons color={colors.text.secondary} name="location-outline" size={14} />
             <Text numberOfLines={1} style={styles.locationText}>
               {locationLabel}
             </Text>
@@ -672,7 +677,7 @@ export function RoutesMapHomeView() {
             style={styles.notificationButton}
             onPress={() => router.push("/notifications")}
           >
-            <Ionicons color="#6B7280" name="notifications-outline" size={20} />
+            <Ionicons color={colors.text.secondary} name="notifications-outline" size={20} />
             {hasUnread ? <View style={styles.unreadDot} /> : null}
           </Pressable>
         </View>
@@ -723,7 +728,7 @@ export function RoutesMapHomeView() {
         <MapView
           key={`routes-home-map-${routeResetToken}`}
           ref={mapRef}
-          customMapStyle={ROUTE_PLANNER_MAP_STYLE}
+          customMapStyle={plannerMapStyle}
           initialRegion={mapRegion}
           moveOnMarkerPress={false}
           provider={PROVIDER_GOOGLE}
@@ -826,7 +831,7 @@ export function RoutesMapHomeView() {
               onPress={handleRecenter}
             >
               <Ionicons
-                color={isLocationReady ? colors.brandPrimary : "#9CA3AF"}
+                color={isLocationReady ? colors.brandPrimary : colors.text.muted}
                 name="locate"
                 size={20}
               />
@@ -844,7 +849,7 @@ export function RoutesMapHomeView() {
               onPress={handleRecenter}
             >
               <Ionicons
-                color={isLocationReady ? colors.brandPrimary : "#9CA3AF"}
+                color={isLocationReady ? colors.brandPrimary : colors.text.muted}
                 name="locate"
                 size={20}
               />
@@ -947,9 +952,9 @@ export function RoutesMapHomeView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatarButton: {
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     overflow: "hidden",
@@ -960,8 +965,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     height: 44,
@@ -1001,7 +1006,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   locationText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flexShrink: 1,
     fontSize: 13,
     fontWeight: "600",
@@ -1044,7 +1049,7 @@ const styles = StyleSheet.create({
   },
   recenterButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 999,
     elevation: 6,
     height: 44,

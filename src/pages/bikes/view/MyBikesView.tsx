@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import {
   createUserBike,
@@ -31,6 +31,8 @@ type MyBikesViewProps = {
 type DetailMode = "list" | "create" | "edit";
 
 export function MyBikesView({ onBack }: MyBikesViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [bikes, setBikes] = useState<UserBike[]>([]);
   const [brands, setBrands] = useState<BikeBrand[]>([]);
   const [detailMode, setDetailMode] = useState<DetailMode>("list");
@@ -174,10 +176,10 @@ export function MyBikesView({ onBack }: MyBikesViewProps) {
           <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
         </Pressable>
         <View style={styles.searchBox}>
-          <Ionicons color="#9CA3AF" name="search-outline" size={18} />
+          <Ionicons color={colors.text.muted} name="search-outline" size={18} />
           <TextInput
             placeholder="Buscar moto por nome"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.text.placeholder}
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -195,7 +197,7 @@ export function MyBikesView({ onBack }: MyBikesViewProps) {
 
           {bikes.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons color="#D1D5DB" name="bicycle-outline" size={46} />
+              <Ionicons color={colors.border.default} name="bicycle-outline" size={46} />
               <Text style={styles.emptyText}>Nenhuma moto cadastrada ainda</Text>
               <AddBikeButton label="Adicionar Moto" onPress={openCreate} />
             </View>
@@ -219,15 +221,19 @@ export function MyBikesView({ onBack }: MyBikesViewProps) {
 }
 
 function AddBikeButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={styles.addCard} onPress={onPress}>
-      <Ionicons color="#9CA3AF" name="add" size={26} />
+      <Ionicons color={colors.text.muted} name="add" size={26} />
       <Text style={styles.addCardText}>{label}</Text>
     </Pressable>
   );
 }
 
 function BikeCard({ bike, onPress }: { bike: UserBike; onPress: () => void }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={styles.bikeCard} onPress={onPress}>
       {bike.imageUrl ? (
@@ -240,7 +246,7 @@ function BikeCard({ bike, onPress }: { bike: UserBike; onPress: () => void }) {
         />
       ) : (
         <View style={styles.bikeImageFallback}>
-          <Ionicons color="#9CA3AF" name="bicycle-outline" size={26} />
+          <Ionicons color={colors.text.muted} name="bicycle-outline" size={26} />
         </View>
       )}
 
@@ -277,10 +283,10 @@ function formatPlate(value: string | null): string | null {
   return `${value.slice(0, 3)}-${value.slice(3)}`;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addCard: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 18,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -289,14 +295,14 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   addCardText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 14,
     fontWeight: "700",
   },
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -305,8 +311,8 @@ const styles = StyleSheet.create({
   },
   bikeCard: {
     alignItems: "stretch",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -315,7 +321,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   bikeActionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
     marginTop: 8,
@@ -327,8 +333,8 @@ const styles = StyleSheet.create({
   },
   bikeImageFallback: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.subtle,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     minHeight: 120,
@@ -341,12 +347,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   bikeMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginTop: 2,
   },
   bikeSubMeta: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 4,
   },
@@ -378,7 +384,7 @@ const styles = StyleSheet.create({
     paddingVertical: 52,
   },
   emptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },
@@ -406,7 +412,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   noResults: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     paddingVertical: 16,
     textAlign: "center",
@@ -417,8 +423,8 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flex: 1,

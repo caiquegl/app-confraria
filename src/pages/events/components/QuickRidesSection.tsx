@@ -11,7 +11,7 @@ import {
 } from "react-native";
 
 import type { QuickRide } from "@/pages/quick-rides/types/quick-ride.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { QuickRideCard } from "./QuickRideCard";
 
@@ -31,6 +31,8 @@ type QuickRidePage = {
 };
 
 function chunkRides(rides: QuickRide[], pageSize: number): QuickRidePage[] {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const pages: QuickRidePage[] = [];
 
   for (let index = 0; index < rides.length; index += pageSize) {
@@ -45,6 +47,8 @@ function chunkRides(rides: QuickRide[], pageSize: number): QuickRidePage[] {
 }
 
 export function QuickRidesSection({ onRidePress, rides }: QuickRidesSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { width: screenWidth } = useWindowDimensions();
   const [activePage, setActivePage] = useState(0);
   const pages = useMemo(() => chunkRides(rides, RIDES_PER_PAGE), [rides]);
@@ -128,14 +132,14 @@ export function QuickRidesSection({ onRidePress, rides }: QuickRidesSectionProps
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   divider: {
     backgroundColor: "rgba(28, 33, 38, 0.08)",
     height: 1,
     marginLeft: 16,
   },
   dot: {
-    backgroundColor: "#D1D5DB",
+    backgroundColor: colors.border.default,
     borderRadius: 999,
     height: 6,
     width: 6,
@@ -163,7 +167,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },

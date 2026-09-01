@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Share, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const EVENT_SHARE_BASE_URL =
   process.env.EXPO_PUBLIC_EVENT_SHARE_BASE_URL ?? "https://confraria-web.vercel.app";
@@ -18,6 +18,8 @@ export function EventOwnerActionsFooter({
   onShareWithFollower,
   title,
 }: EventOwnerActionsFooterProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const eventUrl = `${EVENT_SHARE_BASE_URL.replace(/\/$/, "")}/events/${eventId}`;
 
@@ -56,29 +58,29 @@ export function EventOwnerActionsFooter({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionsRow: {
     flexDirection: "row",
     gap: 10,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderTopWidth: 1,
     elevation: 10,
     paddingHorizontal: 18,
     paddingTop: 14,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: -3, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
   },
   iconAction: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 52,

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { Service } from "../types/services.types";
 
@@ -17,6 +17,8 @@ export function ServicesQuickCard({
   service,
   onPress,
 }: ServicesQuickCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={styles.card} onPress={() => onPress(service)}>
       <Image
@@ -33,7 +35,7 @@ export function ServicesQuickCard({
           {service.category}
         </Text>
         <View style={styles.ratingRow}>
-          <Ionicons color="#F59E0B" name="star" size={12} />
+          <Ionicons color={colors.rating.star} name="star" size={12} />
           <Text style={styles.rating}>{service.rating.toFixed(1)}</Text>
         </View>
       </View>
@@ -41,10 +43,10 @@ export function ServicesQuickCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     elevation: 1,
@@ -56,7 +58,7 @@ const styles = StyleSheet.create({
     width: SERVICES_QUICK_CARD_WIDTH,
   },
   category: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 1,
   },

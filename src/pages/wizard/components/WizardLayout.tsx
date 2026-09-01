@@ -11,7 +11,7 @@ import {
 
 import { Logo } from "@/components/Logo";
 import { ProgressBar } from "@/components/ProgressBar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { LgpdTermsModal } from "./LgpdTermsModal";
 
@@ -25,6 +25,8 @@ type WizardLayoutProps = {
 const TOTAL_STEPS = 5;
 
 export function WizardLayout({ children, step, subtitle, title }: WizardLayoutProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [lgpdModalVisible, setLgpdModalVisible] = useState(false);
 
   return (
@@ -72,7 +74,7 @@ export function WizardLayout({ children, step, subtitle, title }: WizardLayoutPr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     flex: 1,
   },
@@ -94,7 +96,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   footerText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 18,
     textAlign: "center",
@@ -113,13 +115,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   stepLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "500",
     textAlign: "center",
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     marginTop: 8,
   },

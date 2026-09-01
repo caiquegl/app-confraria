@@ -5,7 +5,7 @@ import { InputField } from "@/components/InputField";
 import { EventPlaceAutocompleteField } from "@/pages/event-create/components/EventPlaceAutocompleteField";
 import { formatTimeInput } from "@/pages/event-create/services/event-create.service";
 import type { EventPlaceReference } from "@/pages/event-create/types/event-create.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import {
   getQuickRideTimeError,
@@ -54,6 +54,8 @@ export function QuickRideFormFields({
   onTimeChange,
   onTitleChange,
 }: QuickRideFormFieldsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const timeRef = useRef<TextInput>(null);
   const descriptionRef = useRef<TextInput>(null);
   const maxParticipantsRef = useRef<TextInput>(null);
@@ -183,7 +185,7 @@ export function QuickRideFormFields({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addLimitText: {
     color: colors.brandPrimary,
     fontSize: 14,
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
   },
   dayChip: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     flex: 1,
     paddingVertical: 10,
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   dayChipText: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 14,
     fontWeight: "700",
   },

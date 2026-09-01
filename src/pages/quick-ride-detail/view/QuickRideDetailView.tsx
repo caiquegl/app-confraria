@@ -32,7 +32,7 @@ import {
   isQuickRideFullFromDetail,
   isQuickRideListItemEnded,
 } from "@/pages/quick-rides/types/quick-ride.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type QuickRideDetailViewProps = {
   onBack: () => void;
@@ -40,6 +40,8 @@ type QuickRideDetailViewProps = {
 };
 
 export function QuickRideDetailView({ onBack, quickRideId }: QuickRideDetailViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [ride, setRide] = useState<QuickRideDetail | null>(null);
   const [hasError, setHasError] = useState(false);
@@ -248,11 +250,11 @@ export function QuickRideDetailView({ onBack, quickRideId }: QuickRideDetailView
 
             <View style={styles.metaBlock}>
               <View style={styles.metaRow}>
-                <Ionicons color="#9CA3AF" name="location-outline" size={16} />
+                <Ionicons color={colors.text.muted} name="location-outline" size={16} />
                 <Text style={styles.metaText}>{getQuickRideOriginDestinationLabel(ride)}</Text>
               </View>
               <View style={styles.metaRow}>
-                <Ionicons color="#9CA3AF" name="time-outline" size={16} />
+                <Ionicons color={colors.text.muted} name="time-outline" size={16} />
                 <Text style={styles.metaText}>{formatQuickRideWhen(ride.startsAt)}</Text>
               </View>
             </View>
@@ -354,7 +356,7 @@ export function QuickRideDetailView({ onBack, quickRideId }: QuickRideDetailView
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatarOverlap: {
     marginLeft: -8,
   },
@@ -363,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   avatarWrap: {
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
   },
@@ -379,23 +381,23 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   description: {
-    color: "#374151",
+    color: colors.text.body,
     fontSize: 14,
     lineHeight: 22,
   },
   endedBadge: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   endedBadgeText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "700",
   },
   emptyParticipants: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
   },
   errorState: {
@@ -404,8 +406,8 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   footer: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -415,8 +417,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -446,7 +448,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   hostSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
@@ -465,18 +467,18 @@ const styles = StyleSheet.create({
   },
   moreAvatar: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     height: 32,
     justifyContent: "center",
     width: 32,
   },
   moreAvatarText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "700",
   },
   participantNames: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flex: 1,
     fontSize: 12,
   },
@@ -494,7 +496,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   screen: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
   },
 });

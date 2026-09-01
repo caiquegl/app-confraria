@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type CreatePublicProfileEventCardProps = {
   onPress: () => void;
 };
 
 export function CreatePublicProfileEventCard({ onPress }: CreatePublicProfileEventCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable accessibilityRole="button" style={styles.card} onPress={onPress}>
       <View style={styles.content}>
@@ -20,10 +22,10 @@ export function CreatePublicProfileEventCard({ onPress }: CreatePublicProfileEve
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     padding: 8,
@@ -43,7 +45,7 @@ const styles = StyleSheet.create({
     width: 42,
   },
   label: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 14,
     fontWeight: "700",
   },

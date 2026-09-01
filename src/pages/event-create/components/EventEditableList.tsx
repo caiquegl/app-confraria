@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventEditableListProps = {
   items: string[];
@@ -17,6 +17,8 @@ export function EventEditableList({
   onChange,
   placeholder,
 }: EventEditableListProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [value, setValue] = useState("");
 
   const addItem = () => {
@@ -33,7 +35,7 @@ export function EventEditableList({
       <View style={styles.row}>
         <TextInput
           placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.placeholder}
           style={styles.input}
           value={value}
           onChangeText={setValue}
@@ -64,7 +66,7 @@ export function EventEditableList({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addButton: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,
@@ -75,7 +77,7 @@ const styles = StyleSheet.create({
   },
   chip: {
     alignItems: "center",
-    backgroundColor: "#DCFCE7",
+    backgroundColor: colors.surface.successSubtle,
     borderRadius: 10,
     flexDirection: "row",
     gap: 6,
@@ -89,13 +91,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   chipText: {
-    color: "#166534",
+    color: colors.text.success,
     fontSize: 12,
     fontWeight: "800",
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     color: colors.brandDark,

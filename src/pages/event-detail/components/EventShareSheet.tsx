@@ -7,7 +7,7 @@ import Toast from "react-native-toast-message";
 import { ShareFriendItem } from "@/pages/home/components/ShareFriendItem";
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventSharePreview = {
   category: string;
@@ -33,6 +33,8 @@ export function EventShareSheet({
   onSendToFriend,
   sentFriendId,
 }: EventShareSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   if (!event) return null;
@@ -72,7 +74,7 @@ export function EventShareSheet({
           </View>
 
           <Pressable style={styles.closeButton} hitSlop={8} onPress={onClose}>
-            <Ionicons name="close" size={20} color="#6B7280" />
+            <Ionicons name="close" size={20} color={colors.text.secondary} />
           </Pressable>
         </View>
 
@@ -87,7 +89,7 @@ export function EventShareSheet({
             />
           ) : (
             <View style={styles.previewFallback}>
-              <Ionicons name="calendar-outline" size={20} color="#9CA3AF" />
+              <Ionicons name="calendar-outline" size={20} color={colors.text.muted} />
             </View>
           )}
           <View style={styles.previewText}>
@@ -124,9 +126,9 @@ export function EventShareSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     bottom: 0,
     left: 0,
     position: "absolute",
@@ -135,7 +137,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -143,7 +145,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   empty: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     textAlign: "center",
   },
@@ -170,8 +172,8 @@ const styles = StyleSheet.create({
   },
   preview: {
     alignItems: "center",
-    backgroundColor: "#F7F8F4",
-    borderColor: "#E8EBE3",
+    backgroundColor: colors.surface.preview,
+    borderColor: colors.border.brandLight,
     borderRadius: 22,
     borderWidth: 1,
     flexDirection: "row",
@@ -181,13 +183,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   previewContext: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
   previewFallback: {
     alignItems: "center",
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
     borderRadius: 14,
     height: 44,
     justifyContent: "center",
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     bottom: 0,
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 4,

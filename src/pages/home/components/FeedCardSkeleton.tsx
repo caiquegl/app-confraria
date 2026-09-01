@@ -1,9 +1,11 @@
 import { useEffect, useMemo } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 function SkeletonBlock({ height, style, width }: { height: number; style?: object; width?: number | `${number}%` }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const opacity = useMemo(() => new Animated.Value(0.35), []);
 
   useEffect(() => {
@@ -38,6 +40,8 @@ function SkeletonBlock({ height, style, width }: { height: number; style?: objec
 }
 
 export function FeedCardSkeleton() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -59,6 +63,8 @@ export function FeedCardSkeleton() {
 }
 
 export function FeedListSkeleton({ count = 2 }: { count?: number }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.list}>
       {Array.from({ length: count }).map((_, index) => (
@@ -68,16 +74,16 @@ export function FeedListSkeleton({ count = 2 }: { count?: number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatar: {
     borderRadius: 22,
   },
   block: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 10,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 18,
     elevation: 2,
     overflow: "hidden",

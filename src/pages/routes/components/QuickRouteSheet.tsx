@@ -16,7 +16,7 @@ import { PlaceAutocompleteField } from "@/components/PlaceAutocompleteField";
 import type { PlaceReference } from "@/lib/places";
 import { resolvePlaceWithCoords } from "@/lib/places";
 import type { UserBike } from "@/pages/bikes/types/bikes.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { RoutePathOption } from "../hooks/useRouteDirections";
 import type { QuickRoutePlace } from "../types/quick-route.types";
@@ -77,6 +77,8 @@ function formatFuelCost(value: number | null): string {
 }
 
 function getDistanceKm(distanceMeters: number | null): string {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (distanceMeters == null) return "—";
   return `${Math.round(distanceMeters / 1000)} km`;
 }
@@ -109,6 +111,8 @@ export function QuickRouteSheet({
   stops,
   thumbnailType,
 }: QuickRouteSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [showStopSearch, setShowStopSearch] = useState(false);
   const [showBikePicker, setShowBikePicker] = useState(false);
   const [pendingStop, setPendingStop] = useState<PlaceReference | null>(null);
@@ -233,11 +237,11 @@ export function QuickRouteSheet({
                 {selectedBike.baseConsumption} km/L
               </Text>
             </View>
-            <Ionicons color="#D1D5DB" name="chevron-forward" size={16} />
+            <Ionicons color={colors.border.default} name="chevron-forward" size={16} />
           </Pressable>
         ) : (
           <View style={styles.emptyGarageCard}>
-            <Ionicons color="#9CA3AF" name="bicycle-outline" size={20} />
+            <Ionicons color={colors.text.muted} name="bicycle-outline" size={20} />
             <Text style={styles.emptyGarageText}>
               Cadastre sua moto para estimar o gasto de combustível.
             </Text>
@@ -347,7 +351,7 @@ export function QuickRouteSheet({
                 : "Adicione dias, pernoites e preferências"}
             </Text>
           </View>
-          <Ionicons color="#D1D5DB" name="chevron-forward" size={16} />
+          <Ionicons color={colors.border.default} name="chevron-forward" size={16} />
         </Pressable>
       </ScrollView>
 
@@ -366,7 +370,7 @@ export function QuickRouteSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     flex: 1,
     minHeight: 0,
@@ -386,7 +390,7 @@ const styles = StyleSheet.create({
   },
   emptyGarageCard: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 16,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -401,14 +405,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   errorText: {
-    color: "#DC2626",
+    color: colors.feedback.dangerStrong,
     fontSize: 13,
     fontWeight: "600",
   },
   fuelBikeCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -429,12 +433,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   fuelBikeLoadingText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
   },
   fuelBikeMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 2,
   },
@@ -452,7 +456,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   fuelValueMuted: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "500",
   },
@@ -462,14 +466,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
   },
   planCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -486,14 +490,14 @@ const styles = StyleSheet.create({
   },
   planIconWrap: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 12,
     height: 36,
     justifyContent: "center",
     width: 36,
   },
   planSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 2,
   },
@@ -530,12 +534,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statsDivider: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     height: 32,
     width: 1,
   },
   statsSub: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 2,
   },
@@ -554,7 +558,7 @@ const styles = StyleSheet.create({
     width: 20,
   },
   stopBadgeText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 10,
     fontWeight: "800",
   },

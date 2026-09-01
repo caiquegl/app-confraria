@@ -12,7 +12,7 @@ import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
 import { getApiErrorMessage } from "@/lib/password-reset";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { formatRouteDistance } from "../utils/route-format.utils";
 import { formatDurationFromSeconds } from "../utils/navigation-geometry.utils";
@@ -30,6 +30,8 @@ export function RouteCompletedView({
   onClose,
   onSubmitRating,
 }: RouteCompletedViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -135,13 +137,13 @@ export function RouteCompletedView({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   commentInput: {
     backgroundColor: "rgba(255,255,255,0.08)",
     borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 18,
     borderWidth: 1,
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     marginTop: 20,
     minHeight: 96,
     paddingHorizontal: 16,
@@ -182,7 +184,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   statLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
@@ -194,19 +196,19 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   statValue: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 20,
     fontWeight: "800",
     marginTop: 6,
   },
   subtitle: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 15,
     marginTop: 8,
     textAlign: "center",
   },
   title: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 30,
     fontWeight: "800",
     textAlign: "center",

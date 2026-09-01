@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
 import { getCurrentUserId } from "@/lib/auth";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { formatRelativeTime } from "../services/feed.service";
 import type { FeedComment } from "../types/feed.types";
@@ -70,6 +70,8 @@ function CommentItem({
   onSubmitReply,
   onToggleLike,
 }: CommentItemProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [repliesToggled, setRepliesToggled] = useState(false);
   const replies = comment.replies ?? [];
   const isMine = comment.userId === currentUserId;
@@ -131,7 +133,7 @@ function CommentItem({
                   onPress={() => onToggleLike(comment.id)}
                 >
                   <Ionicons
-                    color={isLiked ? "#EF4444" : "#9CA3AF"}
+                    color={isLiked ? colors.feedback.danger : colors.text.muted}
                     name={isLiked ? "heart" : "heart-outline"}
                     size={13}
                   />
@@ -152,7 +154,7 @@ function CommentItem({
                     style={styles.moreButton}
                     onPress={() => onOpenActions(comment.id)}
                   >
-                    <Ionicons color="#9CA3AF" name="ellipsis-horizontal" size={16} />
+                    <Ionicons color={colors.text.muted} name="ellipsis-horizontal" size={16} />
                   </Pressable>
                 )}
               </View>
@@ -165,7 +167,7 @@ function CommentItem({
                 autoFocus
                 value={replyText}
                 placeholder={`Respondendo a ${comment.userName}...`}
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.placeholder}
                 style={styles.inlineInput}
                 onChangeText={onChangeReplyText}
                 onSubmitEditing={onSubmitReply}
@@ -238,6 +240,8 @@ export function FeedComments({
   onOpenUserProfile,
   onToggleCommentLike,
 }: FeedCommentsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [text, setText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -368,7 +372,7 @@ export function FeedComments({
           value={text}
           onChangeText={setText}
           placeholder="Adicionar comentário..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.placeholder}
           style={styles.input}
           returnKeyType="send"
           editable={!isSubmitting}
@@ -381,7 +385,7 @@ export function FeedComments({
             hitSlop={8}
             onPress={() => void handleSubmit()}
           >
-            <Ionicons name="arrow-up" size={16} color="#FFFFFF" />
+            <Ionicons name="arrow-up" size={16} color={colors.text.inverse} />
           </Pressable>
         ) : null}
       </View>
@@ -406,12 +410,12 @@ export function FeedComments({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   commentBlock: {
     gap: 10,
   },
   commentBubble: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface.disabled,
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -431,13 +435,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   commentText: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 2,
   },
   container: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     gap: 12,
     paddingBottom: 12,
@@ -445,14 +449,14 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   editedLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "500",
     marginTop: 4,
     paddingLeft: 2,
   },
   inlineCancel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
   },
   inlineEditor: {
@@ -462,8 +466,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   inlineInput: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     color: colors.brandDark,
@@ -482,8 +486,8 @@ const styles = StyleSheet.create({
   },
   inputRow: {
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -499,12 +503,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   likeCount: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "500",
   },
   likeCountActive: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
   },
   metaRow: {
     alignItems: "center",
@@ -514,7 +518,7 @@ const styles = StyleSheet.create({
     paddingLeft: 2,
   },
   metaText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
   },
   moreButton: {
@@ -524,7 +528,7 @@ const styles = StyleSheet.create({
     marginLeft: 32,
   },
   replyButton: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "600",
   },
@@ -540,12 +544,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   repliesToggleLine: {
-    backgroundColor: "#D1D5DB",
+    backgroundColor: colors.border.default,
     height: 1,
     width: 24,
   },
   repliesToggleText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "600",
   },

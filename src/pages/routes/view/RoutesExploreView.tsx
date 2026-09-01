@@ -20,7 +20,7 @@ import {
 } from "@/lib/current-profile-store";
 import { useGeolocation } from "@/lib/location";
 import { useNotificationBadge } from "@/pages/notifications";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import {
   CommunityRoutesFiltersSheet,
@@ -34,6 +34,8 @@ import { useNearPublishedRoutes } from "../hooks/useNearPublishedRoutes";
 import type { SavedRoute } from "../types/saved-route.types";
 
 function filterCommunityRoutes(routes: SavedRoute[], filters: CommunityRoutesFilters) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (filters.minRating <= 0) {
     return routes;
   }
@@ -42,6 +44,8 @@ function filterCommunityRoutes(routes: SavedRoute[], filters: CommunityRoutesFil
 }
 
 export function RoutesExploreView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { hasUnread } = useNotificationBadge();
   const { location } = useGeolocation();
@@ -151,7 +155,7 @@ export function RoutesExploreView() {
                 setShowFiltersSheet(true);
               }}
             >
-              <Ionicons color="#6B7280" name="options-outline" size={16} />
+              <Ionicons color={colors.text.secondary} name="options-outline" size={16} />
               <Text style={styles.filtersButtonText}>Filtros</Text>
               {hasAppliedFilters ? (
                 <View style={styles.filtersBadge}>
@@ -293,7 +297,7 @@ export function RoutesExploreView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   activeFilterChip: {
     alignItems: "center",
     backgroundColor: "rgba(200, 247, 99, 0.2)",
@@ -346,8 +350,8 @@ const styles = StyleSheet.create({
   },
   filtersButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -365,7 +369,7 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
   },
   pageSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginTop: 4,
   },

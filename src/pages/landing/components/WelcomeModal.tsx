@@ -8,11 +8,13 @@ import {
 } from "react-native";
 
 import { Logo } from "@/components/Logo";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { WelcomeModalProps } from "../types/landing.types";
 
 export function WelcomeModal({ onContinue, visible }: WelcomeModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal
       animationType="fade"
@@ -44,7 +46,7 @@ export function WelcomeModal({ onContinue, visible }: WelcomeModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.10)",
@@ -73,7 +75,7 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface.primary,
     borderRadius: 32,
     gap: 0,
     paddingHorizontal: 32,
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 32,

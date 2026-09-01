@@ -76,7 +76,7 @@ export function RouteMapPhotosCarouselModal({
       <View style={styles.backdrop}>
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <Pressable style={styles.closeButton} onPress={onClose}>
-            <Ionicons color="#FFFFFF" name="close" size={22} />
+            <Ionicons color={colors.text.inverse} name="close" size={22} />
           </Pressable>
           <View style={styles.headerTextWrap}>
             <Text style={styles.headerTitle}>Fotos no mapa</Text>
@@ -126,7 +126,7 @@ export function RouteMapPhotosCarouselModal({
 
 const styles = StyleSheet.create({
   author: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: "700",
   },

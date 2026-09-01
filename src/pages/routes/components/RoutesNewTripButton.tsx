@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type RoutesNewTripButtonProps = {
   onPress: () => void;
 };
 
 export function RoutesNewTripButton({ onPress }: RoutesNewTripButtonProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>
       <Pressable
@@ -23,7 +25,7 @@ export function RoutesNewTripButton({ onPress }: RoutesNewTripButtonProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,

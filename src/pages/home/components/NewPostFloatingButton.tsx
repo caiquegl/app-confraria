@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, TouchableOpacity } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type NewPostFloatingButtonProps = {
   onPress: () => void;
 };
 
 export function NewPostFloatingButton({ onPress }: NewPostFloatingButtonProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <TouchableOpacity
       activeOpacity={0.75}
@@ -20,7 +22,7 @@ export function NewPostFloatingButton({ onPress }: NewPostFloatingButtonProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,

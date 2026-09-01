@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Animated, Easing, StyleSheet } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useLoading } from "../business/useLoading";
 import { ConfraLogo } from "../components/ConfraLogo";
@@ -9,6 +9,8 @@ import { LoadingBar } from "../components/LoadingBar";
 import type { LoadingViewProps } from "../types/loading.types";
 
 export function LoadingView({ onComplete }: LoadingViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const opacity = useMemo(() => new Animated.Value(0), []);
   const scale = useMemo(() => new Animated.Value(0.92), []);
 
@@ -41,7 +43,7 @@ export function LoadingView({ onComplete }: LoadingViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     alignItems: "center",
   },

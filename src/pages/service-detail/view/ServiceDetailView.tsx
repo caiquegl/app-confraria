@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { ReviewComposer } from "../components/ReviewComposer";
 import { ReviewItem } from "../components/ReviewItem";
@@ -25,6 +25,8 @@ type ServiceDetailViewProps = {
 };
 
 export function ServiceDetailView({ serviceId }: ServiceDetailViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const {
     error,
@@ -114,12 +116,12 @@ export function ServiceDetailView({ serviceId }: ServiceDetailViewProps) {
           >
             <View style={styles.favoriteIcon}>
               <Ionicons
-                color={service.isFavorited ? colors.brandGreen : "#FFFFFF"}
+                color={service.isFavorited ? colors.brandGreen : colors.text.inverse}
                 name="heart"
                 size={20}
               />
               <Ionicons
-                color="#9CA3AF"
+                color={colors.text.muted}
                 name="heart-outline"
                 size={20}
                 style={styles.favoriteOutline}
@@ -185,7 +187,7 @@ export function ServiceDetailView({ serviceId }: ServiceDetailViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   callButton: {
     alignItems: "center",
     alignSelf: "flex-start",
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   category: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     marginTop: 2,
   },
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
   },
   circleButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 999,
     elevation: 3,
     height: 40,
@@ -238,11 +240,11 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   divider: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     height: 1,
   },
   emptyReviews: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     marginTop: 12,
   },
@@ -251,7 +253,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   hero: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     position: "relative",
   },
   heroImage: {
@@ -286,7 +288,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   reviewCount: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
   },
   reviewsSection: {
@@ -299,11 +301,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   screen: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
   },
   stateText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },

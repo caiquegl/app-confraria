@@ -26,7 +26,7 @@ import {
   updateQuickRide,
   type QuickRideDay,
 } from "@/pages/quick-rides/services/quick-rides.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type QuickRideEditViewProps = {
   onBack: () => void;
@@ -35,6 +35,8 @@ type QuickRideEditViewProps = {
 };
 
 export function QuickRideEditView({ onBack, onSaved, quickRideId }: QuickRideEditViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [title, setTitle] = useState("");
   const [origin, setOrigin] = useState<EventPlaceReference | null>(null);
@@ -201,7 +203,7 @@ export function QuickRideEditView({ onBack, onSaved, quickRideId }: QuickRideEdi
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   centered: {
     alignItems: "center",
     flex: 1,
@@ -214,7 +216,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   errorText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },
@@ -222,16 +224,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footer: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -245,7 +247,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   screen: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
   },
   submitButton: {

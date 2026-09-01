@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors, radii, spacing, typography } from "@/theme";
+import { type AppColors, radii, spacing, typography, useTheme, useThemedStyles } from "@/theme";
 
 export type EmptyStateAction = {
   accessibilityLabel?: string;
@@ -30,6 +30,8 @@ export function EmptyState({
   style,
   title,
 }: EmptyStateProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isCard = layout === "card";
   const actionVariant = action?.variant ?? (isCard ? "outline" : "default");
   const secondaryVariant = secondaryAction?.variant ?? "outline";
@@ -83,7 +85,7 @@ export function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
     alignItems: "center",
     backgroundColor: colors.surface.primary,

@@ -12,7 +12,7 @@ import type {
   RouteDaySuggestionsResponse,
   RouteStopSuggestion,
 } from "@/lib/places";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { RouteDraftDay, RoutePlace } from "../types/route-create.types";
 import type { RouteStyle } from "../types/route-style";
@@ -99,6 +99,8 @@ function WaypointRowView({
   onChange: (place: PlaceReference | null) => void;
   onRemove: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.fieldBlock, isDragging && styles.fieldBlockDragging]}>
       <View style={styles.stopHeader}>
@@ -110,7 +112,7 @@ function WaypointRowView({
             hitSlop={8}
             onPress={onRemove}
           >
-            <Ionicons color="#9CA3AF" name="close" size={16} />
+            <Ionicons color={colors.text.muted} name="close" size={16} />
           </Pressable>
         ) : null}
       </View>
@@ -136,7 +138,7 @@ function WaypointRowView({
               drag();
             }}
           >
-            <Ionicons color="#9CA3AF" name="menu" size={20} />
+            <Ionicons color={colors.text.muted} name="menu" size={20} />
           </Pressable>
         ) : null}
       </View>
@@ -175,7 +177,9 @@ export function RouteDayCard({
   routeStyle,
   width,
 }: RouteDayCardProps) {
-  const dayColor = getDayColor(dayIndex);
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const dayColor = getDayColor(dayIndex, colors);
   const derivedOriginLabel = getDayOriginLabel(days, dayIndex);
   const [isReordering, setIsReordering] = useState(false);
 
@@ -398,7 +402,7 @@ export function RouteDayCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addStopButton: {
     alignItems: "center",
     flexDirection: "row",
@@ -411,7 +415,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   body: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     gap: 16,
     marginTop: 16,
@@ -421,8 +425,8 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     padding: 16,
@@ -454,7 +458,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   daySubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginTop: 4,
   },
@@ -465,14 +469,14 @@ const styles = StyleSheet.create({
   },
   dragHandle: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 12,
     height: 44,
     justifyContent: "center",
     width: 40,
   },
   dragHandleActive: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
   },
   fieldBlock: {
     gap: 8,
@@ -482,13 +486,13 @@ const styles = StyleSheet.create({
     opacity: 0.95,
   },
   fieldLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
   },
   fixedOrigin: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     minHeight: 48,
@@ -518,7 +522,7 @@ const styles = StyleSheet.create({
   },
   overnightButton: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     flexDirection: "row",
     gap: 6,
@@ -526,10 +530,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   overnightButtonActive: {
-    backgroundColor: "#EEF4FF",
+    backgroundColor: colors.surface.overnight,
   },
   overnightButtonText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -538,13 +542,13 @@ const styles = StyleSheet.create({
   },
   removeDayButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   removeDayText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     fontWeight: "700",
   },

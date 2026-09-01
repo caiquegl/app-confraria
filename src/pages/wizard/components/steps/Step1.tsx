@@ -6,6 +6,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/Button";
 import { InputField } from "@/components/InputField";
 import { formatCpf, onlyDigits } from "@/lib/cpf";
+import { type AppColors, useThemedStyles } from "@/theme";
 
 import { WizardLayout } from "../WizardLayout";
 import { checkCpfExists, checkEmailExists } from "../../services/wizard.service";
@@ -13,6 +14,7 @@ import { step1Schema, type Step1Data, type StepProps } from "../../types/wizard.
 
 export function Step1({ defaultValues, onBack, onNext }: StepProps) {
   const [isChecking, setIsChecking] = useState(false);
+  const styles = useThemedStyles(createStyles);
 
   const {
     control,
@@ -139,21 +141,22 @@ export function Step1({ defaultValues, onBack, onNext }: StepProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  actions: {
-    gap: 12,
-    marginTop: 32,
-  },
-  fields: {
-    gap: 16,
-  },
-  fullWidth: {
-    width: "100%",
-  },
-  hint: {
-    color: "#6B7280",
-    fontSize: 12,
-    marginLeft: 4,
-    marginTop: 6,
-  },
-});
+const createStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    actions: {
+      gap: 12,
+      marginTop: 32,
+    },
+    fields: {
+      gap: 16,
+    },
+    fullWidth: {
+      width: "100%",
+    },
+    hint: {
+      color: colors.text.secondary,
+      fontSize: 12,
+      marginLeft: 4,
+      marginTop: 6,
+    },
+  });

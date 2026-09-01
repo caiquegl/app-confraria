@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { PublicProfileEvent } from "../types/public-profile-events.types";
 
@@ -22,6 +22,8 @@ export function PublicProfileEventCard({
   onPress,
   onToggleFavorite,
 }: PublicProfileEventCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -74,7 +76,7 @@ export function PublicProfileEventCard({
 
         <View style={styles.eventFooter}>
           <View style={styles.ratingRow}>
-            <Ionicons color="#FB923C" name="star" size={12} />
+            <Ionicons color={colors.rating.accent} name="star" size={12} />
             <Text style={styles.ratingText}>{event.rating.toFixed(1).replace(".", ",")}</Text>
             <Text style={styles.reviewText}>({event.reviews})</Text>
           </View>
@@ -87,16 +89,16 @@ export function PublicProfileEventCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   eventCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 26,
     borderWidth: 1,
     elevation: 1,
     overflow: "hidden",
     padding: 8,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 1, width: 0 },
     shadowOpacity: 0.06,
     shadowRadius: 2,
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   eventDate: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     flexShrink: 1,
     fontSize: 12,
     fontWeight: "600",
@@ -140,20 +142,20 @@ const styles = StyleSheet.create({
   imageWrap: {
     aspectRatio: 4 / 3,
     width: "100%",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 20,
     marginBottom: 12,
     overflow: "hidden",
     position: "relative",
   },
   organizerAvatar: {
-    backgroundColor: "#1F2937",
+    backgroundColor: colors.text.emphasis,
     borderRadius: 18,
     height: 36,
     width: 36,
   },
   organizerName: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
     marginTop: 2,
@@ -173,12 +175,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    color: "#FB923C",
+    color: colors.rating.accent,
     fontSize: 12,
     fontWeight: "900",
   },
   reviewText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "500",
   },

@@ -9,9 +9,11 @@ import {
   type ForceUpdateDecision,
 } from "@/lib/force-update";
 import { checkAndDownloadUpdate } from "@/lib/updates";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 export function ForceUpdateGate() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [decision, setDecision] = useState<ForceUpdateDecision | null>(null);
 
   const checkPolicy = useCallback(async () => {
@@ -82,7 +84,7 @@ export function ForceUpdateGate() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     alignItems: "center",
     backgroundColor: "rgba(28, 33, 38, 0.72)",
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 24,
     gap: 16,
     maxWidth: 400,
@@ -99,7 +101,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   message: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 15,
     lineHeight: 22,
   },

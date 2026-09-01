@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type AppTopBarProps = {
   hasUnreadNotifications?: boolean;
@@ -34,11 +34,13 @@ export function AppTopBar({
   userAvatar,
   userName,
 }: AppTopBarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.container, { paddingTop: topInset }]}>
       <View style={styles.topRow}>
         <View style={styles.locationRow}>
-          <Ionicons color="#6B7280" name="location-outline" size={14} />
+          <Ionicons color={colors.text.secondary} name="location-outline" size={14} />
           <Text numberOfLines={1} style={styles.locationText}>
             {locationLabel}
           </Text>
@@ -50,7 +52,7 @@ export function AppTopBar({
           style={styles.notificationButton}
           onPress={onOpenNotifications}
         >
-          <Ionicons color="#6B7280" name="notifications-outline" size={20} />
+          <Ionicons color={colors.text.secondary} name="notifications-outline" size={20} />
           {hasUnreadNotifications ? <View style={styles.unreadDot} /> : null}
         </Pressable>
       </View>
@@ -68,10 +70,10 @@ export function AppTopBar({
         ) : null}
 
         <View style={styles.searchWrap}>
-          <Ionicons color="#9CA3AF" name="search" size={20} style={styles.searchIcon} />
+          <Ionicons color={colors.text.muted} name="search" size={20} style={styles.searchIcon} />
           <TextInput
             placeholder={searchPlaceholder}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.text.placeholder}
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={onSearchChange}
@@ -91,11 +93,11 @@ export function AppTopBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 48,
@@ -103,11 +105,11 @@ const styles = StyleSheet.create({
     width: 48,
   },
   avatarButton: {
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     overflow: "hidden",
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -125,7 +127,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   locationText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flexShrink: 1,
     fontSize: 13,
     fontWeight: "600",
@@ -159,8 +161,8 @@ const styles = StyleSheet.create({
   },
   searchWrap: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flex: 1,

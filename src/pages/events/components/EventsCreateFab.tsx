@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventsCreateFabProps = {
   onPress: () => void;
 };
 
 export function EventsCreateFab({ onPress }: EventsCreateFabProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       accessibilityLabel="Criar"
@@ -20,7 +22,7 @@ export function EventsCreateFab({ onPress }: EventsCreateFabProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,

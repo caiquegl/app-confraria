@@ -1,7 +1,7 @@
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
 import { ErrorState } from "@/components/ErrorState";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventsEmptyFiltersCardProps = {
   isLoading?: boolean;
@@ -15,6 +15,8 @@ export function EventsEmptyFiltersCard({
   onRetry,
   retrying = false,
 }: EventsEmptyFiltersCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (isLoading) {
     return (
       <View style={styles.loadingWrap}>
@@ -35,7 +37,7 @@ export function EventsEmptyFiltersCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   errorCard: {
     marginHorizontal: 16,
     marginTop: 20,

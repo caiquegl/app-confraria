@@ -28,7 +28,7 @@ import {
   toggleStoryLike,
 } from "@/pages/stories/services/stories.service";
 import type { StoryGroup, StoryItem } from "@/pages/stories/types/stories.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { usePublicProfile } from "../business/usePublicProfile";
 import { usePublicProfileGridEvents } from "../business/usePublicProfileGridEvents";
@@ -58,6 +58,8 @@ export function PublicProfileView({
   refreshKey = 0,
   userId,
 }: PublicProfileViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [isMessageLoading, setIsMessageLoading] = useState(false);
   const [profileStoryGroup, setProfileStoryGroup] = useState<StoryGroup | null>(null);
@@ -333,7 +335,7 @@ export function PublicProfileView({
             style={styles.settingsButton}
             onPress={onOpenSettings}
           >
-            <Ionicons color="#6B7280" name="settings-outline" size={20} />
+            <Ionicons color={colors.text.secondary} name="settings-outline" size={20} />
           </Pressable>
         </View>
       ) : (
@@ -398,7 +400,7 @@ export function PublicProfileView({
               </View>
               {profile.isVerified && (
                 <View style={styles.verifiedBadge}>
-                  <MaterialCommunityIcons color="#FFFFFF" name="motorbike" size={15} />
+                  <MaterialCommunityIcons color={colors.text.inverse} name="motorbike" size={15} />
                 </View>
               )}
             </Pressable>
@@ -409,13 +411,13 @@ export function PublicProfileView({
             ) : null}
             {profile.email ? (
               <View style={styles.contactRow}>
-                <Ionicons color="#6B7280" name="mail-outline" size={14} />
+                <Ionicons color={colors.text.secondary} name="mail-outline" size={14} />
                 <Text style={styles.contactText}>{profile.email}</Text>
               </View>
             ) : null}
             {profile.phone ? (
               <View style={styles.contactRow}>
-                <Ionicons color="#6B7280" name="call-outline" size={14} />
+                <Ionicons color={colors.text.secondary} name="call-outline" size={14} />
                 <Text style={styles.contactText}>{formatPhone(profile.phone)}</Text>
               </View>
             ) : null}
@@ -488,7 +490,7 @@ export function PublicProfileView({
                 onPress={() => void handleOpenMessage()}
               >
                 <Ionicons
-                  color={profile.isFollowing ? colors.brandDark : "#9CA3AF"}
+                  color={profile.isFollowing ? colors.brandDark : colors.text.muted}
                   name="chatbubble-outline"
                   size={16}
                 />
@@ -602,9 +604,11 @@ export function PublicProfileView({
 }
 
 function PrivateProfileNotice() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.privateNotice}>
-      <Ionicons color="#9CA3AF" name="lock-closed-outline" size={34} />
+      <Ionicons color={colors.text.muted} name="lock-closed-outline" size={34} />
       <Text style={styles.privateNoticeTitle}>Esta conta é privada</Text>
       <Text style={styles.privateNoticeText}>
         Siga este perfil para ver posts, lugares e eventos.
@@ -628,6 +632,7 @@ function ProfileStatsBar({
   onEventsPress: () => void;
   onGaragePress: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.shortcutWrap}>
       <View style={styles.shortcutCard}>
@@ -667,6 +672,8 @@ function ProfileShortcut({
   value: number;
   onPress?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const content = (
     <>
       <Ionicons color={colors.brandPrimary} name={icon} size={18} />
@@ -695,6 +702,7 @@ function ProfileStat({
   value: number;
   onPress?: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const Content = (
     <>
       <Text style={styles.statValue}>{value}</Text>
@@ -731,7 +739,7 @@ function formatPhone(phone: string): string {
   return phone;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionButton: {
     alignItems: "center",
     borderRadius: 18,
@@ -750,7 +758,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   actionTextDisabled: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
   },
   actionsRow: {
     flexDirection: "row",
@@ -775,8 +783,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -787,7 +795,7 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   bio: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 13,
     lineHeight: 20,
     marginTop: 10,
@@ -814,15 +822,15 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   contactText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
   },
   followButton: {
     backgroundColor: colors.brandGreen,
   },
   followingButton: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderWidth: 1,
   },
   header: {
@@ -841,17 +849,17 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   location: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginTop: 4,
   },
   messageButton: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderWidth: 1,
   },
   messageButtonDisabled: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     opacity: 0.75,
   },
   name: {
@@ -885,7 +893,7 @@ const styles = StyleSheet.create({
     paddingVertical: 34,
   },
   privateNoticeText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 19,
     marginTop: 6,
@@ -902,8 +910,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   shortcutCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -911,7 +919,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   shortcutDivider: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     width: 1,
   },
   shortcutItem: {
@@ -922,7 +930,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   shortcutLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -938,8 +946,8 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 48,
@@ -951,7 +959,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },

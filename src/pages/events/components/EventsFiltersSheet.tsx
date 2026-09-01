@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { BRAZILIAN_STATES } from "../constants/brazilian-states";
 import {
@@ -32,6 +32,8 @@ function FilterPill({
   label: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -53,6 +55,8 @@ export function EventsFiltersSheet({
   onResetDraft,
   visible,
 }: EventsFiltersSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const scrollMaxHeight = windowHeight * 0.55;
@@ -67,7 +71,7 @@ export function EventsFiltersSheet({
               <Text style={styles.title}>Filtros de eventos</Text>
             </View>
             <Pressable accessibilityRole="button" style={styles.closeButton} onPress={onClose}>
-              <Ionicons color="#9CA3AF" name="close" size={18} />
+              <Ionicons color={colors.text.muted} name="close" size={18} />
             </Pressable>
           </View>
 
@@ -148,7 +152,7 @@ export function EventsFiltersSheet({
 
 export { DEFAULT_EVENTS_FILTERS };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   applyButton: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,
@@ -162,13 +166,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   eyebrow: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 1.2,
@@ -210,8 +214,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pill: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -222,7 +226,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   pillText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -236,7 +240,7 @@ const styles = StyleSheet.create({
   },
   resetButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flex: 1,
@@ -255,7 +259,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionHint: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
   },
   sectionTitle: {
@@ -264,7 +268,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,

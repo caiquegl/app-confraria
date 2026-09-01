@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { MapMarkerPoint } from "../types/route-create.types";
 
@@ -10,6 +10,8 @@ type RouteMapMarkerProps = {
 };
 
 function RouteMapMarkerComponent({ marker }: RouteMapMarkerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isStop = marker.kind === "stop";
   const isDestination = marker.kind === "day-destination";
 
@@ -39,21 +41,21 @@ function RouteMapMarkerComponent({ marker }: RouteMapMarkerProps) {
 
 export const RouteMapMarker = memo(RouteMapMarkerComponent);
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   pin: {
     alignItems: "center",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     justifyContent: "center",
-    shadowColor: "#1C2126",
+    shadowColor: colors.text.primary,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.14,
     shadowRadius: 4,
   },
   pinDestination: {
     backgroundColor: colors.brandDark,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     height: 34,
     width: 34,
   },
@@ -63,12 +65,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   pinLabelDestination: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 10,
     marginTop: -1,
   },
   pinLabelStop: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 10,
     fontWeight: "700",
   },
@@ -80,8 +82,8 @@ const styles = StyleSheet.create({
     width: 34,
   },
   pinStop: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#D1D5DB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.default,
     height: 26,
     width: 26,
   },

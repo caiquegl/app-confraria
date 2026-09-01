@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 import { getCurrentUserId, removeToken } from "@/lib/auth";
@@ -23,7 +23,7 @@ import {
   fetchCurvePreferences,
 } from "@/pages/wizard/services/wizard.service";
 import type { BikeCategory, CurvePreference } from "@/pages/wizard/types/wizard.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type SettingsCard = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -33,6 +33,8 @@ type SettingsCard = {
 };
 
 export default function ProfileSettingsScreen() {
+  const { colors, isDark, setColorScheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const updateInfo = getUpdateInfo();
   const easUpdateLabel = isAppliedEasUpdate(updateInfo.label) ? updateInfo.label : null;
   const [bikeCategories, setBikeCategories] = useState<BikeCategory[]>([]);
@@ -275,12 +277,28 @@ export default function ProfileSettingsScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons color={colors.brandDark} name="chevron-back" size={22} />
+          <Ionicons color={colors.text.primary} name="chevron-back" size={22} />
         </TouchableOpacity>
         <Text style={styles.title}>Configurações</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.appearanceCard}>
+          <View style={styles.appearanceTextWrap}>
+            <Text style={styles.appearanceTitle}>Tema escuro</Text>
+            <Text style={styles.appearanceSubtitle}>
+              Ajusta as cores do app para o modo noturno.
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="Ativar tema escuro"
+            value={isDark}
+            onValueChange={(value) => {
+              void setColorScheme(value ? "dark" : "light");
+            }}
+          />
+        </View>
+
         <View style={styles.grid}>
           {cards.map((card) => (
             <TouchableOpacity
@@ -329,8 +347,8 @@ export default function ProfileSettingsScreen() {
           onPress={() => void handleLogout()}
           style={{
             alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderColor: "#EF4444",
+            backgroundColor: colors.surface.primary,
+            borderColor: colors.feedback.danger,
             borderRadius: 16,
             borderWidth: 1,
             flexDirection: "row",
@@ -340,8 +358,8 @@ export default function ProfileSettingsScreen() {
             paddingVertical: 16,
           }}
         >
-          <Ionicons color="#EF4444" name="log-out-outline" size={20} />
-          <Text style={{ color: "#EF4444", fontSize: 16, fontWeight: "600" }}>Sair</Text>
+          <Ionicons color={colors.feedback.danger} name="log-out-outline" size={20} />
+          <Text style={{ color: colors.feedback.danger, fontSize: 16, fontWeight: "600" }}>Sair</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -391,11 +409,36 @@ function isAppliedEasUpdate(label: string) {
   return !["Build nativa", "Dev (sem OTA)", "OTA desabilitado"].includes(label);
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
+  appearanceCard: {
+    alignItems: "center",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+    marginBottom: 16,
+    padding: 16,
+  },
+  appearanceSubtitle: {
+    color: colors.text.secondary,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  appearanceTextWrap: {
+    flex: 1,
+  },
+  appearanceTitle: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: "700",
+  },
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -403,8 +446,8 @@ const styles = StyleSheet.create({
     width: 40,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 128,
@@ -413,7 +456,7 @@ const styles = StyleSheet.create({
     width: "48%",
   },
   cardText: {
-    color: colors.brandDark,
+    color: colors.text.primary,
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 18,
@@ -438,7 +481,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: colors.brandGray,
+    backgroundColor: colors.surface.canvas,
     flexDirection: "row",
     gap: 12,
     paddingBottom: 10,
@@ -446,11 +489,11 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   screen: {
-    backgroundColor: colors.brandGray,
+    backgroundColor: colors.surface.canvas,
     flex: 1,
   },
   title: {
-    color: colors.brandDark,
+    color: colors.text.primary,
     fontSize: 18,
     fontWeight: "800",
   },
@@ -460,7 +503,7 @@ const styles = StyleSheet.create({
     paddingTop: 32,
   },
   versionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     lineHeight: 18,

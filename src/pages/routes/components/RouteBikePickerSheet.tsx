@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
 import type { UserBike } from "@/pages/bikes/types/bikes.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const GARAGE_ROUTE = "/profile/bikes" as Href;
 
@@ -36,6 +36,8 @@ export function RouteBikePickerSheet({
   onConfirm,
   visible,
 }: RouteBikePickerSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [selectedId, setSelectedId] = useState<string | undefined>(
     initialBikeId ?? bikes.find((bike) => bike.isMainBike)?.id ?? bikes[0]?.id,
@@ -70,7 +72,7 @@ export function RouteBikePickerSheet({
               style={styles.closeButton}
               onPress={onClose}
             >
-              <Ionicons color="#9CA3AF" name="close" size={18} />
+              <Ionicons color={colors.text.muted} name="close" size={18} />
             </Pressable>
           </View>
 
@@ -123,7 +125,7 @@ export function RouteBikePickerSheet({
                         />
                       ) : (
                         <View style={styles.bikeImageFallback}>
-                          <Ionicons color="#9CA3AF" name="bicycle-outline" size={22} />
+                          <Ionicons color={colors.text.muted} name="bicycle-outline" size={22} />
                         </View>
                       )}
 
@@ -170,7 +172,7 @@ export function RouteBikePickerSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     backgroundColor: "rgba(0, 0, 0, 0.4)",
     flex: 1,
@@ -178,8 +180,8 @@ const styles = StyleSheet.create({
   },
   bikeCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
   },
   bikeImageFallback: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 16,
     height: 56,
     justifyContent: "center",
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   bikeMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
@@ -219,7 +221,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     height: 36,
@@ -235,7 +237,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   emptyCard: {
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 22,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -244,7 +246,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   emptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 4,
     textAlign: "center",
@@ -257,7 +259,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 4,
     marginBottom: 16,
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
     maxHeight: 360,
   },
   loadingText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -299,7 +301,7 @@ const styles = StyleSheet.create({
     width: 28,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     maxHeight: "88%",
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },

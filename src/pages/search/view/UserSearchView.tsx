@@ -10,13 +10,15 @@ import {
 } from "react-native";
 
 import { ErrorState } from "@/components/ErrorState";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useUserSearch } from "../business/useUserSearch";
 import { SearchUserCard } from "../components/SearchUserCard";
 import type { UserSearchViewProps } from "../types/search.types";
 
 export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { error, hasSearched, isRetrying, isSearching, results, retry, searchQuery, setSearchQuery } =
     useUserSearch();
 
@@ -33,12 +35,12 @@ export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
       </View>
 
       <View style={styles.searchWrap}>
-        <Ionicons color="#9CA3AF" name="search" size={17} />
+        <Ionicons color={colors.text.muted} name="search" size={17} />
         <TextInput
           autoCapitalize="none"
           autoCorrect={false}
           placeholder="Buscar por nickname ou e-mail"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.placeholder}
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -60,12 +62,12 @@ export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
         />
       ) : showEmptyHint ? (
         <View style={styles.centerState}>
-          <Ionicons color="#D1D5DB" name="search-outline" size={42} />
+          <Ionicons color={colors.border.default} name="search-outline" size={42} />
           <Text style={styles.hintText}>Digite um nickname ou e-mail</Text>
         </View>
       ) : showNoResults ? (
         <View style={styles.centerState}>
-          <Ionicons color="#D1D5DB" name="person-outline" size={42} />
+          <Ionicons color={colors.border.default} name="person-outline" size={42} />
           <Text style={styles.hintText}>Nenhum perfil encontrado</Text>
         </View>
       ) : (
@@ -83,11 +85,11 @@ export function UserSearchView({ onBack, onOpenProfile }: UserSearchViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   hintText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 14,
     textAlign: "center",
   },
@@ -132,15 +134,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchInput: {
-    color: "#111827",
+    color: colors.text.emphasis,
     flex: 1,
     fontSize: 15,
     padding: 0,
   },
   searchWrap: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",

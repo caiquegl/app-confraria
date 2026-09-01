@@ -4,7 +4,7 @@ import Toast from "react-native-toast-message";
 import { Button } from "@/components/Button";
 import { useApiEnvironment } from "@/hooks/useApiEnvironment";
 import { ConfraLogo } from "@/pages/loading";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useLanding } from "../business/useLanding";
 import { SocialButtons } from "../components/SocialButtons";
@@ -12,6 +12,8 @@ import { WelcomeModal } from "../components/WelcomeModal";
 import type { LandingViewProps } from "../types/landing.types";
 
 export function LandingView({ onLogin, onRegister }: LandingViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { handleModalContinue, isReady, modalVisible } = useLanding();
   const { toggleEnvironment } = useApiEnvironment();
 
@@ -78,7 +80,7 @@ export function LandingView({ onLogin, onRegister }: LandingViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actions: {
     gap: 12,
   },

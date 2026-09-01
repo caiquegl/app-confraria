@@ -1,6 +1,8 @@
 import type { ComponentProps } from "react";
 import type { Ionicons } from "@expo/vector-icons";
 
+import type { AppColors } from "@/theme";
+
 export type RouteReportType =
   | "traffic"
   | "police"
@@ -21,21 +23,31 @@ export type RouteReportTypeConfig = {
 
 // Os 7 tipos ativos nesta entrega (CON-32). Demais tipos (combustivel, sos,
 // local, debug, via interditada) ficam para depois.
-export const ROUTE_REPORT_TYPES: RouteReportTypeConfig[] = [
-  { type: "traffic", label: "Trânsito", icon: "car", color: "#F59E0B" },
-  { type: "police", label: "Polícia", icon: "shield-half", color: "#2563EB" },
-  { type: "accident", label: "Acidente", icon: "warning", color: "#EF4444" },
-  { type: "hazard", label: "Perigo", icon: "alert-circle", color: "#F97316" },
-  { type: "lane_closed", label: "Faixa bloqueada", icon: "remove-circle", color: "#DC2626" },
-  { type: "map_error", label: "Erro no mapa", icon: "map", color: "#6B7280" },
-  { type: "bad_weather", label: "Tempo ruim", icon: "rainy", color: "#0EA5E9" },
-];
+export function getRouteReportTypes(colors: AppColors): RouteReportTypeConfig[] {
+  return [
+    { type: "traffic", label: "Trânsito", icon: "car", color: colors.rating.star },
+    { type: "police", label: "Polícia", icon: "shield-half", color: colors.routes.pinPolice },
+    { type: "accident", label: "Acidente", icon: "warning", color: colors.feedback.danger },
+    { type: "hazard", label: "Perigo", icon: "alert-circle", color: colors.routes.pinOrange },
+    {
+      type: "lane_closed",
+      label: "Faixa bloqueada",
+      icon: "remove-circle",
+      color: colors.feedback.dangerStrong,
+    },
+    { type: "map_error", label: "Erro no mapa", icon: "map", color: colors.text.secondary },
+    { type: "bad_weather", label: "Tempo ruim", icon: "rainy", color: colors.routes.pinSky },
+  ];
+}
 
-export const ROUTE_REPORT_TYPE_BY_KEY: Record<RouteReportType, RouteReportTypeConfig> =
-  ROUTE_REPORT_TYPES.reduce(
+export function getRouteReportTypeByKey(
+  colors: AppColors,
+): Record<RouteReportType, RouteReportTypeConfig> {
+  return getRouteReportTypes(colors).reduce(
     (acc, item) => {
       acc[item.type] = item;
       return acc;
     },
     {} as Record<RouteReportType, RouteReportTypeConfig>,
   );
+}

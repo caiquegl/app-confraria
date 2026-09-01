@@ -12,6 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useEnvironmentBannerInset } from "@/components/EnvironmentBanner";
+import { type AppColors, useThemedStyles } from "@/theme";
 
 import type { SheetState } from "../types/route-create.types";
 import {
@@ -69,6 +70,7 @@ export function RoutePlannerSheet({
   sheetState,
   stepper,
 }: RoutePlannerSheetProps) {
+  const styles = useThemedStyles(createStyles);
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const bannerInset = useEnvironmentBannerInset();
@@ -216,56 +218,57 @@ export function RoutePlannerSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  body: {
-    flex: 1,
-    minHeight: 0,
-  },
-  content: {
-    flex: 1,
-    minHeight: 0,
-  },
-  footer: {
-    backgroundColor: "rgba(255,255,255,0.94)",
-    borderTopColor: "#F3F4F6",
-    borderTopWidth: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
-  handle: {
-    backgroundColor: "#D1D5DB",
-    borderRadius: 999,
-    height: 4,
-    width: 40,
-  },
-  handleArea: {
-    alignItems: "center",
-    borderBottomColor: "#F3F4F6",
-    borderBottomWidth: 1,
-    paddingBottom: 12,
-    paddingTop: 12,
-  },
-  sheet: {
-    backgroundColor: "rgba(255,255,255,0.94)",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    bottom: 0,
-    elevation: 2000,
-    left: 0,
-    overflow: "hidden",
-    position: "absolute",
-    right: 0,
-    shadowColor: "#1C2126",
-    shadowOffset: { height: -8, width: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    zIndex: 2000,
-  },
-  stepperWrap: {
-    borderBottomColor: "#F3F4F6",
-    borderBottomWidth: 1,
-    paddingBottom: 8,
-    paddingHorizontal: 24,
-    paddingTop: 4,
-  },
-});
+const createStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    body: {
+      flex: 1,
+      minHeight: 0,
+    },
+    content: {
+      flex: 1,
+      minHeight: 0,
+    },
+    footer: {
+      backgroundColor: colors.map.frosted,
+      borderTopColor: colors.border.subtle,
+      borderTopWidth: 1,
+      paddingHorizontal: 24,
+      paddingTop: 16,
+    },
+    handle: {
+      backgroundColor: colors.border.default,
+      borderRadius: 999,
+      height: 4,
+      width: 40,
+    },
+    handleArea: {
+      alignItems: "center",
+      borderBottomColor: colors.border.subtle,
+      borderBottomWidth: 1,
+      paddingBottom: 12,
+      paddingTop: 12,
+    },
+    sheet: {
+      backgroundColor: colors.map.frosted,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      bottom: 0,
+      elevation: 2000,
+      left: 0,
+      overflow: "hidden",
+      position: "absolute",
+      right: 0,
+      shadowColor: colors.text.primary,
+      shadowOffset: { height: -8, width: 0 },
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
+      zIndex: 2000,
+    },
+    stepperWrap: {
+      borderBottomColor: colors.border.subtle,
+      borderBottomWidth: 1,
+      paddingBottom: 8,
+      paddingHorizontal: 24,
+      paddingTop: 4,
+    },
+  });

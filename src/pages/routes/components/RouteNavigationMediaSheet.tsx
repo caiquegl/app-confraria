@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 export type RouteNavigationMediaAction = "story" | "feed" | "map_pin";
 
@@ -17,6 +17,8 @@ export function RouteNavigationMediaSheet({
   onSelect,
   visible,
 }: RouteNavigationMediaSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -45,7 +47,7 @@ export function RouteNavigationMediaSheet({
                 Publica no seu story, como no feed da Confraria
               </Text>
             </View>
-            <Ionicons color="#9CA3AF" name="chevron-forward" size={18} />
+            <Ionicons color={colors.text.muted} name="chevron-forward" size={18} />
           </Pressable>
 
           <Pressable
@@ -62,7 +64,7 @@ export function RouteNavigationMediaSheet({
                 Monta um post com foto ou vídeo no seu feed
               </Text>
             </View>
-            <Ionicons color="#9CA3AF" name="chevron-forward" size={18} />
+            <Ionicons color={colors.text.muted} name="chevron-forward" size={18} />
           </Pressable>
 
           <Pressable
@@ -71,7 +73,7 @@ export function RouteNavigationMediaSheet({
             onPress={() => onSelect("map_pin")}
           >
             <View style={[styles.iconWrap, styles.mapIconWrap]}>
-              <Ionicons color="#FFFFFF" name="location-outline" size={18} />
+              <Ionicons color={colors.text.inverse} name="location-outline" size={18} />
             </View>
             <View style={styles.optionCopy}>
               <Text style={styles.optionTitle}>Marcar no mapa</Text>
@@ -79,7 +81,7 @@ export function RouteNavigationMediaSheet({
                 Salva um ponto neste trajeto
               </Text>
             </View>
-            <Ionicons color="#9CA3AF" name="chevron-forward" size={18} />
+            <Ionicons color={colors.text.muted} name="chevron-forward" size={18} />
           </Pressable>
 
           <Pressable
@@ -89,7 +91,7 @@ export function RouteNavigationMediaSheet({
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Ionicons color="#9CA3AF" name="close" size={20} />
+            <Ionicons color={colors.text.muted} name="close" size={20} />
           </Pressable>
         </Pressable>
       </Pressable>
@@ -97,9 +99,9 @@ export function RouteNavigationMediaSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.overlay.scrimSoft,
     flex: 1,
     justifyContent: "flex-end",
   },
@@ -109,11 +111,11 @@ const styles = StyleSheet.create({
     top: 12,
   },
   feedIconWrap: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 4,
     marginBottom: 16,
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   optionDescription: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F7D8",
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginBottom: 12,
   },

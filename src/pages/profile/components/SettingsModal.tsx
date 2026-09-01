@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/Button";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { getUpdateInfo } from "@/lib/updates";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type SettingsModalProps = {
   visible: boolean;
@@ -40,6 +40,8 @@ export function SettingsModal({
   onLogout,
   onSavePrivacy,
 }: SettingsModalProps) {
+  const { colors, isDark, setColorScheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const updateInfo = getUpdateInfo();
   const [isPublic, setIsPublic] = useState(true);
@@ -107,11 +109,25 @@ export function SettingsModal({
           <View style={styles.header}>
             <Text style={styles.title}>Configurações</Text>
             <Pressable accessibilityLabel="Fechar" style={styles.closeButton} onPress={onClose}>
-              <Ionicons color="#9CA3AF" name="close" size={24} />
+              <Ionicons color={colors.text.muted} name="close" size={24} />
             </Pressable>
           </View>
 
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Aparência</Text>
+              <SettingSwitch
+                label="Tema escuro"
+                value={isDark}
+                onValueChange={(value) => {
+                  void setColorScheme(value ? "dark" : "light");
+                }}
+              />
+              <Text style={styles.helperText}>
+                Ajusta as cores do app para o modo noturno.
+              </Text>
+            </View>
+
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Privacidade</Text>
               <SettingSwitch
@@ -231,6 +247,8 @@ function SettingSwitch({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.switchRow, bordered && styles.switchRowBordered]}>
       <Text style={styles.switchLabel}>{label}</Text>
@@ -246,6 +264,7 @@ function SettingSwitch({
 }
 
 function MenuButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={styles.menuButton} onPress={onPress}>
       <Text style={styles.menuButtonText}>{label}</Text>
@@ -254,6 +273,7 @@ function MenuButton({ label, onPress }: { label: string; onPress: () => void }) 
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -273,6 +293,7 @@ function ChangePasswordDialog({
   onCancel: () => void;
   onSubmit: (password: string) => Promise<void>;
 }) {
+  const styles = useThemedStyles(createStyles);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -348,11 +369,13 @@ function PasswordInput({
   onChangeText: (value: string) => void;
   onToggleVisible: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.passwordInputWrap, error && styles.passwordInputError]}>
       <TextInput
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.text.placeholder}
         secureTextEntry={!visible}
         style={styles.passwordInput}
         value={value}
@@ -363,13 +386,13 @@ function PasswordInput({
         hitSlop={8}
         onPress={onToggleVisible}
       >
-        <Ionicons color="#9CA3AF" name={visible ? "eye-off-outline" : "eye-outline"} size={20} />
+        <Ionicons color={colors.text.muted} name={visible ? "eye-off-outline" : "eye-outline"} size={20} />
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionButton: {
     flex: 1,
   },
@@ -393,7 +416,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   dangerButton: {
-    borderColor: "#EF4444",
+    borderColor: colors.feedback.danger,
     borderRadius: 14,
     borderWidth: 2,
     paddingHorizontal: 16,
@@ -405,14 +428,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dangerButtonSoft: {
-    borderColor: "#FECACA",
+    borderColor: colors.feedback.dangerBorder,
     borderRadius: 14,
     borderWidth: 2,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   dangerButtonText: {
-    color: "#DC2626",
+    color: colors.feedback.dangerStrong,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -422,12 +445,12 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   dangerTitle: {
-    color: "#DC2626",
+    color: colors.feedback.dangerStrong,
     fontSize: 18,
     fontWeight: "800",
   },
   dialog: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 20,
     padding: 22,
     width: "84%",
@@ -450,7 +473,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dialogMessage: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 20,
@@ -468,17 +491,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   helperText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 18,
   },
   infoLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
   },
   infoRow: {
     alignItems: "center",
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -493,7 +516,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   menuButton: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 16,
@@ -505,7 +528,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   passwordError: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     marginBottom: 8,
     marginTop: -4,
@@ -517,11 +540,11 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   passwordInputError: {
-    borderColor: "#EF4444",
+    borderColor: colors.feedback.danger,
   },
   passwordInputWrap: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -539,7 +562,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "90%",
@@ -558,7 +581,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   switchRowBordered: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingTop: 12,
   },
@@ -568,8 +591,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   versionCard: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 14,

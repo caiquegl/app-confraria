@@ -11,12 +11,14 @@ import {
 import { Button } from "@/components/Button";
 import { InputField } from "@/components/InputField";
 import { Logo } from "@/components/Logo";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useForgotPassword } from "../business/useForgotPassword";
 import type { ForgotPasswordViewProps } from "../types/forgot-password.types";
 
 export function ForgotPasswordView({ onBack }: ForgotPasswordViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { control, errors, handleSubmit, isSubmitting, onSubmit } = useForgotPassword();
 
   return (
@@ -90,7 +92,7 @@ export function ForgotPasswordView({ onBack }: ForgotPasswordViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     marginTop: 16,
     width: "100%",

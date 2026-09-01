@@ -24,7 +24,7 @@ import {
 } from "react-native";
 import ViewShot, { type ViewShotRef } from "react-native-view-shot";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import {
   searchStoryStickers,
@@ -87,11 +87,11 @@ const MIN_TEXT_SIZE = 22;
 const MAX_TEXT_SIZE = 58;
 const MIN_STICKER_SIZE = 56;
 const MAX_STICKER_SIZE = 180;
-const DEFAULT_TEXT_DRAFT: DraftText = {
-  color: "#FFFFFF",
+const DEFAULT_TEXT_DRAFT = (colors: AppColors): DraftText => ({
+  color: colors.text.inverse,
   fontSize: 32,
   text: "",
-};
+});
 
 const EFFECTS: {
   id: EffectId;
@@ -113,6 +113,8 @@ const EFFECTS: {
 
 export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEditorProps>(
   function StoryPhotoEditor({ disabled = false, uri }, ref) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
     const viewShotRef = useRef<ViewShotRef | null>(null);
     const layerIdRef = useRef(0);
     const [canvasSize, setCanvasSize] = useState({ height: 0, width: 0 });
@@ -128,7 +130,7 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
     const [stickerQuery, setStickerQuery] = useState("");
     const [stickerError, setStickerError] = useState<string | null>(null);
     const [stickerResults, setStickerResults] = useState<StoryStickerSearchItem[]>([]);
-    const [draftText, setDraftText] = useState<DraftText>(DEFAULT_TEXT_DRAFT);
+    const [draftText, setDraftText] = useState<DraftText>(() => DEFAULT_TEXT_DRAFT(colors));
 
     const selectedEffect = useMemo(
       () => EFFECTS.find((item) => item.id === effect) ?? EFFECTS[0],
@@ -176,7 +178,7 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
       setSelectedTextId(null);
       setSelectedStickerId(null);
       setIsStickerPickerOpen(false);
-      setDraftText(DEFAULT_TEXT_DRAFT);
+      setDraftText(DEFAULT_TEXT_DRAFT(colors));
       setIsTextEditorOpen(true);
     };
 
@@ -226,7 +228,7 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
     const closeTextEditor = () => {
       setIsTextEditorOpen(false);
       setEditingTextId(null);
-      setDraftText(DEFAULT_TEXT_DRAFT);
+      setDraftText(DEFAULT_TEXT_DRAFT(colors));
     };
 
     const saveText = () => {
@@ -424,13 +426,13 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
         <View pointerEvents={disabled ? "none" : "auto"} style={styles.toolbar}>
           <View style={styles.toolButtonsRow}>
             <Pressable style={[styles.toolButton, disabled && styles.disabled]} onPress={openAddText}>
-              <Ionicons color="#FFFFFF" name="create-outline" size={22} />
+              <Ionicons color={colors.text.inverse} name="create-outline" size={22} />
             </Pressable>
             <Pressable
               style={[styles.toolButton, disabled && styles.disabled]}
               onPress={openStickerPicker}
             >
-              <Ionicons color="#FFFFFF" name="happy-outline" size={22} />
+              <Ionicons color={colors.text.inverse} name="happy-outline" size={22} />
             </Pressable>
           </View>
 
@@ -468,7 +470,7 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
               autoFocus
               maxLength={80}
               placeholder="Digite seu texto"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.text.placeholder}
               style={[
                 styles.textInput,
                 { color: draftText.color, fontSize: Math.min(draftText.fontSize, 32) },
@@ -522,7 +524,7 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
                 autoCapitalize="none"
                 autoCorrect={false}
                 placeholder="Buscar figurinhas"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.placeholder}
                 returnKeyType="search"
                 style={styles.stickerSearchInput}
                 value={stickerQuery}
@@ -541,7 +543,7 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
                 )}
               </Pressable>
               <Pressable style={styles.stickerCloseButton} onPress={() => setIsStickerPickerOpen(false)}>
-                <Ionicons color="#FFFFFF" name="close" size={18} />
+                <Ionicons color={colors.text.inverse} name="close" size={18} />
               </Pressable>
             </View>
 
@@ -573,7 +575,7 @@ export const StoryPhotoEditor = forwardRef<StoryPhotoEditorHandle, StoryPhotoEdi
 
         {selectedSticker ? (
           <Pressable style={styles.stickerRemoveButton} onPress={removeSelectedSticker}>
-            <Ionicons color="#FFFFFF" name="trash-outline" size={18} />
+            <Ionicons color={colors.text.inverse} name="trash-outline" size={18} />
           </Pressable>
         ) : null}
       </View>
@@ -590,6 +592,7 @@ function TextSizeScale({
   fontSize: number;
   onChange: (fontSize: number) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const disabledRef = useRef(disabled);
   const fontSizeRef = useRef(fontSize);
   const onChangeRef = useRef(onChange);
@@ -640,6 +643,7 @@ function DraggableStorySticker({
   onMove: (id: string, x: number, y: number) => void;
   onSelect: (item: StoryStickerItem) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const position = useRef(new Animated.ValueXY({ x: item.x, y: item.y })).current;
   const startPositionRef = useRef({ x: item.x, y: item.y });
 
@@ -712,6 +716,8 @@ function DraggableStoryText({
   onEdit: (item: StoryTextItem) => void;
   onMove: (id: string, x: number, y: number) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const position = useRef(new Animated.ValueXY({ x: item.x, y: item.y })).current;
   const startPositionRef = useRef({ x: item.x, y: item.y });
 
@@ -775,7 +781,7 @@ function DraggableStoryText({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   cancelButton: {
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -786,7 +792,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   canvas: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
     overflow: "hidden",
   },
@@ -855,7 +861,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   effectButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 12,
     fontWeight: "800",
   },
@@ -888,7 +894,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   removeButtonText: {
-    color: "#FCA5A5",
+    color: colors.feedback.dangerBorder,
     fontSize: 14,
     fontWeight: "800",
   },
@@ -910,7 +916,7 @@ const styles = StyleSheet.create({
     width: 34,
   },
   stickerError: {
-    color: "#FCA5A5",
+    color: colors.feedback.dangerBorder,
     fontSize: 12,
     fontWeight: "700",
     marginTop: 10,
@@ -974,7 +980,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.16)",
     borderRadius: 14,
     borderWidth: 1,
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     flex: 1,
     fontSize: 14,
     fontWeight: "700",

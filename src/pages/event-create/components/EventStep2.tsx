@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventFormField } from "./EventFormField";
 import { EventPlaceAutocompleteField } from "./EventPlaceAutocompleteField";
@@ -32,6 +32,8 @@ type EventStep2Props = {
 };
 
 export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: EventStep2Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const dateIsComplete = draft.date.length === 10;
   const dateIsPast = dateIsComplete && isPastBrazilianDate(draft.date);
   const startTimeIsComplete = draft.startTime.length === 5;
@@ -162,7 +164,7 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
                   )
                 }
               >
-                <Ionicons color="#EF4444" name="close" size={18} />
+                <Ionicons color={colors.feedback.danger} name="close" size={18} />
               </Pressable>
             </View>
           </View>
@@ -173,7 +175,7 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
           style={styles.addStopButton}
           onPress={() => updateDraft("stops", [...draft.stops, null])}
         >
-          <Ionicons color="#6B7280" name="add" size={18} />
+          <Ionicons color={colors.text.secondary} name="add" size={18} />
           <Text style={styles.addStopText}>Adicionar ponto de parada (opcional)</Text>
         </Pressable>
       </View>
@@ -190,10 +192,10 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addStopButton: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 18,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -204,7 +206,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   addStopText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
   errorText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 6,
@@ -225,7 +227,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   helperText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 6,
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
   },
   removeStopButton: {
     alignItems: "center",
-    borderColor: "#FECACA",
+    borderColor: colors.feedback.dangerBorder,
     borderRadius: 18,
     borderWidth: 1,
     height: 50,

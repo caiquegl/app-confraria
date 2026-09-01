@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { WizardStep } from "../types/route-create.types";
 
@@ -22,6 +22,8 @@ export function RouteWizardStepper({
   maxReachableStep = currentStep,
   onStepPress,
 }: RouteWizardStepperProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       {STEPS.map((item, index) => {
@@ -100,10 +102,10 @@ export function RouteWizardStepper({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   bubble: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     height: 28,
     justifyContent: "center",
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bubbleText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "800",
   },
@@ -128,16 +130,16 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
   },
   bubbleTextCompleted: {
-    color: "#728F21",
+    color: colors.brandActive,
   },
   bubbleTextUnlocked: {
-    color: "#728F21",
+    color: colors.brandActive,
   },
   bubbleUnlocked: {
     backgroundColor: "rgba(200, 247, 99, 0.12)",
   },
   connector: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     height: 1,
     marginHorizontal: 4,
     marginTop: 14,
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   label: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 9,
     fontWeight: "700",
     marginTop: 4,
@@ -165,10 +167,10 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
   },
   labelCompleted: {
-    color: "#728F21",
+    color: colors.brandActive,
   },
   labelUnlocked: {
-    color: "#728F21",
+    color: colors.brandActive,
   },
   stepBlock: {
     alignItems: "center",

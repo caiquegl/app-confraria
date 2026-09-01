@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventCreatedSuccessModalProps = {
   onContinue: () => void;
@@ -13,6 +13,8 @@ export function EventCreatedSuccessModal({
   onContinue,
   visible,
 }: EventCreatedSuccessModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal animationType="fade" transparent visible={visible}>
       <View style={styles.backdrop}>
@@ -33,7 +35,7 @@ export function EventCreatedSuccessModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     alignItems: "center",
     backgroundColor: "rgba(17, 24, 39, 0.48)",
@@ -47,13 +49,13 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 28,
     padding: 24,
     width: "100%",
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,

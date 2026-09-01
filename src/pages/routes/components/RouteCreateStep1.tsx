@@ -8,7 +8,7 @@ import type {
   RouteDaySuggestionsResponse,
   RouteStopSuggestion,
 } from "@/lib/places";
-import { colors, radii, spacing, typography } from "@/theme";
+import { type AppColors, radii, spacing, typography, useTheme, useThemedStyles } from "@/theme";
 
 import { RouteDayCarousel } from "./RouteDayCarousel";
 import type { RouteDraftDay } from "../types/route-create.types";
@@ -66,6 +66,8 @@ export function RouteCreateStep1({
   onSelectRouteStyle,
   routeStyle,
 }: RouteCreateStep1Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   // Evita NestableScrollContainer + NestableDraggableFlatList (warning measureLayout no RN novo).
   const [scrollEnabled, setScrollEnabled] = useState(true);
 
@@ -127,7 +129,7 @@ export function RouteCreateStep1({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addDayButton: {
     alignItems: "center",
     backgroundColor: colors.surface.primary,

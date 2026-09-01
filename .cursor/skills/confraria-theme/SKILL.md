@@ -16,6 +16,7 @@ Ao criar ou editar componentes e páginas em `app-confraria`:
 1. **Nunca** inserir valores visuais literais diretamente no componente ou na página.
 2. **Sempre** consumir tokens de `src/theme/` via `@/theme`.
 3. Se o token não existir, **adicione primeiro** em `src/theme/` e só depois use no componente.
+4. **Nunca** crie dois tokens com o mesmo valor numérico ou cor — reutilize o token existente (ex.: `spacing.xl` em vez de novo `listGap: 14`).
 
 Isso vale para: cores (hex/rgba), espaçamento, tipografia, raios de borda e estados de feedback.
 

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventAnalyticsHeaderProps = {
   onBack: () => void;
@@ -17,6 +17,8 @@ export function EventAnalyticsHeader({
   onEditEvent,
   participantsCount,
 }: EventAnalyticsHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [menuVisible, setMenuVisible] = useState(false);
   const hasRegistrants = participantsCount > 0;
 
@@ -65,7 +67,7 @@ export function EventAnalyticsHeader({
             }}
           >
             <Ionicons
-              color="#EF4444"
+              color={colors.feedback.danger}
               name={hasRegistrants ? "calendar-outline" : "trash-outline"}
               size={17}
             />
@@ -79,7 +81,7 @@ export function EventAnalyticsHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   header: {
     alignItems: "center",
     backgroundColor: colors.brandGray,
@@ -91,8 +93,8 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 48,
@@ -100,15 +102,15 @@ const styles = StyleSheet.create({
     width: 48,
   },
   menu: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     elevation: 8,
     overflow: "hidden",
     position: "absolute",
     right: 24,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 6, width: 0 },
     shadowOpacity: 0.14,
     shadowRadius: 16,
@@ -123,7 +125,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   menuDivider: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     height: 1,
   },
   menuItem: {
@@ -134,7 +136,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   menuItemDanger: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
   },
   menuItemText: {
     color: colors.brandDark,

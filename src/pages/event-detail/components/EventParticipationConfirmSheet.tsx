@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventParticipationConfirmSheetProps = {
   dateLabel: string;
@@ -25,6 +25,8 @@ export function EventParticipationConfirmSheet({
   title,
   visible,
 }: EventParticipationConfirmSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -40,7 +42,7 @@ export function EventParticipationConfirmSheet({
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Ionicons color="#9CA3AF" name="close" size={20} />
+            <Ionicons color={colors.text.muted} name="close" size={20} />
           </Pressable>
         </View>
 
@@ -87,9 +89,11 @@ function InfoRow({
   strong?: boolean;
   text: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.infoRow}>
-      <Ionicons color="#9CA3AF" name={icon} size={16} />
+      <Ionicons color={colors.text.muted} name={icon} size={16} />
       <Text
         numberOfLines={2}
         style={[styles.infoText, strong && styles.infoTextStrong]}
@@ -100,9 +104,9 @@ function InfoRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     bottom: 0,
     left: 0,
     position: "absolute",
@@ -111,7 +115,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -151,7 +155,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flex: 1,
     fontSize: 13,
     fontWeight: "600",
@@ -161,14 +165,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   note: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "600",
     marginTop: 12,
     textAlign: "center",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     bottom: 0,
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   summaryCard: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 22,
     borderWidth: 1,
     marginBottom: 20,

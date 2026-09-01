@@ -6,7 +6,7 @@ import { PlaceAutocompleteField } from "@/components/PlaceAutocompleteField";
 import { Button } from "@/components/Button";
 import type { PlaceReference, PlaceWithCoords } from "@/lib/places";
 import { resolvePlaceWithCoords } from "@/lib/places";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type RouteAddStopSheetProps = {
   dayLabel: string;
@@ -23,6 +23,8 @@ export function RouteAddStopSheet({
   onConfirm,
   visible,
 }: RouteAddStopSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [selectedPlace, setSelectedPlace] = useState<PlaceReference | null>(null);
 
@@ -67,9 +69,9 @@ export function RouteAddStopSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.overlay.scrimSoft,
     flex: 1,
   },
   confirmButton: {
@@ -77,21 +79,21 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 4,
     marginBottom: 16,
     width: 40,
   },
   label: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 1,
     textTransform: "uppercase",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,

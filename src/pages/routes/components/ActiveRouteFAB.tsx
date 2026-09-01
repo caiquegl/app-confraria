@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type ActiveRouteFABProps = {
   /** Extra offset above the safe-area / bottom nav. */
@@ -11,6 +11,8 @@ type ActiveRouteFABProps = {
 };
 
 export function ActiveRouteFAB({ bottomOffset = 86, onPress }: ActiveRouteFABProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -35,7 +37,7 @@ export function ActiveRouteFAB({ bottomOffset = 86, onPress }: ActiveRouteFABPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   dot: {
     backgroundColor: colors.brandDark,
     borderRadius: 999,

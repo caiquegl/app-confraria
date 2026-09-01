@@ -3,7 +3,7 @@ import Svg, { Circle, Path } from "react-native-svg";
 import { Image } from "expo-image";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { SavedRoute } from "../types/saved-route.types";
 
@@ -24,6 +24,7 @@ function hashId(id: string) {
 }
 
 function RouteTraceThumbnail({ route }: { route: SavedRoute }) {
+  const styles = useThemedStyles(createStyles);
   const seed = hashId(route.id);
   const path = MINI_PATHS[seed % MINI_PATHS.length];
   const stroke = MINI_STROKES[seed % MINI_STROKES.length];
@@ -40,6 +41,7 @@ function RouteTraceThumbnail({ route }: { route: SavedRoute }) {
 }
 
 function RouteCoverThumbnail({ coverImageUrl }: { coverImageUrl: string }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Image
       contentFit="cover"
@@ -51,6 +53,8 @@ function RouteCoverThumbnail({ coverImageUrl }: { coverImageUrl: string }) {
 }
 
 function buildRouteTags(route: SavedRoute) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const tags = [route.distanceLabel];
   tags.push(`${route.dayCount} dia${route.dayCount === 1 ? "" : "s"}`);
   return tags.slice(0, 2);
@@ -62,6 +66,8 @@ type CommunityRouteCardProps = {
 };
 
 export function CommunityRouteCard({ onPress, route }: CommunityRouteCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const tags = buildRouteTags(route);
   const regionLabel =
     route.regionLabel ??
@@ -120,9 +126,9 @@ export function CommunityRouteCard({ onPress, route }: CommunityRouteCardProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   authorName: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flex: 1,
     fontSize: 12,
     fontWeight: "600",
@@ -130,7 +136,7 @@ const styles = StyleSheet.create({
   },
   authorRow: {
     alignItems: "center",
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -142,12 +148,12 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     padding: 8,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -169,21 +175,21 @@ const styles = StyleSheet.create({
     top: 8,
   },
   ratingCount: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "500",
   },
   ratingStar: {
-    color: "#FB923C",
+    color: colors.rating.accent,
     fontSize: 11,
   },
   ratingValue: {
-    color: "#FB923C",
+    color: colors.rating.accent,
     fontSize: 11,
     fontWeight: "800",
   },
   region: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginBottom: 8,
     marginTop: 2,

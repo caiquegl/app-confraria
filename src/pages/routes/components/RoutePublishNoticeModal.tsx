@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type RoutePublishNoticeModalProps = {
   mode: "published" | "unpublished" | null;
@@ -15,6 +15,8 @@ export function RoutePublishNoticeModal({
   onContinue,
   visible,
 }: RoutePublishNoticeModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (!mode) return null;
 
   const isPublished = mode === "published";
@@ -30,7 +32,7 @@ export function RoutePublishNoticeModal({
             ]}
           >
             <Ionicons
-              color={isPublished ? "#FFFFFF" : "#EF4444"}
+              color={isPublished ? "#FFFFFF" : colors.feedback.danger}
               name="globe-outline"
               size={30}
             />
@@ -55,7 +57,7 @@ export function RoutePublishNoticeModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     alignItems: "center",
     backgroundColor: "rgba(17, 24, 39, 0.48)",
@@ -69,13 +71,13 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 28,
     padding: 24,
     width: "100%",
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,

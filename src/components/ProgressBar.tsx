@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type ProgressBarProps = {
   currentStep: number;
@@ -9,6 +9,8 @@ type ProgressBarProps = {
 };
 
 export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const percentage = (currentStep / totalSteps) * 100;
 
   return (
@@ -22,7 +24,7 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   fill: {
     backgroundColor: colors.brandGreen,
     borderRadius: 999,
@@ -31,8 +33,8 @@ const styles = StyleSheet.create({
   },
   iconWrapper: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     bottom: -4,
@@ -47,7 +49,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   track: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 8,
     marginBottom: 32,

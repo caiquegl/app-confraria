@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { colors, radii, spacing, typography } from "@/theme";
+import { type AppColors, radii, spacing, typography, useTheme, useThemedStyles } from "@/theme";
 
 export type InputFieldProps = TextInputProps & {
   error?: string;
@@ -43,6 +43,8 @@ export const InputField = forwardRef<TextInput, InputFieldProps>(function InputF
   },
   ref,
 ) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [showPassword, setShowPassword] = useState(false);
   const reactId = useId();
   const inputId = `input-${reactId.replace(/:/g, "")}`;
@@ -144,7 +146,7 @@ export const InputField = forwardRef<TextInput, InputFieldProps>(function InputF
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     alignItems: "center",
     backgroundColor: colors.surface.primary,

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventOccupancyCardProps = {
   participantLimit: number | null;
@@ -12,6 +12,8 @@ export function EventOccupancyCard({
   participantLimit,
   participantsCount,
 }: EventOccupancyCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const hasLimit = participantLimit !== null && participantLimit > 0;
   const occupancy = hasLimit
     ? Math.min(100, Math.round((participantsCount / participantLimit) * 100))
@@ -47,10 +49,10 @@ export function EventOccupancyCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
@@ -67,12 +69,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   countSubtitle: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     fontWeight: "700",
   },
   helperText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 8,
@@ -86,7 +88,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   label: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -102,7 +104,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   progressTrack: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     height: 10,
     overflow: "hidden",

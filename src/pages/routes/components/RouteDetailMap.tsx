@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { MapMarkerPoint } from "../types/route-create.types";
-import { ROUTE_PLANNER_MAP_STYLE } from "../utils/route-map-style";
+import { getRoutePlannerMapStyle } from "../utils/route-map-style";
 import { RouteMapMarker } from "./RouteMapMarker";
 
 type RouteCoordinate = {
@@ -29,6 +29,8 @@ function buildFitCoordinates(
   routeCoordinates: RouteCoordinate[],
   markers: MapMarkerPoint[],
 ): RouteCoordinate[] {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (routeCoordinates.length > 1) {
     return routeCoordinates;
   }
@@ -37,6 +39,9 @@ function buildFitCoordinates(
 }
 
 export function RouteDetailMap({ markers, routeCoordinates }: RouteDetailMapProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const plannerMapStyle = useMemo(() => getRoutePlannerMapStyle(colors), [colors]);
   const mapRef = useRef<MapView | null>(null);
 
   const fitCoordinates = useMemo(
@@ -84,7 +89,7 @@ export function RouteDetailMap({ markers, routeCoordinates }: RouteDetailMapProp
     <View style={styles.container}>
       <MapView
         ref={mapRef}
-        customMapStyle={ROUTE_PLANNER_MAP_STYLE}
+        customMapStyle={plannerMapStyle}
         initialRegion={initialRegion}
         provider={PROVIDER_GOOGLE}
         rotateEnabled={false}
@@ -129,7 +134,7 @@ export function RouteDetailMap({ markers, routeCoordinates }: RouteDetailMapProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     flex: 1,
   },

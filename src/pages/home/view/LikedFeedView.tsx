@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { getCurrentUserId } from "@/lib/auth";
 import { useChatBadge } from "@/pages/messages";
 import { useNotificationBadge } from "@/pages/notifications";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useLikedFeed } from "../business/useLikedFeed";
 import { FeedFloatingActions } from "../components/FeedFloatingActions";
@@ -12,6 +12,8 @@ import { FeedList } from "../components/FeedList";
 import { SharePostSheet } from "../components/SharePostSheet";
 
 export function LikedFeedView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     addComment,
     addReply,
@@ -112,7 +114,7 @@ export function LikedFeedView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     backgroundColor: colors.brandGray,
     flex: 1,

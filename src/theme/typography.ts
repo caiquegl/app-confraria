@@ -1,7 +1,5 @@
 import type { TextStyle } from "react-native";
 
-import { colors } from "./colors";
-
 /**
  * Presets tipográficos por papel visual.
  * Espalhe com `[typography.body, { color: colors.text.secondary }]` quando precisar sobrescrever cor.
@@ -53,8 +51,32 @@ export const typography = {
     fontWeight: "800",
     lineHeight: 34,
   },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    lineHeight: 26,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
+  },
+  meta: {
+    fontSize: 11,
+    fontWeight: "500",
+    lineHeight: 15,
+  },
+  micro: {
+    fontSize: 10,
+    fontWeight: "500",
+    lineHeight: 14,
+  },
+  permissionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    lineHeight: 28,
+  },
   label: {
-    color: colors.text.primary,
     fontSize: 14,
     fontWeight: "700",
   },

@@ -8,6 +8,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { type AppColors, useThemedStyles } from "@/theme";
+
 export type RoutesSheetDetent = "collapsed" | "mid" | "expanded";
 
 /** Frações da área do mapa (já descontando header e BottomNav no layout). */
@@ -103,6 +105,7 @@ export function RoutesHomeBottomSheet({
   onDetentChange,
   topReserve = ROUTES_SHEET_TOP_RESERVE,
 }: RoutesHomeBottomSheetProps) {
+  const styles = useThemedStyles(createStyles);
   const { height: windowHeight } = useWindowDimensions();
   const usableHeight = containerHeight > 0 ? containerHeight : windowHeight * 0.55;
 
@@ -196,38 +199,39 @@ export function RoutesHomeBottomSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  body: {
-    flex: 1,
-    minHeight: 0,
-  },
-  handle: {
-    alignSelf: "center",
-    backgroundColor: "#D1D5DB",
-    borderRadius: 999,
-    height: 4,
-    width: 40,
-  },
-  handleArea: {
-    paddingBottom: 4,
-    paddingHorizontal: 24,
-    paddingTop: 10,
-  },
-  sheet: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#E5E7EB",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    borderTopWidth: 1,
-    elevation: 16,
-    left: 0,
-    overflow: "hidden",
-    position: "absolute",
-    right: 0,
-    shadowColor: "#1C2126",
-    shadowOffset: { height: -18, width: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 40,
-    zIndex: 20,
-  },
-});
+const createStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    body: {
+      flex: 1,
+      minHeight: 0,
+    },
+    handle: {
+      alignSelf: "center",
+      backgroundColor: colors.border.default,
+      borderRadius: 999,
+      height: 4,
+      width: 40,
+    },
+    handleArea: {
+      paddingBottom: 4,
+      paddingHorizontal: 24,
+      paddingTop: 10,
+    },
+    sheet: {
+      backgroundColor: colors.surface.primary,
+      borderTopColor: colors.border.subtle,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      borderTopWidth: 1,
+      elevation: 16,
+      left: 0,
+      overflow: "hidden",
+      position: "absolute",
+      right: 0,
+      shadowColor: colors.text.primary,
+      shadowOffset: { height: -18, width: 0 },
+      shadowOpacity: 0.12,
+      shadowRadius: 40,
+      zIndex: 20,
+    },
+  });

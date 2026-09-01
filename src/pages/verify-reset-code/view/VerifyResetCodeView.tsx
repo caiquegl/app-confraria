@@ -11,12 +11,14 @@ import {
 import { Button } from "@/components/Button";
 import { InputField } from "@/components/InputField";
 import { Logo } from "@/components/Logo";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useVerifyResetCode } from "../business/useVerifyResetCode";
 import type { VerifyResetCodeViewProps } from "../types/verify-reset-code.types";
 
 export function VerifyResetCodeView({ email, onBack }: VerifyResetCodeViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { control, errors, handleSubmit, isSubmitting, onSubmit } = useVerifyResetCode(email);
 
   return (
@@ -92,7 +94,7 @@ export function VerifyResetCodeView({ email, onBack }: VerifyResetCodeViewProps)
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     marginTop: 16,
     width: "100%",

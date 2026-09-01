@@ -11,7 +11,7 @@ import {
 
 import { ErrorState } from "@/components/ErrorState";
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { usePublicProfileFollows } from "../business/usePublicProfileFollows";
 import type {
@@ -39,6 +39,8 @@ export function PublicProfileFollowsView({
   onBack,
   onOpenProfile,
 }: PublicProfileFollowsViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     acceptRequest,
     activeTab,
@@ -81,10 +83,10 @@ export function PublicProfileFollowsView({
       </View>
 
       <View style={styles.searchWrap}>
-        <Ionicons color="#9CA3AF" name="search" size={17} />
+        <Ionicons color={colors.text.muted} name="search" size={17} />
         <TextInput
           placeholder="Buscar por nome..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.placeholder}
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -176,6 +178,7 @@ function FollowRequestCard({
   onDecline: () => void;
   onOpenProfile: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <Pressable style={styles.userRow} onPress={onOpenProfile}>
@@ -221,6 +224,8 @@ function FollowUserCard({
   onFollow: () => void;
   onOpenProfile: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const disableFollow = user.isSelf || user.isFollowing || isLoading;
   const buttonLabel = user.isSelf ? "Você" : user.isFollowing ? "Seguindo" : "Seguir";
 
@@ -234,7 +239,7 @@ function FollowUserCard({
           </Text>
           {user.location ? (
             <View style={styles.locationRow}>
-              <Ionicons color="#9CA3AF" name="location-outline" size={12} />
+              <Ionicons color={colors.text.muted} name="location-outline" size={12} />
               <Text numberOfLines={1} style={styles.locationText}>
                 {user.location}
               </Text>
@@ -263,19 +268,21 @@ function FollowUserCard({
 }
 
 function EmptyState({ message }: { message: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.empty}>
-      <Ionicons color="#D1D5DB" name="people-outline" size={42} />
+      <Ionicons color={colors.border.default} name="people-outline" size={42} />
       <Text style={styles.emptyText}>{message}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -296,8 +303,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     marginBottom: 12,
@@ -305,14 +312,14 @@ const styles = StyleSheet.create({
   },
   declineButton: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 12,
     minWidth: 74,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
   declineText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "800",
   },
@@ -329,7 +336,7 @@ const styles = StyleSheet.create({
     paddingVertical: 70,
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     textAlign: "center",
   },
@@ -347,8 +354,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   followButtonDisabled: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderWidth: 1,
   },
   followText: {
@@ -357,7 +364,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   followTextDisabled: {
-    color: "#6B7280",
+    color: colors.text.secondary,
   },
   header: {
     alignItems: "center",
@@ -383,7 +390,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   locationText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 3,
   },
@@ -404,8 +411,8 @@ const styles = StyleSheet.create({
   },
   searchWrap: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
@@ -425,8 +432,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   tabsWrap: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -435,7 +442,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   tabText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
   },

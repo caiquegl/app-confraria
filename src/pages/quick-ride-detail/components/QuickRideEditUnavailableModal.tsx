@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type QuickRideEditUnavailableModalProps = {
   message: string;
@@ -18,6 +18,8 @@ export function QuickRideEditUnavailableModal({
   title,
   visible,
 }: QuickRideEditUnavailableModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -45,7 +47,7 @@ export function QuickRideEditUnavailableModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     bottom: 0,
     left: 0,
@@ -54,7 +56,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   backdropWrap: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },
@@ -64,7 +66,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     alignItems: "center",
     alignSelf: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 18,
     height: 56,
     justifyContent: "center",
@@ -72,14 +74,14 @@ const styles = StyleSheet.create({
     width: 56,
   },
   message: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 20,
     textAlign: "center",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,

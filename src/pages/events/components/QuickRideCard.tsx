@@ -7,7 +7,7 @@ import {
   getQuickRideDestinationLabel,
   isQuickRideFull,
 } from "@/pages/quick-rides/types/quick-ride.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type QuickRideCardProps = {
   dimmed?: boolean;
@@ -18,6 +18,8 @@ type QuickRideCardProps = {
 };
 
 export function QuickRideCard({ dimmed, ended, onPress, ride, roleBadge }: QuickRideCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const count = ride.participantCount;
   const full = isQuickRideFull(ride);
   const isEnded = ended ?? false;
@@ -75,7 +77,7 @@ export function QuickRideCard({ dimmed, ended, onPress, ride, roleBadge }: Quick
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatar: {
     borderRadius: 28,
     height: 56,
@@ -84,7 +86,7 @@ const styles = StyleSheet.create({
   badge: {
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: "#ECFCCB",
+    backgroundColor: colors.surface.quickRideBadge,
     borderRadius: 999,
     flexDirection: "row",
     gap: 4,
@@ -92,13 +94,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   badgeFull: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
   },
   badgeEnded: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
   },
   badgeEndedText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "700",
   },
@@ -108,16 +110,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   badgeTextFull: {
-    color: "#6B7280",
+    color: colors.text.secondary,
   },
   roleBadge: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: colors.surface.infoSubtle,
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   roleBadgeText: {
-    color: "#4338CA",
+    color: colors.text.info,
     fontSize: 11,
     fontWeight: "700",
   },
@@ -146,12 +148,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   description: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 13,
     marginTop: 4,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },

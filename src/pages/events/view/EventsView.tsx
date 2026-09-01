@@ -26,7 +26,7 @@ import type { PublicProfileEvent } from "@/pages/public-profile-events/types/pub
 import { fetchActiveQuickRides } from "@/pages/quick-rides/services/quick-rides.service";
 import type { QuickRide } from "@/pages/quick-rides/types/quick-ride.types";
 import { isQuickRideDiscoverable } from "@/pages/quick-rides/types/quick-ride.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventsCategoryPills } from "../components/EventsCategoryPills";
 import { EventsCreateActionSheet } from "../components/EventsCreateActionSheet";
@@ -85,6 +85,8 @@ function EventsContentEmpty({
   onClearFilters?: () => void;
   onRetry?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (hasFilters) {
     return (
       <EmptyState
@@ -127,6 +129,8 @@ function EventsContentEmpty({
 }
 
 export function EventsView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { hasUnread } = useNotificationBadge();
   const { location, requestPermission } = useGeolocation();
@@ -784,7 +788,7 @@ export function EventsView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   emptyCard: {
     marginHorizontal: 16,
     marginTop: 20,

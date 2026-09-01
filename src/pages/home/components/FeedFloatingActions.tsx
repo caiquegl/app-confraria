@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type FeedFloatingActionsProps = {
   hasUnreadMessages?: boolean;
@@ -22,6 +22,8 @@ export function FeedFloatingActions({
   onOpenNotifications,
   onOpenNewPost,
 }: FeedFloatingActionsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.tabsPillContainer}>
@@ -45,7 +47,7 @@ export function FeedFloatingActions({
             style={styles.tab}
             onPress={onOpenMessages}
           >
-            <Ionicons color="#6B7280" name="chatbubble-ellipses-outline" size={18} />
+            <Ionicons color={colors.text.secondary} name="chatbubble-ellipses-outline" size={18} />
             {hasUnreadMessages && <View style={styles.tabUnreadDot} />}
           </Pressable>
         </View>
@@ -57,7 +59,7 @@ export function FeedFloatingActions({
         style={styles.notificationButton}
         onPress={onOpenNotifications}
       >
-        <Ionicons color="#6B7280" name="notifications-outline" size={18} />
+        <Ionicons color={colors.text.secondary} name="notifications-outline" size={18} />
         {hasUnreadNotifications && <View style={styles.unreadDot} />}
       </TouchableOpacity>
 
@@ -73,7 +75,7 @@ export function FeedFloatingActions({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     alignItems: "flex-end",
     bottom: 18,
@@ -99,8 +101,8 @@ const styles = StyleSheet.create({
   },
   notificationButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#DADFD5",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.brand,
     borderRadius: 16,
     borderWidth: 1,
     elevation: 8,
@@ -130,8 +132,8 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
   },
   tabsPill: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#DADFD5",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.brand,
     borderRadius: 999,
     borderWidth: 1,
     elevation: 8,
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
   },
   tabUnreadDot: {
     backgroundColor: colors.brandGreen,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     height: 10,
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   },
   unreadDot: {
     backgroundColor: colors.brandGreen,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     height: 10,

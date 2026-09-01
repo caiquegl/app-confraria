@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 import type { ServiceReview } from "@/pages/services/types/services.types";
 
 import { StarRating } from "./StarRating";
@@ -26,6 +26,8 @@ export function ReviewComposer({
   onSubmit,
   onDelete,
 }: ReviewComposerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [rating, setRating] = useState(myReview?.rating ?? 0);
   const [comment, setComment] = useState(myReview?.comment ?? "");
 
@@ -48,7 +50,7 @@ export function ReviewComposer({
         multiline
         maxLength={500}
         placeholder="Conte como foi sua experiência (opcional)"
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.text.placeholder}
         style={styles.input}
         value={comment}
         onChangeText={setComment}
@@ -85,7 +87,7 @@ export function ReviewComposer({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actions: {
     alignItems: "center",
     flexDirection: "row",
@@ -94,8 +96,8 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   container: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     gap: 12,
@@ -108,13 +110,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   deleteText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 14,
     fontWeight: "700",
   },
   input: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.brandDark,

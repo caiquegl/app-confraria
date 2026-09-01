@@ -4,7 +4,7 @@ import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { CreatePublicProfileEventCard } from "../components/CreatePublicProfileEventCard";
 import { PublicProfileEventCard } from "../components/PublicProfileEventCard";
@@ -43,6 +43,8 @@ export function PublicProfileEventsView({
   onOpenEvent,
   userId,
 }: PublicProfileEventsViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<PublicProfileEventTab>("Criados");
   const [createdEvents, setCreatedEvents] = useState<PublicProfileEvent[]>([]);
@@ -299,7 +301,7 @@ function getSectionTitle(tab: PublicProfileEventTab) {
   }
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     paddingHorizontal: 24,
     paddingTop: 12,
@@ -312,15 +314,15 @@ const styles = StyleSheet.create({
   },
   feedbackCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 22,
     borderWidth: 1,
     gap: 8,
     padding: 24,
   },
   feedbackText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     textAlign: "center",
   },
@@ -345,7 +347,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
     marginTop: 4,

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailInfoSectionProps = {
   dateLabel: string;
@@ -24,6 +24,8 @@ export function EventDetailInfoSection({
   timeLabel,
   weekdayLabel,
 }: EventDetailInfoSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const participantsLabel =
     participantsCount === 1 ? "1 participante inscrito" : `${participantsCount} participantes inscritos`;
 
@@ -68,6 +70,8 @@ type InfoItemProps = {
 };
 
 function InfoItem({ icon, iconColor, subtitle, title }: InfoItemProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.infoRow}>
       <View style={styles.iconBox}>
@@ -81,17 +85,17 @@ function InfoItem({ icon, iconColor, subtitle, title }: InfoItemProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
   },
   iconBox: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 14,
     height: 40,
     justifyContent: "center",
@@ -102,7 +106,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   infoSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 3,

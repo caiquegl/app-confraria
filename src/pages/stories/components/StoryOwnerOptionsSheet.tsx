@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { type AppColors, useThemedStyles } from "@/theme";
+
 type StoryOwnerOptionsSheetProps = {
   visible: boolean;
   onCancel: () => void;
@@ -13,6 +15,7 @@ export function StoryOwnerOptionsSheet({
   onDelete,
 }: StoryOwnerOptionsSheetProps) {
   const insets = useSafeAreaInsets();
+  const styles = useThemedStyles(createStyles);
 
   if (!visible) return null;
 
@@ -35,49 +38,50 @@ export function StoryOwnerOptionsSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: "rgba(0,0,0,0.4)",
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  cancelButton: {
-    alignItems: "center",
-    paddingVertical: 16,
-  },
-  cancelText: {
-    color: "#1F2937",
-    fontSize: 17,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  container: {
-    bottom: 0,
-    justifyContent: "flex-end",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 20,
-  },
-  deleteButton: {
-    alignItems: "center",
-    paddingVertical: 16,
-  },
-  deleteText: {
-    color: "#EF4444",
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  sheet: {
-    gap: 8,
-    paddingHorizontal: 12,
-    position: "relative",
-  },
-});
+const createStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    backdrop: {
+      backgroundColor: colors.overlay.scrimSoft,
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+    },
+    cancelButton: {
+      alignItems: "center",
+      paddingVertical: 16,
+    },
+    cancelText: {
+      color: colors.text.emphasis,
+      fontSize: 17,
+    },
+    card: {
+      backgroundColor: colors.surface.primary,
+      borderRadius: 16,
+      overflow: "hidden",
+    },
+    container: {
+      bottom: 0,
+      justifyContent: "flex-end",
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+      zIndex: 20,
+    },
+    deleteButton: {
+      alignItems: "center",
+      paddingVertical: 16,
+    },
+    deleteText: {
+      color: colors.feedback.danger,
+      fontSize: 17,
+      fontWeight: "600",
+    },
+    sheet: {
+      gap: 8,
+      paddingHorizontal: 12,
+      position: "relative",
+    },
+  });

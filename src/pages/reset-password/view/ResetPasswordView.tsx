@@ -11,12 +11,14 @@ import {
 import { Button } from "@/components/Button";
 import { InputField } from "@/components/InputField";
 import { Logo } from "@/components/Logo";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useResetPassword } from "../business/useResetPassword";
 import type { ResetPasswordViewProps } from "../types/reset-password.types";
 
 export function ResetPasswordView({ code, email, onBack }: ResetPasswordViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { control, errors, handleSubmit, isSubmitting, onSubmit } = useResetPassword(
     email,
     code,
@@ -109,7 +111,7 @@ export function ResetPasswordView({ code, email, onBack }: ResetPasswordViewProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     marginTop: 16,
     width: "100%",

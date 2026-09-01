@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Modal, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const MESSAGES = [
   "Aquecendo os motores...",
@@ -33,6 +33,8 @@ type PreparingProfileContentProps = {
 };
 
 function PreparingProfileContent({ onComplete, userName }: PreparingProfileContentProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [step, setStep] = useState(0);
   const spin = useMemo(() => new Animated.Value(0), []);
   const progress = useMemo(() => new Animated.Value(0), []);
@@ -151,7 +153,7 @@ export function PreparingProfile({ onComplete, userName, visible }: PreparingPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     alignItems: "center",
     flex: 1,
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
     width: 96,
   },
   message: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 14,
     marginTop: 8,
     textAlign: "center",
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
     width: 96,
   },
   title: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 20,
     fontWeight: "700",
     textAlign: "center",

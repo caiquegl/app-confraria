@@ -1,6 +1,6 @@
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { SavedRoute } from "../types/saved-route.types";
 import { CommunityRouteCard } from "./CommunityRouteCard";
@@ -33,6 +33,8 @@ export function RoutesHorizontalSection({
   subtitle,
   title,
 }: RoutesHorizontalSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (isLoading || routes.length === 0) {
     return null;
   }
@@ -101,7 +103,7 @@ export function RoutesHorizontalSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   carousel: {
     gap: 12,
     paddingLeft: 24,
@@ -143,7 +145,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },

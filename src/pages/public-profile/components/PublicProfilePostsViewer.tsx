@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FeedCard } from "@/pages/home/components/FeedCard";
 import type { FeedPost } from "@/pages/home/types/feed.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type PublicProfilePostsViewerProps = {
   commentsLoadingByPost: Record<string, boolean>;
@@ -59,6 +59,8 @@ export function PublicProfilePostsViewer({
   onToggleCommentLike,
   onToggleLike,
 }: PublicProfilePostsViewerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const itemOffsetsRef = useRef<Record<string, number>>({});
@@ -160,7 +162,7 @@ export function PublicProfilePostsViewer({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     paddingBottom: 110,
     paddingHorizontal: 16,
@@ -172,7 +174,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
   },
   header: {
@@ -184,8 +186,8 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,

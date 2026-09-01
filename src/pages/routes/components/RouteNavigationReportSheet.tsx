@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
-import { ROUTE_REPORT_TYPES, type RouteReportType } from "../utils/route-report-types";
+import { getRouteReportTypes, type RouteReportType } from "../utils/route-report-types";
 
 type RouteNavigationReportSheetProps = {
   visible: boolean;
@@ -17,6 +18,9 @@ export function RouteNavigationReportSheet({
   onSelect,
   visible,
 }: RouteNavigationReportSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const reportTypes = useMemo(() => getRouteReportTypes(colors), [colors]);
   const insets = useSafeAreaInsets();
 
   return (
@@ -32,7 +36,7 @@ export function RouteNavigationReportSheet({
           </Text>
 
           <View style={styles.grid}>
-            {ROUTE_REPORT_TYPES.map((item) => (
+            {reportTypes.map((item) => (
               <Pressable
                 key={item.type}
                 accessibilityRole="button"
@@ -44,7 +48,7 @@ export function RouteNavigationReportSheet({
                 }}
               >
                 <View style={[styles.iconWrap, { backgroundColor: item.color }]}>
-                  <Ionicons color="#FFFFFF" name={item.icon} size={24} />
+                  <Ionicons color={colors.text.inverse} name={item.icon} size={24} />
                 </View>
                 <Text style={styles.itemLabel} numberOfLines={2}>
                   {item.label}
@@ -58,7 +62,7 @@ export function RouteNavigationReportSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     flex: 1,
   },
@@ -70,7 +74,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#D1D5DB",
+    backgroundColor: colors.border.default,
     borderRadius: 999,
     height: 5,
     marginBottom: 16,
@@ -102,14 +106,14 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
     paddingTop: 12,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginBottom: 20,
   },

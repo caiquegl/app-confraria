@@ -14,12 +14,14 @@ import { Button } from "@/components/Button";
 import { InputField } from "@/components/InputField";
 import { Logo } from "@/components/Logo";
 import { SocialButtons } from "@/pages/landing/components/SocialButtons";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useLogin } from "../business/useLogin";
 import type { LoginViewProps } from "../types/login.types";
 
 export function LoginView({ onBack }: LoginViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { control, errors, handleSubmit, isSubmitting, onSubmit } = useLogin();
 
   return (
@@ -123,7 +125,7 @@ export function LoginView({ onBack }: LoginViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     marginTop: 16,
     width: "100%",

@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const GALLERY_MAX_IMAGES = 10;
 const GALLERY_MAX_SIZE = 720;
@@ -20,6 +20,8 @@ type EventGalleryImagePickerProps = {
 };
 
 export function EventGalleryImagePicker({ images, onChange }: EventGalleryImagePickerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -125,7 +127,7 @@ export function EventGalleryImagePicker({ images, onChange }: EventGalleryImageP
           style={[styles.galleryPicker, hasReachedLimit && styles.galleryPickerDisabled]}
           onPress={openCamera}
         >
-          <Ionicons color="#6B7280" name="camera-outline" size={20} />
+          <Ionicons color={colors.text.secondary} name="camera-outline" size={20} />
           <Text style={styles.galleryPickerText}>
             {hasReachedLimit ? "Limite de 10 fotos atingido" : "Adicionar imagens à galeria"}
           </Text>
@@ -149,7 +151,7 @@ export function EventGalleryImagePicker({ images, onChange }: EventGalleryImageP
                 style={styles.removeImageButton}
                 onPress={() => removeImage(index)}
               >
-                <Ionicons color="#FFFFFF" name="close" size={14} />
+                <Ionicons color={colors.text.inverse} name="close" size={14} />
               </Pressable>
             </View>
           ))}
@@ -212,6 +214,8 @@ function GalleryCameraModal({
   onTakePhoto,
   onToggleFacing,
 }: GalleryCameraModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (!visible) return null;
 
   if (!permissionGranted) {
@@ -255,11 +259,11 @@ function GalleryCameraModal({
 
         <View style={[styles.cameraTopBar, { paddingTop: topInset + 16 }]}>
           <Pressable style={styles.cameraIconButton} onPress={onClose}>
-            <Ionicons color="#FFFFFF" name="close" size={24} />
+            <Ionicons color={colors.text.inverse} name="close" size={24} />
           </Pressable>
           <Text style={styles.cameraTitle}>Galeria do evento</Text>
           <Pressable style={styles.cameraIconButton} onPress={onToggleFacing}>
-            <Ionicons color="#FFFFFF" name="camera-reverse-outline" size={24} />
+            <Ionicons color={colors.text.inverse} name="camera-reverse-outline" size={24} />
           </Pressable>
         </View>
 
@@ -270,7 +274,7 @@ function GalleryCameraModal({
             style={styles.cameraGalleryButton}
             onPress={onOpenGallery}
           >
-            <Ionicons color="#FFFFFF" name="images-outline" size={24} />
+            <Ionicons color={colors.text.inverse} name="images-outline" size={24} />
           </Pressable>
 
           <Pressable
@@ -321,7 +325,7 @@ function showLimitToast() {
   });
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   camera: {
     flex: 1,
   },
@@ -355,11 +359,11 @@ const styles = StyleSheet.create({
     width: 44,
   },
   cameraScreen: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
   },
   cameraTitle: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: "800",
   },
@@ -375,15 +379,15 @@ const styles = StyleSheet.create({
   },
   captureButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 999,
     height: 76,
     justifyContent: "center",
     width: 76,
   },
   captureButtonInner: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#111827",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.text.emphasis,
     borderRadius: 999,
     borderWidth: 2,
     height: 62,
@@ -421,7 +425,7 @@ const styles = StyleSheet.create({
   },
   galleryPicker: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 18,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -435,12 +439,12 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   galleryPickerText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "700",
   },
   helperText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 8,
@@ -476,7 +480,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   permissionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,

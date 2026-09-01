@@ -1,7 +1,7 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EVENTS_DISCOVER_CARD_WIDTH, EventsDiscoverCard } from "./EventsDiscoverCard";
 
@@ -25,6 +25,8 @@ export function EventsSection({
   subtitle,
   title,
 }: EventsSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (events.length === 0) {
     return null;
   }
@@ -72,7 +74,7 @@ export function EventsSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   cardItem: {
     marginRight: CARD_GAP,
   },
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },

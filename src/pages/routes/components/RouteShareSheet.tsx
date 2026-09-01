@@ -7,7 +7,7 @@ import { getApiErrorMessage } from "@/lib/password-reset";
 import { ShareFriendItem } from "@/pages/home/components/ShareFriendItem";
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type RouteSharePreview = {
   destinationLabel: string;
@@ -42,6 +42,8 @@ export function RouteShareSheet({
   route,
   sentFriendId,
 }: RouteShareSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   if (!route) return null;
@@ -106,7 +108,7 @@ export function RouteShareSheet({
           </View>
 
           <Pressable style={styles.closeButton} hitSlop={8} onPress={onClose}>
-            <Ionicons name="close" size={20} color="#6B7280" />
+            <Ionicons name="close" size={20} color={colors.text.secondary} />
           </Pressable>
         </View>
 
@@ -127,12 +129,12 @@ export function RouteShareSheet({
             >
               {isPublishing ? (
                 <ActivityIndicator
-                  color={isPublished ? "#EF4444" : "#FFFFFF"}
+                  color={isPublished ? colors.feedback.danger : "#FFFFFF"}
                   size="small"
                 />
               ) : (
                 <Ionicons
-                  color={isPublished ? "#EF4444" : "#FFFFFF"}
+                  color={isPublished ? colors.feedback.danger : "#FFFFFF"}
                   name="globe-outline"
                   size={20}
                 />
@@ -163,7 +165,7 @@ export function RouteShareSheet({
             </View>
 
             <Ionicons
-              color={isPublished ? "#FCA5A5" : "#D1D5DB"}
+              color={isPublished ? colors.feedback.dangerBorder : "#D1D5DB"}
               name="chevron-forward"
               size={18}
             />
@@ -172,7 +174,7 @@ export function RouteShareSheet({
 
         <View style={styles.preview}>
           <View style={styles.previewFallback}>
-            <Ionicons name="map-outline" size={20} color="#9CA3AF" />
+            <Ionicons name="map-outline" size={20} color={colors.text.muted} />
           </View>
           <View style={styles.previewText}>
             <Text style={styles.previewName} numberOfLines={1}>
@@ -212,9 +214,9 @@ export function RouteShareSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     bottom: 0,
     left: 0,
     position: "absolute",
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   empty: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -239,7 +241,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     textAlign: "center",
   },
@@ -258,8 +260,8 @@ const styles = StyleSheet.create({
   },
   preview: {
     alignItems: "center",
-    backgroundColor: "#F7F8F4",
-    borderColor: "#E8EBE3",
+    backgroundColor: colors.surface.preview,
+    borderColor: colors.border.brandLight,
     borderRadius: 22,
     borderWidth: 1,
     flexDirection: "row",
@@ -269,13 +271,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   previewContext: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
   previewFallback: {
     alignItems: "center",
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
     borderRadius: 14,
     height: 44,
     justifyContent: "center",
@@ -303,14 +305,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(132, 169, 74, 0.1)",
   },
   publishActionUnpublish: {
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
   },
   publishDescription: {
     fontSize: 12,
     marginTop: 2,
   },
   publishDescriptionPublish: {
-    color: "#6B7280",
+    color: colors.text.secondary,
   },
   publishDescriptionUnpublish: {
     color: "#F87171",
@@ -340,10 +342,10 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
   },
   publishTitleUnpublish: {
-    color: "#DC2626",
+    color: colors.feedback.dangerStrong,
   },
   sectionLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.8,
@@ -351,7 +353,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     bottom: 0,
@@ -362,7 +364,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 4,

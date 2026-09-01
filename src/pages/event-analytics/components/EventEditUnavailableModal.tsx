@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventEditUnavailableModalProps = {
   description?: string;
@@ -21,6 +21,8 @@ export function EventEditUnavailableModal({
   title = DEFAULT_TITLE,
   visible,
 }: EventEditUnavailableModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal animationType="fade" statusBarTranslucent transparent visible={visible}>
       <View style={styles.backdrop}>
@@ -39,7 +41,7 @@ export function EventEditUnavailableModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     alignItems: "center",
     backgroundColor: "rgba(17, 24, 39, 0.48)",
@@ -53,13 +55,13 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 28,
     padding: 24,
     width: "100%",
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,

@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 
 import { Button } from "@/components/Button";
 import type { UserBike } from "@/pages/bikes/types/bikes.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type RouteCreateStep2Props = {
   bikes: UserBike[];
@@ -21,6 +21,8 @@ export function RouteCreateStep2({
   onSelectBike,
   selectedBikeId,
 }: RouteCreateStep2Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (isLoading) {
     return (
       <View style={styles.loadingWrap}>
@@ -43,7 +45,7 @@ export function RouteCreateStep2({
       {bikes.length === 0 ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIconWrap}>
-            <Ionicons color="#9CA3AF" name="navigate-outline" size={24} />
+            <Ionicons color={colors.text.muted} name="navigate-outline" size={24} />
           </View>
           <Text style={styles.emptyTitle}>Cadastre uma moto para continuar</Text>
           <Text style={styles.emptyText}>
@@ -77,7 +79,7 @@ export function RouteCreateStep2({
                   />
                 ) : (
                   <View style={styles.bikeImageFallback}>
-                    <Ionicons color="#9CA3AF" name="bicycle-outline" size={24} />
+                    <Ionicons color={colors.text.muted} name="bicycle-outline" size={24} />
                   </View>
                 )}
 
@@ -109,11 +111,11 @@ export function RouteCreateStep2({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   bikeCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
   },
   bikeImageFallback: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 16,
     height: 60,
     justifyContent: "center",
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   bikeMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 4,
   },
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
   emptyCard: {
     alignItems: "center",
     backgroundColor: "#FAFBF8",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 22,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -168,14 +170,14 @@ const styles = StyleSheet.create({
   },
   emptyIconWrap: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 16,
     height: 56,
     justifyContent: "center",
     width: 56,
   },
   emptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
     width: 28,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 4,

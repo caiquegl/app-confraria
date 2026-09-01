@@ -1,13 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailHeaderProps = {
   onBack: () => void;
 };
 
 export function EventDetailHeader({ onBack }: EventDetailHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.header]}>
       <Pressable accessibilityRole="button" style={styles.backButton} onPress={onBack}>
@@ -17,11 +19,11 @@ export function EventDetailHeader({ onBack }: EventDetailHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 48,

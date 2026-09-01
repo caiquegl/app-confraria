@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventsHeaderSectionProps = {
   activeFiltersCount: number;
@@ -12,6 +12,8 @@ export function EventsHeaderSection({
   activeFiltersCount,
   onOpenFilters,
 }: EventsHeaderSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.copy}>
@@ -24,7 +26,7 @@ export function EventsHeaderSection({
         style={styles.filtersButton}
         onPress={onOpenFilters}
       >
-        <Ionicons color="#6B7280" name="settings-outline" size={16} />
+        <Ionicons color={colors.text.secondary} name="settings-outline" size={16} />
         <Text style={styles.filtersText}>Filtros</Text>
         {activeFiltersCount > 0 ? (
           <View style={styles.filtersBadge}>
@@ -36,7 +38,7 @@ export function EventsHeaderSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     alignItems: "flex-end",
     flexDirection: "row",
@@ -65,8 +67,8 @@ const styles = StyleSheet.create({
   },
   filtersButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginTop: 4,
   },

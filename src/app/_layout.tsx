@@ -2,7 +2,7 @@ import "@/lib/sentry-init";
 
 import { Stack, usePathname } from "expo-router";
 import { useEffect, type ReactNode } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +18,7 @@ import {
 import { routeTrackingLog } from "@/lib/route-tracking-logger";
 import { subscribeRouteFinished } from "@/lib/route-navigation-socket";
 import { addSentryBreadcrumb } from "@/lib/sentry";
-import { colors } from "@/theme/colors";
+import { type AppColors, ThemeProvider, useTheme, useThemedStyles } from "@/theme";
 
 // Task de background + AsyncStorage/Sentry não rodam no SSR web do `eas update`.
 if (Platform.OS !== "web") {
@@ -27,8 +27,6 @@ if (Platform.OS !== "web") {
 }
 
 if (__DEV__) {
-  // Deixei esses imports com a verificação desativado para não dar erro no dev para que o reactotron seja carregado apenas em desenvolvimento
-
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require("@/lib/reactotron");
 
@@ -37,6 +35,16 @@ if (__DEV__) {
 }
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutShell />
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutShell() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -66,15 +74,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AppKeyboardProvider>
           <EnvironmentBannerProvider>
-            <SafeAreaView
-              edges={["top", "left", "right"]}
-              style={styles.safeArea}
-            >
+            <SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
               <EnvironmentBanner />
               <View style={styles.stackWrap}>
                 <Stack
                   screenOptions={{
-                    contentStyle: { backgroundColor: colors.brandGray },
+                    contentStyle: { backgroundColor: colors.surface.canvas },
                     headerShown: false,
                   }}
                 />
@@ -98,6 +103,7 @@ function AppKeyboardProvider({ children }: { children: ReactNode }) {
 }
 
 function AppToastHost() {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -107,19 +113,18 @@ function AppToastHost() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   root: {
     flex: 1,
   },
   safeArea: {
-    backgroundColor: colors.brandGray,
+    backgroundColor: colors.surface.canvas,
     flex: 1,
   },
   stackWrap: {
     flex: 1,
     overflow: "visible",
   },
-  // Só no topo: absoluteFill + elevation alto bloqueava toques no app inteiro (ex.: finalizar rota).
   toastHost: {
     elevation: 10000,
     left: 0,

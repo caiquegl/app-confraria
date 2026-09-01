@@ -19,7 +19,7 @@ import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { OwnProfile, UpdateProfilePayload } from "../types/profile.types";
 
@@ -40,6 +40,8 @@ export function EditProfileModal({
   onClose,
   onSave,
 }: EditProfileModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [name, setName] = useState(profile.name);
   const [email, setEmail] = useState(profile.email);
@@ -172,7 +174,7 @@ export function EditProfileModal({
           <View style={styles.header}>
             <Text style={styles.title}>Editar Perfil</Text>
             <Pressable accessibilityLabel="Fechar" style={styles.closeButton} onPress={onClose}>
-              <Ionicons color="#9CA3AF" name="close" size={24} />
+              <Ionicons color={colors.text.muted} name="close" size={24} />
             </Pressable>
           </View>
 
@@ -245,7 +247,7 @@ export function EditProfileModal({
                 multiline
                 maxLength={150}
                 placeholder="Conte um pouco sobre você..."
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.placeholder}
                 style={[styles.input, styles.bioInput, errors.bio && styles.inputError]}
                 textAlignVertical="top"
                 value={bio}
@@ -310,6 +312,8 @@ function ProfileInput({
   keyboardType = "default",
   onChangeText,
 }: ProfileInputProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       <Text style={styles.label}>{label}</Text>
@@ -317,7 +321,7 @@ function ProfileInput({
         autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.text.placeholder}
         style={[styles.input, error && styles.inputError]}
         value={value}
         onChangeText={onChangeText}
@@ -351,7 +355,7 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionButton: {
     flex: 1,
   },
@@ -366,8 +370,8 @@ const styles = StyleSheet.create({
   },
   avatarButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -388,7 +392,7 @@ const styles = StyleSheet.create({
   },
   avatarPreview: {
     alignItems: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 48,
     height: 96,
     justifyContent: "center",
@@ -422,11 +426,11 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   counter: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
   },
   errorText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     marginTop: 4,
   },
@@ -439,7 +443,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 4,
     marginBottom: 18,
@@ -452,8 +456,8 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     color: colors.brandDark,
@@ -462,7 +466,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   inputError: {
-    borderColor: "#EF4444",
+    borderColor: colors.feedback.danger,
   },
   label: {
     color: colors.brandDark,
@@ -471,7 +475,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "90%",

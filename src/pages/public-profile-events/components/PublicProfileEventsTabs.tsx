@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { PublicProfileEventTab } from "../types/public-profile-events.types";
 
@@ -15,6 +15,8 @@ export function PublicProfileEventsTabs({
   onChangeTab,
   tabs,
 }: PublicProfileEventsTabsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.tabs}>
       {tabs.map((tab) => {
@@ -35,7 +37,7 @@ export function PublicProfileEventsTabs({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   tab: {
     alignItems: "center",
     borderRadius: 999,
@@ -46,8 +48,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   tabs: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -55,7 +57,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   tabText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "800",
   },

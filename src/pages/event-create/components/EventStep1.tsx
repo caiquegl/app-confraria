@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventCoverImagePicker } from "./EventCoverImagePicker";
 import { EventFormField } from "./EventFormField";
@@ -28,6 +28,8 @@ export function EventStep1({
   onNext,
   updateDraft,
 }: EventStep1Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const canAdvance = draft.title.trim() !== "" && draft.category.trim() !== "";
 
   return (
@@ -98,15 +100,15 @@ export function EventStep1({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   categories: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
   categoryChip: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -117,13 +119,13 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   categoryHint: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
     lineHeight: 18,
   },
   categoryText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "800",
   },

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventEditSectionProps = {
   children: React.ReactNode;
@@ -8,6 +8,8 @@ type EventEditSectionProps = {
 };
 
 export function EventEditSection({ children, title }: EventEditSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.section}>
       <Text style={styles.title}>{title}</Text>
@@ -16,13 +18,13 @@ export function EventEditSection({ children, title }: EventEditSectionProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     gap: 20,
   },
   section: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     gap: 16,

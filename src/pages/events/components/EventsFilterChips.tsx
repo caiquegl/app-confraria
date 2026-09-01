@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { EventsFilterChip } from "../types/events.types";
 
@@ -11,6 +11,8 @@ type EventsFilterChipsProps = {
 };
 
 export function EventsFilterChips({ chips, onClearAll }: EventsFilterChipsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (chips.length === 0) return null;
 
   return (
@@ -34,7 +36,7 @@ export function EventsFilterChips({ chips, onClearAll }: EventsFilterChipsProps)
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   chip: {
     alignItems: "center",
     backgroundColor: "rgba(200, 247, 99, 0.2)",

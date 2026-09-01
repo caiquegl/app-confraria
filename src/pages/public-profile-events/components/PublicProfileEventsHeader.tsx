@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type PublicProfileEventsHeaderProps = {
   avatarUrl?: string | null;
@@ -19,6 +19,8 @@ export function PublicProfileEventsHeader({
   onSearchChange,
   searchQuery,
 }: PublicProfileEventsHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.header, { paddingTop: 12 }]}>
       <Pressable accessibilityRole="button" style={styles.backButton} onPress={onBack}>
@@ -26,10 +28,10 @@ export function PublicProfileEventsHeader({
       </Pressable>
 
       <View style={styles.searchBox}>
-        <Ionicons color="#9CA3AF" name="search-outline" size={20} />
+        <Ionicons color={colors.text.muted} name="search-outline" size={20} />
         <TextInput
           placeholder="Busque por categoria..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.placeholder}
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={onSearchChange}
@@ -47,7 +49,7 @@ export function PublicProfileEventsHeader({
           />
         ) : (
           <View style={styles.avatarFallback}>
-            <Ionicons color="#9CA3AF" name="person-outline" size={22} />
+            <Ionicons color={colors.text.muted} name="person-outline" size={22} />
           </View>
         )}
       </Pressable>
@@ -55,16 +57,16 @@ export function PublicProfileEventsHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatarButton: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.surface.primary,
     borderRadius: 24,
     borderWidth: 2,
     elevation: 2,
     height: 48,
     overflow: "hidden",
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 1, width: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
   },
   avatarFallback: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     flex: 1,
     justifyContent: "center",
   },
@@ -82,8 +84,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 48,
@@ -100,8 +102,8 @@ const styles = StyleSheet.create({
   },
   searchBox: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flex: 1,

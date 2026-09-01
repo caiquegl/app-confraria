@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type FeedActionsProps = {
   commentCount: number;
@@ -22,13 +22,15 @@ export function FeedActions({
   onToggleComments,
   onToggleLike,
 }: FeedActionsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Pressable style={styles.action} hitSlop={8} onPress={onToggleLike}>
         <Ionicons
           name={isLiked ? "heart" : "heart-outline"}
           size={20}
-          color={isLiked ? "#EF4444" : "#9CA3AF"}
+          color={isLiked ? colors.feedback.danger : colors.text.muted}
         />
         <Text style={[styles.count, isLiked && styles.likedText]}>{likeCount}</Text>
       </Pressable>
@@ -37,20 +39,20 @@ export function FeedActions({
         <Ionicons
           name="chatbubble-outline"
           size={19}
-          color={commentsVisible ? colors.brandGreen : "#9CA3AF"}
+          color={commentsVisible ? colors.brandGreen : colors.text.muted}
         />
         <Text style={[styles.count, commentsVisible && styles.commentsText]}>{commentCount}</Text>
       </Pressable>
 
       <Pressable style={[styles.action, styles.share]} hitSlop={8} onPress={onOpenShare}>
-        <Ionicons name="share-social-outline" size={20} color="#9CA3AF" />
+        <Ionicons name="share-social-outline" size={20} color={colors.text.muted} />
         <Text style={styles.count}>Compartilhar</Text>
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   action: {
     alignItems: "center",
     flexDirection: "row",
@@ -68,12 +70,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   count: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "500",
   },
   likedText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontWeight: "700",
   },
   share: {

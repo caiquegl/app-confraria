@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UserAvatar } from "@/components/UserAvatar";
 import { setHighlightPostId } from "@/lib/feed-highlight-store";
 import { formatRelativeTime } from "@/pages/home/services/feed.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useChatConversation } from "../business/useChatConversation";
 import { fetchChatConversations } from "../services/messages.service";
@@ -48,6 +48,8 @@ export function ChatView({
   participantName,
   onBack,
 }: ChatViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardState((state) => state.height);
   const listRef = useRef<FlatList<ChatMessage> | null>(null);
@@ -271,7 +273,7 @@ export function ChatView({
           )}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Ionicons color="#D1D5DB" name="chatbubbles-outline" size={34} />
+              <Ionicons color={colors.border.default} name="chatbubbles-outline" size={34} />
               <Text style={styles.emptyText}>Envie a primeira mensagem.</Text>
             </View>
           }
@@ -296,7 +298,7 @@ export function ChatView({
             <TextInput
               multiline
               placeholder="Escreva uma mensagem..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.text.placeholder}
               style={styles.input}
               value={draft}
               onBlur={stopTyping}
@@ -309,7 +311,7 @@ export function ChatView({
               onPress={handleSend}
             >
               <Ionicons
-                color={draft.trim() ? colors.brandDark : "#9CA3AF"}
+                color={draft.trim() ? colors.brandDark : colors.text.muted}
                 name="send"
                 size={18}
               />
@@ -351,6 +353,8 @@ function MessageBubble({
   onReply: (message: ChatMessage) => void;
   onRetry: (messageId: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [translateX] = useState(() => new Animated.Value(0));
   const canReply = message.sendStatus !== "sending" && message.sendStatus !== "failed";
   const panResponder = useMemo(
@@ -456,6 +460,7 @@ function ReactionPicker({
   onClose: () => void;
   onSelect: (emoji: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal animationType="fade" transparent statusBarTranslucent visible={Boolean(message)}>
       <Pressable style={styles.reactionBackdrop} onPress={onClose} />
@@ -489,6 +494,7 @@ function ReactionBadgeGroup({
   message: ChatMessage;
   onReact: (messageId: string, emoji: string) => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   if (message.reactions.length === 0) return null;
 
   return (
@@ -524,6 +530,8 @@ function ReplyComposerPreview({
   participantName: string;
   onCancel: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.replyComposerPreview}>
       <View style={styles.replyComposerAccent} />
@@ -536,7 +544,7 @@ function ReplyComposerPreview({
         </Text>
       </View>
       <Pressable accessibilityRole="button" hitSlop={8} onPress={onCancel}>
-        <Ionicons color="#6B7280" name="close" size={18} />
+        <Ionicons color={colors.text.secondary} name="close" size={18} />
       </Pressable>
     </View>
   );
@@ -549,6 +557,7 @@ function MessageReplySnippet({
   isMine: boolean;
   replyToMessage: NonNullable<ChatMessage["replyToMessage"]>;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.replySnippet, isMine && styles.replySnippetMine]}>
       <Text numberOfLines={1} style={styles.replySnippetTitle}>
@@ -574,6 +583,8 @@ function getMessagePreviewText(message: ChatMessage) {
 }
 
 function SharedEventCard({ message }: { message: ChatMessage }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const sharedEvent = message.sharedEvent;
   if (!sharedEvent) return null;
 
@@ -596,7 +607,7 @@ function SharedEventCard({ message }: { message: ChatMessage }) {
         />
       ) : (
         <View style={styles.sharedImageFallback}>
-          <Ionicons color="#9CA3AF" name="calendar-outline" size={20} />
+          <Ionicons color={colors.text.muted} name="calendar-outline" size={20} />
         </View>
       )}
       <View style={styles.sharedInfo}>
@@ -607,12 +618,14 @@ function SharedEventCard({ message }: { message: ChatMessage }) {
           {sharedEvent.title || message.text}
         </Text>
       </View>
-      <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
+      <Ionicons color={colors.text.muted} name="chevron-forward" size={16} />
     </Pressable>
   );
 }
 
 function SharedRouteCard({ message }: { message: ChatMessage }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const sharedRoute = message.sharedRoute;
   if (!sharedRoute) return null;
 
@@ -644,12 +657,14 @@ function SharedRouteCard({ message }: { message: ChatMessage }) {
           Rota de {sharedRoute.creatorName}
         </Text>
       </View>
-      <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
+      <Ionicons color={colors.text.muted} name="chevron-forward" size={16} />
     </Pressable>
   );
 }
 
 function SharedPostCard({ message }: { message: ChatMessage }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const sharedPost = message.sharedPost;
   if (!sharedPost) return null;
 
@@ -670,7 +685,7 @@ function SharedPostCard({ message }: { message: ChatMessage }) {
         />
       ) : (
         <View style={styles.sharedImageFallback}>
-          <Ionicons color="#9CA3AF" name="image-outline" size={20} />
+          <Ionicons color={colors.text.muted} name="image-outline" size={20} />
         </View>
       )}
       <View style={styles.sharedInfo}>
@@ -681,16 +696,16 @@ function SharedPostCard({ message }: { message: ChatMessage }) {
           {sharedPost.caption || message.text}
         </Text>
       </View>
-      <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
+      <Ionicons color={colors.text.muted} name="chevron-forward" size={16} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -711,8 +726,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   bubbleOther: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderWidth: 1,
   },
   centerState: {
@@ -728,13 +743,13 @@ const styles = StyleSheet.create({
   },
   composerWrap: {
     backgroundColor: "rgba(255,255,255,0.96)",
-    borderTopColor: "#E5E7EB",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingHorizontal: 14,
     paddingTop: 10,
   },
   typingIndicator: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontStyle: "italic",
     marginBottom: 8,
@@ -747,18 +762,18 @@ const styles = StyleSheet.create({
     minHeight: 260,
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
   },
   errorText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     textAlign: "center",
   },
   header: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.96)",
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 12,
@@ -779,13 +794,13 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   headerStatus: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     color: colors.brandDark,
@@ -797,7 +812,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   messageMeta: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     marginTop: 4,
   },
@@ -816,7 +831,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   messageText: {
-    color: "#374151",
+    color: colors.text.body,
     flexShrink: 1,
     fontSize: 14,
     lineHeight: 20,
@@ -829,15 +844,15 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   nextStepCard: {
-    backgroundColor: "#F7F8F4",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.preview,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     marginBottom: 10,
     padding: 12,
   },
   nextStepText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 3,
@@ -869,8 +884,8 @@ const styles = StyleSheet.create({
   },
   reactionBadge: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -879,7 +894,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   reactionBadgeCount: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "900",
   },
@@ -903,15 +918,15 @@ const styles = StyleSheet.create({
     width: 36,
   },
   reactionOptionActive: {
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
   },
   reactionOptionText: {
     fontSize: 22,
   },
   reactionPicker: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     elevation: 8,
@@ -919,7 +934,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 7,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 6, width: 0 },
     shadowOpacity: 0.16,
     shadowRadius: 16,
@@ -933,8 +948,8 @@ const styles = StyleSheet.create({
   },
   routeButton: {
     alignSelf: "flex-start",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#DADFD5",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.brand,
     borderRadius: 999,
     borderWidth: 1,
     marginTop: 10,
@@ -953,8 +968,8 @@ const styles = StyleSheet.create({
   },
   replyComposerPreview: {
     alignItems: "center",
-    backgroundColor: "#F7F8F4",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.preview,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -964,7 +979,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   replyComposerText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
@@ -979,7 +994,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   replySnippet: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderLeftColor: colors.brandPrimary,
     borderLeftWidth: 3,
     borderRadius: 12,
@@ -991,7 +1006,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.42)",
   },
   replySnippetText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     lineHeight: 16,
@@ -1015,10 +1030,10 @@ const styles = StyleSheet.create({
     width: 46,
   },
   sendButtonDisabled: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
   },
   sharedCaption: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
@@ -1041,7 +1056,7 @@ const styles = StyleSheet.create({
   },
   sharedImageFallback: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 12,
     height: 48,
     justifyContent: "center",
@@ -1077,14 +1092,14 @@ const styles = StyleSheet.create({
   },
   sharedRouteIcon: {
     alignItems: "center",
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
     borderRadius: 14,
     height: 48,
     justifyContent: "center",
     width: 48,
   },
   sharedRouteMeta: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "600",
     marginTop: 4,
@@ -1101,7 +1116,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   sharedRouteTitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     lineHeight: 16,
@@ -1109,7 +1124,7 @@ const styles = StyleSheet.create({
   },
   swipeReplyIcon: {
     alignItems: "center",
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
     borderRadius: 16,
     height: 32,
     justifyContent: "center",

@@ -1,29 +1,31 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 export function PublicProfileEventsEmptyState() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.emptyCard}>
-      <Ionicons color="#9CA3AF" name="calendar-clear-outline" size={28} />
+      <Ionicons color={colors.text.muted} name="calendar-clear-outline" size={28} />
       <Text style={styles.emptyTitle}>Nenhum evento encontrado</Text>
       <Text style={styles.emptyText}>Tente buscar por outro termo.</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   emptyCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 22,
     borderWidth: 1,
     padding: 28,
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     marginTop: 4,
   },

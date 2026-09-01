@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailParticipationFooterProps = {
   isParticipant: boolean;
@@ -15,6 +15,8 @@ export function EventDetailParticipationFooter({
   onPress,
   remainingSpots,
 }: EventDetailParticipationFooterProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -53,7 +55,7 @@ export function EventDetailParticipationFooter({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,
@@ -64,7 +66,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonConfirmed: {
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
   },
   buttonText: {
     color: colors.brandDark,
@@ -72,21 +74,21 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderTopWidth: 1,
     elevation: 10,
     paddingHorizontal: 18,
     paddingTop: 14,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: -3, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
   },
   note: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "600",
     marginTop: 10,
@@ -104,12 +106,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   priceSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
   },
   spotsBadge: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 12,

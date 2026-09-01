@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { formatRelativeTime } from "../services/feed.service";
 import type { FeedPost } from "../types/feed.types";
@@ -13,6 +13,8 @@ type FeedCardHeaderProps = {
 };
 
 export function FeedCardHeader({ onOpenUserProfile, post }: FeedCardHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <Pressable
@@ -36,9 +38,9 @@ export function FeedCardHeader({ onOpenUserProfile, post }: FeedCardHeaderProps)
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 17,
   },
@@ -60,7 +62,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   time: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
   },
   userName: {

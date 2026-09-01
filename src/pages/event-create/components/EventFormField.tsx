@@ -1,18 +1,20 @@
 import { StyleSheet, Text, TextInput, type TextInputProps, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventFormFieldProps = TextInputProps & {
   label: string;
 };
 
 export function EventFormField({ label, multiline, style, ...props }: EventFormFieldProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         multiline={multiline}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.text.placeholder}
         style={[styles.input, multiline && styles.inputMultiline, style]}
         textAlignVertical={multiline ? "top" : "center"}
         {...props}
@@ -21,10 +23,10 @@ export function EventFormField({ label, multiline, style, ...props }: EventFormF
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     color: colors.brandDark,

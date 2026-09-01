@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { FeedPost, FeedPostMedia } from "../types/feed.types";
 import { FeedActions } from "./FeedActions";
@@ -42,6 +42,8 @@ function FeedCardInner({
   onToggleLike,
   post,
 }: FeedCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [commentsVisible, setCommentsVisible] = useState(false);
 
   const mediaItems = useMemo<FeedPostMedia[]>(() => {
@@ -123,9 +125,9 @@ function FeedCardInner({
 
 export const FeedCard = memo(FeedCardInner);
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 18,
     elevation: 2,
     overflow: "hidden",

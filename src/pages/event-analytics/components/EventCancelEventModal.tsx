@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventCancelEventModalProps = {
   eventTitle: string;
@@ -30,6 +30,8 @@ export function EventCancelEventModal({
   participantsCount,
   visible,
 }: EventCancelEventModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [reason, setReason] = useState("");
 
@@ -63,13 +65,13 @@ export function EventCancelEventModal({
               style={styles.closeButton}
               onPress={handleClose}
             >
-              <Ionicons color="#9CA3AF" name="close" size={20} />
+              <Ionicons color={colors.text.muted} name="close" size={20} />
             </Pressable>
           </View>
 
           <View style={styles.alertBox}>
             <View style={styles.alertIconWrap}>
-              <Ionicons color="#EF4444" name="calendar-outline" size={20} />
+              <Ionicons color={colors.feedback.danger} name="calendar-outline" size={20} />
             </View>
             <Text style={styles.alertText}>
               <Text style={styles.alertTextBold}>{participantsLabel}</Text> do cancelamento de
@@ -82,7 +84,7 @@ export function EventCancelEventModal({
             editable={!isDeleting}
             multiline
             placeholder="Ex.: previsão de chuva forte na serra, remarcaremos em breve."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.text.placeholder}
             style={styles.textarea}
             textAlignVertical="top"
             value={reason}
@@ -99,7 +101,7 @@ export function EventCancelEventModal({
             onPress={() => onConfirm(reason.trim())}
           >
             {isDeleting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.text.inverse} />
             ) : (
               <Text style={styles.primaryButtonText}>Cancelar evento e avisar inscritos</Text>
             )}
@@ -118,10 +120,10 @@ export function EventCancelEventModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   alertBox: {
     alignItems: "flex-start",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
     borderRadius: 18,
     flexDirection: "row",
     gap: 12,
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   backdropWrap: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   primaryButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "800",
     textAlign: "center",
@@ -214,7 +216,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,
@@ -222,7 +224,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   textarea: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     color: colors.brandDark,

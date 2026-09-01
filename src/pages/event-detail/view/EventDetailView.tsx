@@ -11,7 +11,7 @@ import { fetchChatConversations, sendChatMessage } from "@/pages/messages/servic
 import {
   togglePublicProfileEventFavorite,
 } from "@/pages/public-profile-events/services/public-profile-events.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventDetailGallery } from "../components/EventDetailGallery";
 import { EventDetailHeader } from "../components/EventDetailHeader";
@@ -36,6 +36,7 @@ const DEFAULT_DESCRIPTION =
 const PARTICIPATION_FOOTER_BASE_HEIGHT = 156;
 
 export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [shareFriends, setShareFriends] = useState<FeedShareFriend[]>([]);
@@ -353,12 +354,14 @@ function FeedbackState({
   loading = false,
   message,
 }: FeedbackStateProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.feedbackWrap}>
       {loading ? (
         <ActivityIndicator color={colors.brandPrimary} />
       ) : (
-        <Ionicons color="#9CA3AF" name={icon} size={32} />
+        <Ionicons color={colors.text.muted} name={icon} size={32} />
       )}
       <Text style={styles.feedbackText}>{message}</Text>
     </View>
@@ -426,7 +429,7 @@ function getTimeDurationMinutes(startTime: string, endTime: string) {
   return duration > 0 ? duration : null;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     gap: 14,
     paddingBottom: 28,
@@ -434,7 +437,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   feedbackText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "700",
     marginTop: 10,

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventEditableList } from "./EventEditableList";
 import { EventFormField } from "./EventFormField";
@@ -19,6 +19,8 @@ type EventStep3Props = {
 };
 
 export function EventStep3({ draft, onBack, onClose, onNext, updateDraft }: EventStep3Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const updateLimit = (value: string) => {
     const normalized = value.replace(/\D/g, "");
     updateDraft("maxParticipants", normalized ? Number(normalized) : undefined);
@@ -49,7 +51,7 @@ export function EventStep3({ draft, onBack, onClose, onNext, updateDraft }: Even
         >
           <View style={styles.toggleIcon}>
             <Ionicons
-              color={draft.hasParticipantLimit ? colors.brandDark : "#9CA3AF"}
+              color={draft.hasParticipantLimit ? colors.brandDark : colors.text.muted}
               name={draft.hasParticipantLimit ? "checkmark-circle" : "ellipse-outline"}
               size={24}
             />
@@ -99,7 +101,7 @@ export function EventStep3({ draft, onBack, onClose, onNext, updateDraft }: Even
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   footer: {
     gap: 12,
     marginTop: 28,
@@ -112,8 +114,8 @@ const styles = StyleSheet.create({
   },
   toggleCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
@@ -122,14 +124,14 @@ const styles = StyleSheet.create({
   },
   toggleIcon: {
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface.disabled,
     borderRadius: 16,
     height: 42,
     justifyContent: "center",
     width: 42,
   },
   toggleSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 3,

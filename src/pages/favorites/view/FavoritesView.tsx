@@ -4,7 +4,7 @@ import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { FavoriteEventsList } from "../components/FavoriteEventsList";
 import { FavoritesFeedbackCard } from "../components/FavoritesFeedbackCard";
@@ -19,6 +19,8 @@ type FavoritesViewProps = {
 };
 
 export function FavoritesView({ onBack, onOpenEvent }: FavoritesViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<FavoriteTab>("events");
   const [events, setEvents] = useState<FavoriteEvent[]>([]);
@@ -157,7 +159,7 @@ export function FavoritesView({ onBack, onOpenEvent }: FavoritesViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     paddingHorizontal: 24,
     paddingTop: 4,

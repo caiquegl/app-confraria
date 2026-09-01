@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type RouteMapPinCameraProps = {
   isUploading?: boolean;
@@ -33,6 +33,8 @@ export function RouteMapPinCamera({
   onClose,
   onConfirm,
 }: RouteMapPinCameraProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -149,7 +151,7 @@ export function RouteMapPinCamera({
             style={[styles.iconButton, isUploading && styles.disabled]}
             onPress={handleClose}
           >
-            <Ionicons color="#FFFFFF" name="close" size={24} />
+            <Ionicons color={colors.text.inverse} name="close" size={24} />
           </Pressable>
           <Text style={styles.title}>Marcar no mapa</Text>
           <View style={styles.iconButtonPlaceholder} />
@@ -163,7 +165,7 @@ export function RouteMapPinCamera({
                 style={[styles.secondaryButton, isUploading && styles.disabled]}
                 onPress={handleRetake}
               >
-                <Ionicons color="#FFFFFF" name="refresh" size={22} />
+                <Ionicons color={colors.text.inverse} name="refresh" size={22} />
                 <Text style={styles.secondaryButtonText}>Tirar outra</Text>
               </Pressable>
               <Pressable
@@ -200,7 +202,7 @@ export function RouteMapPinCamera({
                   setFacing((current) => (current === "back" ? "front" : "back"))
                 }
               >
-                <Ionicons color="#FFFFFF" name="camera-reverse-outline" size={26} />
+                <Ionicons color={colors.text.inverse} name="camera-reverse-outline" size={26} />
               </Pressable>
             </>
           )}
@@ -210,7 +212,7 @@ export function RouteMapPinCamera({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   bottomControls: {
     alignItems: "center",
     bottom: 0,
@@ -226,7 +228,7 @@ const styles = StyleSheet.create({
   },
   captureButton: {
     alignItems: "center",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 42,
     borderWidth: 4,
     height: 78,
@@ -234,7 +236,7 @@ const styles = StyleSheet.create({
     width: 78,
   },
   captureInner: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 31,
     height: 62,
     width: 62,
@@ -271,7 +273,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: colors.overlay.scrimLight,
     borderRadius: 999,
     height: 42,
     justifyContent: "center",
@@ -306,7 +308,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   permissionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
@@ -325,7 +327,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   previewCanvas: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
     overflow: "hidden",
   },
@@ -333,7 +335,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   screen: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
   },
   secondaryButton: {
@@ -347,7 +349,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   secondaryButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -355,7 +357,7 @@ const styles = StyleSheet.create({
     width: 52,
   },
   title: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: "700",
   },

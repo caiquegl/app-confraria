@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { NAV_CONTROL_BUTTON_SIZE } from "./route-navigation-controls.constants";
 
@@ -16,6 +16,8 @@ export function RouteNavigationControls({
   onRecenter,
   onReport,
 }: RouteNavigationControlsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.wrap}>
       <Pressable
@@ -24,7 +26,7 @@ export function RouteNavigationControls({
         style={({ pressed }) => [styles.button, styles.reportButton, pressed && styles.pressed]}
         onPress={onReport}
       >
-        <Ionicons color="#FFFFFF" name="warning" size={26} />
+        <Ionicons color={colors.text.inverse} name="warning" size={26} />
       </Pressable>
 
       <Pressable
@@ -48,13 +50,13 @@ export function RouteNavigationControls({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
     borderRadius: 999,
     height: NAV_CONTROL_BUTTON_SIZE,
     justifyContent: "center",
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.22,
     shadowRadius: 10,
@@ -63,20 +65,20 @@ const styles = StyleSheet.create({
   },
   photoButton: {
     backgroundColor: colors.brandGreen,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderWidth: 2,
   },
   pressed: {
     opacity: 0.8,
   },
   recenterButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderColor: "#CBD1D6",
     borderWidth: 1.5,
   },
   reportButton: {
     backgroundColor: "#F97316",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderWidth: 2,
   },
   wrap: {

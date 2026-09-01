@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { ErrorState } from "@/components/ErrorState";
@@ -58,6 +58,8 @@ function formatDate(iso: string | null) {
 }
 
 function planPeriodLabel(code: SubscriptionPlanCode) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return code === "annual" ? "por ano" : "por mês";
 }
 
@@ -66,6 +68,8 @@ type MySubscriptionViewProps = {
 };
 
 export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [subscription, setSubscription] = useState<SubscriptionMe | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -435,9 +439,9 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   screen: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
   },
   header: {
@@ -623,7 +627,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 14,
     borderWidth: 1,
     minHeight: 48,

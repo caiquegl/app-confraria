@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { RoutePreferenceToggleKey, RoutePreferencesDraft } from "../types/route-create.types";
 
@@ -19,37 +19,42 @@ type PreferenceOption = {
   title: string;
 };
 
-const PREFERENCE_OPTIONS: PreferenceOption[] = [
-  {
-    description: "Pode aumentar o tempo de viagem",
-    icon: "settings-outline",
-    iconBackground: "#FFEDD5",
-    iconColor: "#EA580C",
-    key: "avoidTolls",
-    title: "Evitar Pedágios",
-  },
-  {
-    description: "Prefere asfalto sempre que existir alternativa",
-    icon: "earth-outline",
-    iconBackground: "#FEF3C7",
-    iconColor: "#B45309",
-    key: "avoidUnpaved",
-    title: "Evitar estrada de terra",
-  },
-  {
-    description: "Rota mais econômica",
-    icon: "water-outline",
-    iconBackground: "#DCFCE7",
-    iconColor: "#16A34A",
-    key: "optimizeFuel",
-    title: "Otimizar Combustível",
-  },
-];
+function getPreferenceOptions(colors: AppColors): PreferenceOption[] {
+  return [
+    {
+      description: "Pode aumentar o tempo de viagem",
+      icon: "settings-outline",
+      iconBackground: colors.routes.suggestionWarningBackground,
+      iconColor: colors.routes.pinOrange,
+      key: "avoidTolls",
+      title: "Evitar Pedágios",
+    },
+    {
+      description: "Prefere asfalto sempre que existir alternativa",
+      icon: "earth-outline",
+      iconBackground: colors.routes.sponsoredBackground,
+      iconColor: colors.routes.suggestionWarningText,
+      key: "avoidUnpaved",
+      title: "Evitar estrada de terra",
+    },
+    {
+      description: "Rota mais econômica",
+      icon: "water-outline",
+      iconBackground: colors.surface.successSubtle,
+      iconColor: colors.status.open,
+      key: "optimizeFuel",
+      title: "Otimizar Combustível",
+    },
+  ];
+}
 
 export function RouteCreateStep3({
   onTogglePreference,
   preferences,
 }: RouteCreateStep3Props) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const preferenceOptions = getPreferenceOptions(colors);
   return (
     <ScrollView
       contentContainerStyle={styles.scrollContent}
@@ -62,7 +67,7 @@ export function RouteCreateStep3({
       </Text>
 
       <View style={styles.list}>
-        {PREFERENCE_OPTIONS.map((option) => {
+        {preferenceOptions.map((option) => {
           const isEnabled = preferences[option.key];
 
           return (
@@ -95,11 +100,11 @@ export function RouteCreateStep3({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -115,7 +120,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   cardDescription: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
@@ -148,7 +153,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 4,
@@ -159,10 +164,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   toggleThumb: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 999,
     height: 20,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 1, width: 0 },
     shadowOpacity: 0.12,
     shadowRadius: 2,
@@ -172,7 +177,7 @@ const styles = StyleSheet.create({
     transform: [{ translateX: 20 }],
   },
   toggleTrack: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 28,
     justifyContent: "center",

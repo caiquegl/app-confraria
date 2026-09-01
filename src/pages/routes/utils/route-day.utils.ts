@@ -1,6 +1,7 @@
-import type { RouteDraftDay, RouteDraftStop, SheetState } from "../types/route-create.types";
+import { getRouteDayPalette, lightColors } from "@/theme/colors";
+import type { AppColors } from "@/theme";
 
-const DAY_COLORS = ["#B8E43A", "#9FC132", "#7CB342", "#5775C8", "#F59E0B", "#EF4444"];
+import type { RouteDraftDay, RouteDraftStop, SheetState } from "../types/route-create.types";
 
 export const SHEET_HEIGHT_RATIO: Record<SheetState, number> = {
   compact: 0.28,
@@ -64,8 +65,9 @@ export function createRouteStop(): RouteDraftStop {
   };
 }
 
-export function getDayColor(dayIndex: number): string {
-  return DAY_COLORS[dayIndex % DAY_COLORS.length];
+export function getDayColor(dayIndex: number, colors: AppColors = lightColors): string {
+  const palette = getRouteDayPalette(colors);
+  return palette[dayIndex % palette.length];
 }
 
 export function cycleSheetState(current: SheetState): SheetState {

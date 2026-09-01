@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors, radii, spacing, typography } from "@/theme";
+import { type AppColors, radii, spacing, typography, useTheme, useThemedStyles } from "@/theme";
 
 export type ErrorStateAction = {
   accessibilityLabel?: string;
@@ -31,6 +31,8 @@ export type ErrorStateProps = {
 };
 
 export function isTechnicalErrorMessage(message: string) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return /axios|ECONN|ETIMEDOUT|HTTP\/\d|Network Error|stack|status\s*\d{3}|Request failed/i.test(
     message,
   );
@@ -47,6 +49,8 @@ export function ErrorState({
   style,
   title,
 }: ErrorStateProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isCard = layout === "card";
   const retryAccessibilityLabel = retrying ? "Tentando novamente" : retryLabel;
 
@@ -113,7 +117,7 @@ export function ErrorState({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
     alignItems: "center",
     backgroundColor: colors.surface.primary,

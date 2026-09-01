@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type {
   RouteParticipantResponse,
@@ -16,6 +16,8 @@ type RouteGuestsSectionProps = {
 };
 
 function GuestAvatar({ label, uri }: { label: string; uri: string | null }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (uri) {
     return <Image source={{ uri }} style={styles.avatarImage} />;
   }
@@ -32,6 +34,8 @@ export function RouteGuestsSection({
   participants,
   pendingInvites,
 }: RouteGuestsSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const hasGuests = participants.length > 0 || pendingInvites.length > 0;
 
   return (
@@ -73,7 +77,7 @@ export function RouteGuestsSection({
                 <Text style={styles.guestName}>{invite.name}</Text>
                 <Text style={styles.guestMeta}>Convite enviado</Text>
               </View>
-              <Ionicons color="#F59E0B" name="time-outline" size={18} />
+              <Ionicons color={colors.rating.star} name="time-outline" size={18} />
             </View>
           ))}
         </View>
@@ -82,10 +86,10 @@ export function RouteGuestsSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatarFallback: {
     alignItems: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 40,
     justifyContent: "center",
@@ -102,15 +106,15 @@ const styles = StyleSheet.create({
     width: 40,
   },
   emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     gap: 14,
     padding: 16,
   },
   emptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   guestMeta: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
@@ -159,8 +163,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   listCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     gap: 4,

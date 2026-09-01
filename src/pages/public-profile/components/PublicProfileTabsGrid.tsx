@@ -12,7 +12,7 @@ import {
 
 import type { FeedPost } from "@/pages/home/types/feed.types";
 import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type ProfileTabKey = "posts" | "events";
 
@@ -51,6 +51,8 @@ export function PublicProfileTabsGrid({
   onPostLongPress,
   onPostPress,
 }: PublicProfileTabsGridProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [activeTab, setActiveTab] = useState<ProfileTabKey>("posts");
   const isPostsTab = activeTab === "posts";
   const activeItemsCount = isPostsTab ? posts.length : events.length;
@@ -120,6 +122,8 @@ function PublicProfilePostGridItem({
   post: FeedPost;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [hasImageError, setHasImageError] = useState(false);
   const videoThumbnail = post.media?.find((item) => item.mediaType === "video")?.thumbnailUrl;
   const image = post.media?.find((item) => item.mediaType === "image")?.url
@@ -147,21 +151,21 @@ function PublicProfilePostGridItem({
         />
       ) : hasVideo ? (
         <View style={styles.videoFallback}>
-          <Ionicons color="#FFFFFF" name="play" size={26} />
+          <Ionicons color={colors.text.inverse} name="play" size={26} />
         </View>
       ) : (
         <View style={styles.imageFallback}>
-          <Ionicons color="#9CA3AF" name="image-outline" size={24} />
+          <Ionicons color={colors.text.muted} name="image-outline" size={24} />
         </View>
       )}
       {post.media && post.media.length > 1 ? (
         <View style={styles.mediaCountBadge}>
-          <Ionicons color="#FFFFFF" name="copy-outline" size={13} />
+          <Ionicons color={colors.text.inverse} name="copy-outline" size={13} />
         </View>
       ) : null}
       {hasVideo && image && !hasImageError ? (
         <View style={styles.videoPlayBadge}>
-          <Ionicons color="#FFFFFF" name="play" size={16} />
+          <Ionicons color={colors.text.inverse} name="play" size={16} />
         </View>
       ) : null}
       {label ? (
@@ -182,6 +186,8 @@ function PublicProfileEventGridItem({
   event: PublicProfileEvent;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [hasImageError, setHasImageError] = useState(false);
 
   return (
@@ -197,7 +203,7 @@ function PublicProfileEventGridItem({
         />
       ) : (
         <View style={styles.imageFallback}>
-          <Ionicons color="#9CA3AF" name="calendar-outline" size={24} />
+          <Ionicons color={colors.text.muted} name="calendar-outline" size={24} />
         </View>
       )}
       <View style={styles.labelBadge}>
@@ -209,7 +215,7 @@ function PublicProfileEventGridItem({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingTop: 18,
@@ -220,7 +226,7 @@ const styles = StyleSheet.create({
     minHeight: 150,
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
   },
   grid: {
@@ -235,12 +241,12 @@ const styles = StyleSheet.create({
   },
   imageFallback: {
     alignItems: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     flex: 1,
     justifyContent: "center",
   },
   item: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 4,
     height: ITEM_SIZE,
     overflow: "hidden",
@@ -248,7 +254,7 @@ const styles = StyleSheet.create({
     width: ITEM_SIZE,
   },
   labelBadge: {
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderRadius: 6,
     bottom: 6,
     left: 6,
@@ -258,12 +264,12 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   labelText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 9,
     fontWeight: "700",
   },
   mediaCountBadge: {
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderRadius: 999,
     padding: 5,
     position: "absolute",
@@ -280,15 +286,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   tabs: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
     padding: 4,
   },
   tabText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -298,13 +304,13 @@ const styles = StyleSheet.create({
   },
   videoFallback: {
     alignItems: "center",
-    backgroundColor: "#111827",
+    backgroundColor: colors.surface.videoFallback,
     flex: 1,
     justifyContent: "center",
   },
   videoPlayBadge: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     borderRadius: 999,
     height: 34,
     justifyContent: "center",

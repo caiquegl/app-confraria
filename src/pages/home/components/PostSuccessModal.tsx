@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type PostSuccessModalProps = {
   onContinue: () => void;
@@ -9,6 +9,8 @@ type PostSuccessModalProps = {
 };
 
 export function PostSuccessModal({ onContinue, visible }: PostSuccessModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal animationType="fade" statusBarTranslucent transparent visible={visible}>
       <View style={styles.backdrop}>
@@ -36,10 +38,10 @@ export function PostSuccessModal({ onContinue, visible }: PostSuccessModalProps)
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
@@ -65,14 +67,14 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 32,
     paddingHorizontal: 32,
     paddingVertical: 32,
     width: "100%",
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 28,
@@ -80,7 +82,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: "center",
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
     borderRadius: 999,
     height: 88,
     justifyContent: "center",

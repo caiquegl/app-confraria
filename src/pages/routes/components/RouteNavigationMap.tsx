@@ -1,10 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, useColorScheme, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import Svg, { Path } from "react-native-svg";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { RouteLiveLocation, RouteLiveReport } from "@/lib/route-navigation-socket";
 
@@ -12,11 +12,8 @@ import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 import type { RoutePhotoCluster } from "../types/route-photo.types";
 import type { RouteNavigationPlacePin } from "../utils/build-navigation-place-pins";
 import { RoutePhotoClusterMarker } from "./RoutePhotoClusterMarker";
-import { ROUTE_REPORT_TYPE_BY_KEY } from "../utils/route-report-types";
-import {
-  ROUTE_NAVIGATION_MAP_STYLE_NIGHT,
-  ROUTE_PLANNER_MAP_STYLE,
-} from "../utils/route-map-style";
+import { getRouteReportTypeByKey } from "../utils/route-report-types";
+import { getRouteNavigationMapStyleNight, getRoutePlannerMapStyle } from "../utils/route-map-style";
 
 type RouteNavigationMapProps = {
   followUser: boolean;
@@ -48,6 +45,11 @@ export function RouteNavigationMap({
   photoClusters = [],
   state,
 }: RouteNavigationMapProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const reportTypeByKey = useMemo(() => getRouteReportTypeByKey(colors), [colors]);
+  const plannerMapStyle = useMemo(() => getRoutePlannerMapStyle(colors), [colors]);
+  const nightMapStyle = useMemo(() => getRouteNavigationMapStyleNight(colors), [colors]);
   const mapRef = useRef<MapView | null>(null);
   const zoomRef = useRef(NAVIGATION_ZOOM);
   const followUserRef = useRef(followUser);
@@ -165,7 +167,7 @@ export function RouteNavigationMap({
     <View style={styles.container}>
       <MapView
         ref={mapRef}
-        customMapStyle={isNightMode ? ROUTE_NAVIGATION_MAP_STYLE_NIGHT : ROUTE_PLANNER_MAP_STYLE}
+        customMapStyle={isNightMode ? nightMapStyle : plannerMapStyle}
         initialRegion={initialRegion}
         pitchEnabled={followUser}
         provider={PROVIDER_GOOGLE}
@@ -254,7 +256,7 @@ export function RouteNavigationMap({
               >
                 <View collapsable={false} style={styles.partnerPin}>
                   <View collapsable={false} style={styles.partnerPinInner}>
-                    <Ionicons color="#FFFFFF" name="person" size={14} />
+                    <Ionicons color={colors.text.inverse} name="person" size={14} />
                   </View>
                   <View collapsable={false} style={styles.partnerLabel}>
                     <Text numberOfLines={1} style={styles.partnerLabelText}>
@@ -295,8 +297,8 @@ export function RouteNavigationMap({
           )
           .map((report) => {
             const config =
-              ROUTE_REPORT_TYPE_BY_KEY[
-                report.type as keyof typeof ROUTE_REPORT_TYPE_BY_KEY
+              reportTypeByKey[
+                report.type as keyof typeof reportTypeByKey
               ];
             return (
               <Marker
@@ -316,7 +318,7 @@ export function RouteNavigationMap({
                   ]}
                 >
                   <Ionicons
-                    color="#FFFFFF"
+                    color={colors.text.inverse}
                     name={config?.icon ?? "alert-circle"}
                     size={16}
                   />
@@ -350,13 +352,15 @@ export function RouteNavigationMap({
 }
 
 function HeadingNavArrow() {
+  const { colors } = useTheme();
+
   // Ponta em (24,2), centro geométrico do viewBox em (24,24) → bearing 0 = norte.
   return (
     <Svg width={44} height={44} viewBox="0 0 48 48">
       <Path
         d="M24 2 L42 42 L24 32 L6 42 Z"
         fill={colors.brandGreen}
-        stroke="#FFFFFF"
+        stroke={colors.text.inverse}
         strokeLinejoin="round"
         strokeWidth={2.5}
       />
@@ -365,6 +369,8 @@ function HeadingNavArrow() {
 }
 
 function NavigationPlacePin({ pin }: { pin: RouteNavigationPlacePin }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isDestination = pin.kind === "destination";
   const title = isDestination
     ? pin.title || "Destino"
@@ -386,7 +392,7 @@ function NavigationPlacePin({ pin }: { pin: RouteNavigationPlacePin }) {
         ]}
       >
         {isDestination ? (
-          <Ionicons color="#FFFFFF" name="flag" size={15} />
+          <Ionicons color={colors.text.inverse} name="flag" size={15} />
         ) : (
           <Text style={styles.placePinLabel}>{pin.pinLabel}</Text>
         )}
@@ -402,7 +408,7 @@ function NavigationPlacePin({ pin }: { pin: RouteNavigationPlacePin }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     flex: 1,
   },
@@ -418,7 +424,7 @@ const styles = StyleSheet.create({
   },
   placePin: {
     alignItems: "center",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     height: 32,
@@ -438,7 +444,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   placePinStop: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderColor: colors.brandGreen,
   },
   placePinTip: {
@@ -472,7 +478,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   placePinTitleText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 10,
     fontWeight: "700",
     includeFontPadding: false,
@@ -501,7 +507,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   partnerLabelText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 10,
     fontWeight: "700",
     includeFontPadding: false,
@@ -516,7 +522,7 @@ const styles = StyleSheet.create({
   partnerPinInner: {
     alignItems: "center",
     backgroundColor: "#3B82F6",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     height: 34,
@@ -525,12 +531,12 @@ const styles = StyleSheet.create({
   },
   reportPin: {
     alignItems: "center",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     height: 34,
     justifyContent: "center",
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

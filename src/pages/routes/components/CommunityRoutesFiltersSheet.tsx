@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 export type CommunityRoutesFilters = {
   minRating: number;
@@ -24,6 +24,8 @@ type CommunityRoutesFiltersSheetProps = {
 };
 
 function formatRatingLabel(value: number) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (value <= 0) return "Qualquer";
   return `≥ ${value.toFixed(1).replace(".", ",")}`;
 }
@@ -36,6 +38,8 @@ export function CommunityRoutesFiltersSheet({
   onClose,
   visible,
 }: CommunityRoutesFiltersSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -46,7 +50,7 @@ export function CommunityRoutesFiltersSheet({
               <Text style={styles.title}>Filtros das rotas</Text>
             </View>
             <Pressable accessibilityRole="button" style={styles.closeButton} onPress={onClose}>
-              <Ionicons color="#9CA3AF" name="close" size={18} />
+              <Ionicons color={colors.text.muted} name="close" size={18} />
             </Pressable>
           </View>
 
@@ -115,7 +119,7 @@ export function CommunityRoutesFiltersSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     backgroundColor: "rgba(28, 33, 38, 0.45)",
     flex: 1,
@@ -125,8 +129,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chip: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 14,
@@ -137,7 +141,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   chipText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -147,7 +151,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     height: 32,
     justifyContent: "center",
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 48,
@@ -168,7 +172,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   comingSoon: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   eyebrow: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 1,
@@ -187,7 +191,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   footer: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     flexDirection: "row",
     gap: 12,

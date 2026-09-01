@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 import { EventCoverImagePicker } from "@/pages/event-create/components/EventCoverImagePicker";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { RouteThumbnailType } from "../types/saved-route.types";
 
@@ -34,6 +34,8 @@ export function RouteCoverPicker({
   style,
   thumbnailType,
 }: RouteCoverPickerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handlePickCover = (uri: string) => {
@@ -63,7 +65,7 @@ export function RouteCoverPicker({
           ) : null}
         </View>
         <Ionicons
-          color="#9CA3AF"
+          color={colors.text.muted}
           name={isExpanded ? "chevron-up" : "chevron-down"}
           size={18}
         />
@@ -123,7 +125,7 @@ export function RouteCoverPicker({
             />
           ) : (
             <View style={[styles.mapPreview, compact && styles.mapPreviewCompact]}>
-              <Ionicons color="#728F21" name="navigate-outline" size={compact ? 22 : 28} />
+              <Ionicons color={colors.brandActive} name="navigate-outline" size={compact ? 22 : 28} />
               <Text style={styles.mapPreviewText}>Mini traçado do mapa no card da rota</Text>
             </View>
           )}
@@ -133,7 +135,7 @@ export function RouteCoverPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   collapseCopy: {
     flex: 1,
     gap: 2,
@@ -145,13 +147,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   collapseSummary: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
   },
   container: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     gap: 12,
@@ -174,7 +176,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   mapPreviewText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     textAlign: "center",
   },
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   typeOptionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -205,8 +207,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   typeSwitch: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",

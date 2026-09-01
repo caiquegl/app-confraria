@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatRelativeTime } from "@/pages/home/services/feed.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { StoryItem, StoryViewerUser } from "../types/stories.types";
 
@@ -29,6 +29,8 @@ export function StoryViewersSheet({
   viewers,
   onClose,
 }: StoryViewersSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -49,7 +51,7 @@ export function StoryViewersSheet({
             </Text>
           </View>
           <Pressable hitSlop={8} onPress={onClose}>
-            <Ionicons color="#6B7280" name="close" size={22} />
+            <Ionicons color={colors.text.secondary} name="close" size={22} />
           </Pressable>
         </View>
 
@@ -64,7 +66,7 @@ export function StoryViewersSheet({
             contentContainerStyle={viewers.length === 0 && styles.emptyContent}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <Ionicons color="#D1D5DB" name="eye-outline" size={34} />
+                <Ionicons color={colors.border.default} name="eye-outline" size={34} />
                 <Text style={styles.emptyText}>Ninguém viu este story ainda.</Text>
               </View>
             }
@@ -85,7 +87,7 @@ export function StoryViewersSheet({
                 </View>
                 {item.liked && (
                   <View style={styles.likeBadge}>
-                    <Ionicons color="#EF4444" name="heart" size={16} />
+                    <Ionicons color={colors.feedback.danger} name="heart" size={16} />
                   </View>
                 )}
               </View>
@@ -97,7 +99,7 @@ export function StoryViewersSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     backgroundColor: "rgba(0,0,0,0.28)",
     bottom: 0,
@@ -115,12 +117,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#D1D5DB",
+    backgroundColor: colors.border.default,
     borderRadius: 999,
     height: 4,
     marginBottom: 14,
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
     width: 30,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     bottom: 0,
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   subtitle: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   viewerTime: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 2,
   },

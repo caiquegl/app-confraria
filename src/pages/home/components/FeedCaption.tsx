@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const PREVIEW_LINES = 3;
 const MIN_CHARS_FOR_TOGGLE = 120;
@@ -11,6 +11,8 @@ type FeedCaptionProps = {
 };
 
 export function FeedCaption({ text }: FeedCaptionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [expanded, setExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(text.length > MIN_CHARS_FOR_TOGGLE);
 
@@ -41,9 +43,9 @@ export function FeedCaption({ text }: FeedCaptionProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   caption: {
-    color: "#374151",
+    color: colors.text.body,
     fontSize: 14,
     lineHeight: 20,
   },

@@ -18,7 +18,7 @@ import { QuickRideCard } from "@/pages/events/components/QuickRideCard";
 import { fetchMyQuickRides } from "@/pages/quick-rides/services/quick-rides.service";
 import type { QuickRide, QuickRideListItem } from "@/pages/quick-rides/types/quick-ride.types";
 import { isQuickRideListItemEnded } from "@/pages/quick-rides/types/quick-ride.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type MyQuickRidesViewProps = {
   onBack: () => void;
@@ -31,12 +31,16 @@ type QuickRideSection = {
 };
 
 function getRoleBadge(ride: QuickRideListItem): string {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (ride.isHost) return "Organizador";
   if (ride.isActive) return "Participando";
   return "Participou";
 }
 
 export function MyQuickRidesView({ onBack }: MyQuickRidesViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [rides, setRides] = useState<QuickRideListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,7 +176,7 @@ export function MyQuickRidesView({ onBack }: MyQuickRidesViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   centered: {
     alignItems: "center",
     flex: 1,
@@ -186,8 +190,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -211,7 +215,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   sectionTitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.4,

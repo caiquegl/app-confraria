@@ -15,9 +15,11 @@ import type {
   UpdateProfilePayload,
 } from "@/pages/profile/types/profile.types";
 import { PublicProfileView } from "@/pages/public-profile/view/PublicProfileView";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 export default function ProfileScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [editProfile, setEditProfile] = useState<OwnProfile | null>(null);
@@ -141,7 +143,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   centerState: {
     alignItems: "center",
     flex: 1,
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   errorText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },

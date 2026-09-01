@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 import { ErrorState } from "@/components/ErrorState";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { FeedPost } from "../types/feed.types";
 import { FeedCard } from "./FeedCard";
@@ -78,6 +78,7 @@ export function FeedList({
   onToggleLike,
   posts,
 }: FeedListProps) {
+  const styles = useThemedStyles(createStyles);
   const endReachedDuringMountRef = useRef(true);
 
   const handleEndReached = useCallback(() => {
@@ -192,6 +193,7 @@ export function FeedList({
 }
 
 function Separator() {
+  const styles = useThemedStyles(createStyles);
   return <View style={styles.separator} />;
 }
 
@@ -202,6 +204,8 @@ function EmptyFeed({
   emptyText?: string;
   emptyTitle?: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.empty}>
       <Text style={styles.emptyTitle}>{emptyTitle}</Text>
@@ -210,7 +214,7 @@ function EmptyFeed({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     flexGrow: 1,
     paddingBottom: 96,
@@ -223,7 +227,7 @@ const styles = StyleSheet.create({
     paddingTop: 80,
   },
   emptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 22,
     marginTop: 8,

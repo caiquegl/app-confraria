@@ -165,7 +165,7 @@ export function NewPostCamera({
 
         <View style={[styles.topControls, { paddingTop: insets.top + 12 }]}>
           <Pressable style={styles.iconButton} onPress={handleClose}>
-            <Ionicons name="close" size={24} color="#FFFFFF" />
+            <Ionicons name="close" size={24} color={colors.text.inverse} />
           </Pressable>
 
           <Pressable
@@ -182,7 +182,7 @@ export function NewPostCamera({
 
         <View style={[styles.bottomControls, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
           <Pressable style={styles.galleryButton} onPress={handleOpenGallery}>
-            <Ionicons name="images-outline" size={26} color="#FFFFFF" />
+            <Ionicons name="images-outline" size={26} color={colors.text.inverse} />
           </Pressable>
 
           <Pressable
@@ -197,7 +197,7 @@ export function NewPostCamera({
           </Pressable>
 
           <Pressable style={styles.flipButton} onPress={toggleFacing}>
-            <Ionicons name="camera-reverse-outline" size={26} color="#FFFFFF" />
+            <Ionicons name="camera-reverse-outline" size={26} color={colors.text.inverse} />
           </Pressable>
         </View>
 

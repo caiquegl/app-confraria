@@ -43,7 +43,7 @@ export function useRouteMapPhotos({ enabled, routeId }: UseRouteMapPhotosParams)
   useEffect(() => {
     if (!enabled) return;
 
-    return subscribeRoutePhotoCreated((photo) => {
+    const unsubscribe = subscribeRoutePhotoCreated((photo) => {
       if (photo.routeId !== routeId) return;
 
       setPhotos((current) => {
@@ -53,6 +53,10 @@ export function useRouteMapPhotos({ enabled, routeId }: UseRouteMapPhotosParams)
         return [...current, photo];
       });
     });
+
+    return () => {
+      unsubscribe();
+    };
   }, [enabled, routeId]);
 
   const clusters = useMemo(() => clusterRoutePhotos(photos), [photos]);

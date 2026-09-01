@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { InputField } from "@/components/InputField";
 import { QUICK_RIDE_FIELD } from "@/pages/quick-rides/lib/quick-ride-form";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type QuickRideCancelModalProps = {
   isDeleting: boolean;
@@ -31,6 +31,8 @@ export function QuickRideCancelModal({
   rideTitle,
   visible,
 }: QuickRideCancelModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [reason, setReason] = useState("");
 
@@ -66,13 +68,13 @@ export function QuickRideCancelModal({
               style={styles.closeButton}
               onPress={handleClose}
             >
-              <Ionicons color="#9CA3AF" name="close" size={20} />
+              <Ionicons color={colors.text.muted} name="close" size={20} />
             </Pressable>
           </View>
 
           <View style={styles.alertBox}>
             <View style={styles.alertIconWrap}>
-              <Ionicons color="#EF4444" name="flame-outline" size={20} />
+              <Ionicons color={colors.feedback.danger} name="flame-outline" size={20} />
             </View>
             <Text style={styles.alertText}>
               <Text style={styles.alertTextBold}>{participantsLabel}</Text> do cancelamento de
@@ -102,7 +104,7 @@ export function QuickRideCancelModal({
             onPress={() => onConfirm(reason.trim())}
           >
             {isDeleting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.text.inverse} />
             ) : (
               <Text style={styles.primaryButtonText}>Cancelar rolê e avisar participantes</Text>
             )}
@@ -121,10 +123,10 @@ export function QuickRideCancelModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   alertBox: {
     alignItems: "flex-start",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
     borderRadius: 18,
     flexDirection: "row",
     gap: 12,
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   backdropWrap: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },
@@ -165,7 +167,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   primaryButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "800",
     textAlign: "center",
@@ -214,7 +216,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,

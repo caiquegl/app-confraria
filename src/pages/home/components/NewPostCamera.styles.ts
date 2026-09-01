@@ -18,7 +18,7 @@ export const styles = StyleSheet.create({
   },
   captureButton: {
     alignItems: "center",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 42,
     borderWidth: 4,
     height: 78,
@@ -29,19 +29,19 @@ export const styles = StyleSheet.create({
     opacity: 0.6,
   },
   captureButtonRecording: {
-    backgroundColor: "#EF4444",
-    borderColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
+    borderColor: colors.feedback.danger,
     borderRadius: 18,
     transform: [{ scale: 1.02 }],
   },
   captureInner: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 31,
     height: 62,
     width: 62,
   },
   captureInnerRecording: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 6,
     height: 28,
     width: 28,
@@ -79,7 +79,7 @@ export const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: colors.overlay.scrimLight,
     borderRadius: 18,
     height: 42,
     justifyContent: "center",
@@ -100,7 +100,7 @@ export const styles = StyleSheet.create({
   },
   mediaCounter: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderRadius: 14,
     flexDirection: "row",
     gap: 8,
@@ -110,14 +110,14 @@ export const styles = StyleSheet.create({
     position: "absolute",
   },
   mediaCounterText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "800",
   },
   modeButton: {
     alignItems: "center",
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderColor: "rgba(255,255,255,0.24)",
     borderRadius: 999,
     borderWidth: 1,
@@ -134,7 +134,7 @@ export const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   modeButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "900",
   },
@@ -154,12 +154,12 @@ export const styles = StyleSheet.create({
   },
   permissionScreen: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
     justifyContent: "center",
   },
   permissionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 22,
     marginTop: 10,
@@ -176,7 +176,7 @@ export const styles = StyleSheet.create({
     width: "100%",
   },
   recordingDot: {
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 999,
     height: 8,
     width: 8,
@@ -184,7 +184,7 @@ export const styles = StyleSheet.create({
   recordingPill: {
     alignItems: "center",
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: colors.overlay.scrimHeavy,
     borderColor: "rgba(255,255,255,0.24)",
     borderRadius: 999,
     borderWidth: 1,
@@ -195,12 +195,12 @@ export const styles = StyleSheet.create({
     position: "absolute",
   },
   recordingText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "800",
   },
   screen: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
   },
   topControls: {

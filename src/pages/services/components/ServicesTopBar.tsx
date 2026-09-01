@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type ServicesTopBarProps = {
   searchQuery: string;
@@ -19,19 +19,21 @@ export function ServicesTopBar({
   userAvatar,
   userName,
 }: ServicesTopBarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.row}>
         <View style={styles.searchWrap}>
           <Ionicons
-            color="#9CA3AF"
+            color={colors.text.muted}
             name="search"
             size={18}
             style={styles.searchIcon}
           />
           <TextInput
             placeholder="Busque por Categorias, no..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.text.placeholder}
             style={styles.searchInput}
             value={searchQuery}
             onChangeText={onSearchChange}
@@ -51,13 +53,13 @@ export function ServicesTopBar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatarButton: {
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     elevation: 3,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -88,8 +90,8 @@ const styles = StyleSheet.create({
   },
   searchWrap: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     flex: 1,

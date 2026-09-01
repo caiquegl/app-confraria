@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { StoryGroup } from "../types/stories.types";
 
@@ -30,6 +30,8 @@ export function StoriesBar({
   onOpenSearch,
   onOpenStory,
 }: StoriesBarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (!currentUser) return null;
 
   const hasMyStory = Boolean(myStoryGroup?.stories.length);
@@ -108,14 +110,14 @@ export function StoriesBar({
           style={styles.searchButton}
           onPress={onOpenSearch}
         >
-          <Ionicons color="#6B7280" name="search-outline" size={20} />
+          <Ionicons color={colors.text.secondary} name="search-outline" size={20} />
         </Pressable>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   activeStoryRing: {
     borderColor: colors.brandGreen,
     borderStyle: "solid",
@@ -123,7 +125,7 @@ const styles = StyleSheet.create({
   addBadge: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     bottom: 18,
@@ -146,8 +148,8 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 44,
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   },
   myStoryRing: {
     alignItems: "center",
-    borderColor: "#DADFD5",
+    borderColor: colors.border.brand,
     borderRadius: 999,
     borderStyle: "dashed",
     borderWidth: 2,
@@ -184,7 +186,7 @@ const styles = StyleSheet.create({
     width: 72,
   },
   storyLabel: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 5,
     textAlign: "center",

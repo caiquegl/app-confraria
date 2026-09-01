@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1558981806-ec527fa84c3d?q=80&w=900&auto=format&fit=crop";
@@ -17,6 +17,8 @@ export function EventAnalyticsHeroCard({
   coverImageUrl,
   title,
 }: EventAnalyticsHeroCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const imageUrl = coverImageUrl || FALLBACK_IMAGE;
 
   return (
@@ -37,16 +39,16 @@ export function EventAnalyticsHeroCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 14,
   },
   category: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -56,7 +58,7 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     aspectRatio: 16 / 9,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 20,
     marginBottom: 16,
     overflow: "hidden",

@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type SelectOption = {
   label: string;
@@ -26,6 +26,8 @@ type SelectFieldProps = {
 };
 
 export function SelectField({ error, label, onChange, options, value }: SelectFieldProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [open, setOpen] = useState(false);
 
   const selected = options.find((o) => o.value === value);
@@ -45,7 +47,7 @@ export function SelectField({ error, label, onChange, options, value }: SelectFi
         <Text style={[styles.triggerText, !selected && styles.placeholder]}>
           {selected ? selected.label : label}
         </Text>
-        <Ionicons name="chevron-down" size={18} color="#9CA3AF" />
+        <Ionicons name="chevron-down" size={18} color={colors.text.muted} />
       </TouchableOpacity>
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -81,14 +83,14 @@ export function SelectField({ error, label, onChange, options, value }: SelectFi
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: colors.overlay.scrimLight,
     flex: 1,
     justifyContent: "flex-end",
   },
   error: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     marginLeft: 4,
     marginTop: 4,
@@ -105,7 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${colors.brandGreen}33`,
   },
   optionText: {
-    color: "#374151",
+    color: colors.text.body,
     fontSize: 15,
   },
   optionTextSelected: {
@@ -113,10 +115,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   placeholder: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "60%",
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
   },
   trigger: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -142,10 +144,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   triggerDefault: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
   },
   triggerError: {
-    borderColor: "#EF4444",
+    borderColor: colors.feedback.danger,
   },
   triggerText: {
     color: colors.brandDark,

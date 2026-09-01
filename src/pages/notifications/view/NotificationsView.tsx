@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import Toast from "react-native-toast-message";
 
 import { ErrorState } from "@/components/ErrorState";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useNotifications } from "../business/useNotifications";
 import { NotificationsList } from "../components/NotificationsList";
@@ -15,6 +15,8 @@ export function NotificationsView({
   onOpenPost,
   onOpenQuickRide,
 }: NotificationsViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { error, isLoading, isRetrying, newNotifications, oldNotifications, reload } =
     useNotifications();
 
@@ -29,7 +31,7 @@ export function NotificationsView({
           style={styles.closeButton}
           onPress={onBack}
         >
-          <Ionicons color="#6B7280" name="close" size={18} />
+          <Ionicons color={colors.text.secondary} name="close" size={18} />
         </Pressable>
       </View>
 
@@ -87,7 +89,7 @@ export function NotificationsView({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   closeButton: {
     alignItems: "center",
     backgroundColor: "rgba(229,231,235,0.7)",

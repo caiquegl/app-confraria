@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventEditLayoutProps = {
   children: React.ReactNode;
@@ -17,6 +17,8 @@ type EventEditLayoutProps = {
 };
 
 export function EventEditLayout({ children, footer, onBack }: EventEditLayoutProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -54,11 +56,11 @@ export function EventEditLayout({ children, footer, onBack }: EventEditLayoutPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 48,
@@ -69,8 +71,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footer: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 16,

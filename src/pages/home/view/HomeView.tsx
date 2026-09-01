@@ -12,7 +12,7 @@ import { StorySuccessModal } from "@/pages/stories/components/StorySuccessModal"
 import { StoryViewer } from "@/pages/stories/components/StoryViewer";
 import { StoryViewersSheet } from "@/pages/stories/components/StoryViewersSheet";
 import type { StoryDraftMedia } from "@/pages/stories/types/stories.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useFeed } from "../business/useFeed";
 import { FeedFloatingActions } from "../components/FeedFloatingActions";
@@ -23,6 +23,8 @@ import { PostSuccessModal } from "../components/PostSuccessModal";
 import { SharePostSheet } from "../components/SharePostSheet";
 
 export function HomeView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     addComment,
     addReply,
@@ -260,7 +262,7 @@ export function HomeView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     backgroundColor: colors.brandGray,
     flex: 1,

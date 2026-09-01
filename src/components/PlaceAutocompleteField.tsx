@@ -12,7 +12,7 @@ import {
 import { getStoredGeolocation } from "@/lib/location";
 import { fetchPlaceAutocomplete } from "@/lib/places";
 import type { PlaceReference } from "@/lib/places";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const MIN_SEARCH_LENGTH = 3;
 const SEARCH_DEBOUNCE_MS = 450;
@@ -38,6 +38,8 @@ export function PlaceAutocompleteField({
   suppressSuggestions = false,
   value,
 }: PlaceAutocompleteFieldProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [query, setQuery] = useState(value?.description ?? "");
   const [suggestions, setSuggestions] = useState<PlaceReference[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -153,12 +155,12 @@ export function PlaceAutocompleteField({
       ) : null}
 
       <View style={[styles.inputWrap, compact && styles.inputWrapCompact]}>
-        <Ionicons color="#9CA3AF" name="location-outline" size={compact ? 16 : 18} />
+        <Ionicons color={colors.text.muted} name="location-outline" size={compact ? 16 : 18} />
         <TextInput
           autoCapitalize="words"
           editable={editable}
           placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.placeholder}
           style={[styles.input, compact && styles.inputCompact]}
           value={query}
           onChangeText={handleChangeText}
@@ -172,7 +174,7 @@ export function PlaceAutocompleteField({
             style={styles.clearButton}
             onPress={handleClear}
           >
-            <Ionicons color="#9CA3AF" name="close-circle" size={compact ? 16 : 18} />
+            <Ionicons color={colors.text.muted} name="close-circle" size={compact ? 16 : 18} />
           </Pressable>
         ) : null}
       </View>
@@ -195,7 +197,7 @@ export function PlaceAutocompleteField({
               onPress={() => handleSelectPlace(place)}
             >
               <View style={styles.optionIcon}>
-                <Ionicons color="#6B7280" name="location-outline" size={16} />
+                <Ionicons color={colors.text.secondary} name="location-outline" size={16} />
               </View>
               <View style={styles.optionTextBlock}>
                 <Text numberOfLines={1} style={styles.optionTitle}>
@@ -215,15 +217,15 @@ export function PlaceAutocompleteField({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   clearButton: {
     alignItems: "center",
     justifyContent: "center",
     paddingLeft: 2,
   },
   dropdown: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     elevation: 3,
@@ -235,7 +237,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   dropdownMessage: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
     padding: 14,
@@ -252,8 +254,8 @@ const styles = StyleSheet.create({
   },
   inputWrap: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -280,7 +282,7 @@ const styles = StyleSheet.create({
   },
   optionIcon: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     height: 30,
     justifyContent: "center",
@@ -288,7 +290,7 @@ const styles = StyleSheet.create({
     width: 30,
   },
   optionSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "600",
     lineHeight: 15,

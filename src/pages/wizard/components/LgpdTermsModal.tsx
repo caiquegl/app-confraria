@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { fetchLatestTerm } from "../services/wizard.service";
 import type { LgpdTermsModalProps, Term } from "../types/wizard.types";
@@ -23,6 +23,8 @@ type LgpdTermsModalContentProps = {
 };
 
 function LgpdTermsModalContent({ onClose }: LgpdTermsModalContentProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [term, setTerm] = useState<Term | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,9 +97,9 @@ export function LgpdTermsModal({ onClose, visible }: LgpdTermsModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     flex: 1,
     justifyContent: "flex-end",
   },
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     marginBottom: 8,
@@ -115,12 +117,12 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   content: {
-    color: "#374151",
+    color: colors.text.body,
     fontSize: 14,
     lineHeight: 22,
   },
   error: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 14,
     lineHeight: 22,
     paddingVertical: 24,

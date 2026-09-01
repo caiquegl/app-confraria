@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type CommentActionSheetProps = {
   confirmDelete: boolean;
@@ -21,6 +21,8 @@ export function CommentActionSheet({
   onEdit,
   onRequestDelete,
 }: CommentActionSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -48,12 +50,12 @@ export function CommentActionSheet({
           ) : (
             <View style={styles.actionsBlock}>
               <Pressable style={styles.actionRow} onPress={onEdit}>
-                <Ionicons color="#6B7280" name="pencil" size={18} />
+                <Ionicons color={colors.text.secondary} name="pencil" size={18} />
                 <Text style={styles.actionLabel}>Editar</Text>
               </Pressable>
 
               <Pressable style={styles.actionRowDanger} onPress={onRequestDelete}>
-                <Ionicons color="#EF4444" name="trash-outline" size={18} />
+                <Ionicons color={colors.feedback.danger} name="trash-outline" size={18} />
                 <Text style={styles.actionLabelDanger}>Excluir</Text>
               </Pressable>
 
@@ -68,14 +70,14 @@ export function CommentActionSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionLabel: {
     color: colors.brandDark,
     fontSize: 14,
     fontWeight: "600",
   },
   actionLabelDanger: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -99,19 +101,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },
   cancelButton: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 16,
     marginTop: 8,
     paddingVertical: 14,
   },
   cancelButtonText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   confirmText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },
@@ -131,25 +133,25 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     alignItems: "center",
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 16,
     paddingVertical: 14,
   },
   deleteButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "700",
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 4,
     marginBottom: 16,
     width: 40,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 16,

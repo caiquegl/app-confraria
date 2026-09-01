@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailOrganizerProps = {
   avatarUrl: string | null;
@@ -9,6 +9,8 @@ type EventDetailOrganizerProps = {
 };
 
 export function EventDetailOrganizer({ avatarUrl, name }: EventDetailOrganizerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Organizador</Text>
@@ -23,13 +25,13 @@ export function EventDetailOrganizer({ avatarUrl, name }: EventDetailOrganizerPr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatar: {
     borderRadius: 18,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
@@ -45,7 +47,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 3,

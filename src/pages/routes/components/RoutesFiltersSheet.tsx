@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 import { formatBrazilianDateInput } from "@/pages/event-create/services/event-create.service";
 
 import type {
@@ -36,6 +36,8 @@ function isoToBrazilianDate(value: string) {
 }
 
 function brazilianDateToIso(value: string) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
   if (!match) return "";
   return `${match[3]}-${match[2]}-${match[1]}`;
@@ -50,6 +52,8 @@ export function RoutesFiltersSheet({
   onClose,
   visible,
 }: RoutesFiltersSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -60,7 +64,7 @@ export function RoutesFiltersSheet({
               <Text style={styles.title}>Filtros das rotas</Text>
             </View>
             <Pressable accessibilityRole="button" style={styles.closeButton} onPress={onClose}>
-              <Ionicons color="#9CA3AF" name="close" size={18} />
+              <Ionicons color={colors.text.muted} name="close" size={18} />
             </Pressable>
           </View>
 
@@ -109,7 +113,7 @@ export function RoutesFiltersSheet({
                   keyboardType="number-pad"
                   maxLength={10}
                   placeholder="DD/MM/AAAA"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.text.placeholder}
                   style={styles.input}
                   value={isoToBrazilianDate(draftFilters.startDate)}
                   onChangeText={(value) =>
@@ -123,7 +127,7 @@ export function RoutesFiltersSheet({
                   keyboardType="number-pad"
                   maxLength={10}
                   placeholder="DD/MM/AAAA"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={colors.text.placeholder}
                   style={styles.input}
                   value={isoToBrazilianDate(draftFilters.endDate)}
                   onChangeText={(value) =>
@@ -259,12 +263,12 @@ export function getUniqueBikeNames(routes: SavedRoute[]) {
   return Array.from(new Set(routes.map((route) => route.bikeName).filter(Boolean)));
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   applyButton: {
     flex: 1,
   },
   backdrop: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },
@@ -272,7 +276,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bikeOption: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 14,
@@ -283,7 +287,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   bikeOptionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -291,7 +295,7 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
   },
   chip: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 14,
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   chipText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -311,7 +315,7 @@ const styles = StyleSheet.create({
   },
   clearButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flex: 1,
@@ -325,7 +329,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -341,7 +345,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   eyebrow: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 1.2,
@@ -365,8 +369,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     color: colors.brandDark,
@@ -387,7 +391,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     maxHeight: "88%",

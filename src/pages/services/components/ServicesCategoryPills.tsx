@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { ServiceCategory } from "../types/services.types";
 
@@ -24,6 +24,8 @@ export function ServicesCategoryPills({
   selectedCategory,
   onChange,
 }: ServicesCategoryPillsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       <FlatList
@@ -63,14 +65,14 @@ export function ServicesCategoryPills({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   list: {
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 2,
   },
   pill: {
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 14,

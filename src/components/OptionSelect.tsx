@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type OptionSelectProps = {
   label: string;
@@ -11,6 +11,8 @@ type OptionSelectProps = {
 };
 
 export function OptionSelect({ flex, label, onPress, selected }: OptionSelectProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <TouchableOpacity
       activeOpacity={0.75}
@@ -20,7 +22,7 @@ export function OptionSelect({ flex, label, onPress, selected }: OptionSelectPro
       <Ionicons
         name={selected ? "checkbox" : "square-outline"}
         size={20}
-        color={selected ? colors.brandGreen : "#D1D5DB"}
+        color={selected ? colors.brandGreen : colors.border.default}
         style={styles.icon}
       />
       <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
@@ -28,11 +30,11 @@ export function OptionSelect({ flex, label, onPress, selected }: OptionSelectPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -51,7 +53,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   label: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 15,
     fontWeight: "500",
   },

@@ -17,7 +17,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { toggleFavoriteEvent } from "@/pages/favorites/services/favorites.service";
 import { PublicProfileEventCard } from "@/pages/public-profile-events/components/PublicProfileEventCard";
 import type { PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import {
   fetchEventsDiscoverList,
@@ -45,6 +45,8 @@ export function EventsDiscoverListView({
   scope,
   title,
 }: EventsDiscoverListViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [events, setEvents] = useState<PublicProfileEvent[]>([]);
   const [hasError, setHasError] = useState(false);
@@ -191,7 +193,7 @@ export function EventsDiscoverListView({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   centered: {
     alignItems: "center",
     flex: 1,

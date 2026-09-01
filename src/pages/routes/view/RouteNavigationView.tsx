@@ -25,7 +25,7 @@ import { NewPostComposer } from "@/pages/home/components/NewPostComposer";
 import { PostSuccessModal } from "@/pages/home/components/PostSuccessModal";
 import { NewStoryCamera } from "@/pages/stories/components/NewStoryCamera";
 import { StorySuccessModal } from "@/pages/stories/components/StorySuccessModal";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { RouteCompletedView } from "../components/RouteCompletedView";
 import { RouteMapPhotosCarouselModal } from "../components/RouteMapPhotosCarouselModal";
@@ -51,6 +51,8 @@ import { setRouteRatingUiOpen } from "../stores/route-rating-ui-store";
 import { getRouteTripDurationSeconds } from "../utils/route-trip-time.utils";
 
 function NavigationKeepAwake() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   // Android rejeita deactivate se a Activity já morreu (background/killed).
   useKeepAwake("route-navigation", { suppressDeactivateWarnings: true });
   return null;
@@ -64,6 +66,8 @@ type RouteNavigationViewProps = {
 type NavigationPhase = "navigating" | "completed";
 
 export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<NavigationPhase>("navigating");
   const [isFinishing, setIsFinishing] = useState(false);
@@ -345,7 +349,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
             router.replace("/routes" as Href);
           }}
         >
-          <Ionicons color="#FFFFFF" name="remove-outline" size={14} />
+          <Ionicons color={colors.text.inverse} name="remove-outline" size={14} />
           <Text style={styles.minimizeText}>Minimizar mapa</Text>
         </Pressable>
       </View>
@@ -451,9 +455,9 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   cameraBackdrop: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
   },
   centered: {
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
     zIndex: 30,
   },
   loadingText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
   },
   minimizeButton: {
@@ -495,7 +499,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -505,7 +509,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   minimizeText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 12,
     fontWeight: "700",
   },

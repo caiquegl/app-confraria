@@ -19,7 +19,7 @@ import {
   type RouteDaySuggestionAlert,
   type RouteStopSuggestion,
 } from "@/lib/places";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { RouteDraftDay } from "../types/route-create.types";
 import { isSuggestionAddedToDay } from "../utils/route-suggestions.utils";
@@ -48,6 +48,8 @@ function SuggestionPhoto({
   photoName: string | null;
   variant?: "card" | "sheet";
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [source, setSource] = useState<{ headers?: { Authorization: string }; uri: string } | null>(
     null,
   );
@@ -74,7 +76,7 @@ function SuggestionPhoto({
           variant === "sheet" ? styles.sheetPhotoPlaceholder : null,
         ]}
       >
-        <Ionicons color="#9CA3AF" name="image-outline" size={28} />
+        <Ionicons color={colors.text.muted} name="image-outline" size={28} />
       </View>
     );
   }
@@ -89,6 +91,7 @@ function SuggestionPhoto({
 }
 
 function AlertBadge({ alert }: { alert: RouteDaySuggestionAlert }) {
+  const styles = useThemedStyles(createStyles);
   const isWarning = alert.tone === "warning";
 
   return (
@@ -115,6 +118,8 @@ function SuggestionDetailModal({
   onClose,
   suggestion,
 }: SuggestionDetailModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   if (!suggestion) {
@@ -144,7 +149,7 @@ function SuggestionDetailModal({
               <Text style={styles.modalTitle}>{suggestion.name}</Text>
               {suggestion.rating != null ? (
                 <View style={styles.ratingRow}>
-                  <Ionicons color="#F59E0B" name="star" size={12} />
+                  <Ionicons color={colors.rating.star} name="star" size={12} />
                   <Text style={styles.ratingText}>{suggestion.rating.toFixed(1)}</Text>
                 </View>
               ) : null}
@@ -192,6 +197,8 @@ function SuggestionCard({
   onOpenDetails: (suggestion: RouteStopSuggestion) => void;
   suggestion: RouteStopSuggestion;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isAdded = isSuggestionAddedToDay(suggestion, day);
 
   return (
@@ -203,7 +210,7 @@ function SuggestionCard({
         </Text>
         {suggestion.rating != null ? (
           <View style={styles.ratingRow}>
-            <Ionicons color="#F59E0B" name="star" size={10} />
+            <Ionicons color={colors.rating.star} name="star" size={10} />
             <Text style={styles.ratingTextSmall}>{suggestion.rating.toFixed(1)}</Text>
           </View>
         ) : null}
@@ -238,6 +245,8 @@ function SuggestionCard({
 }
 
 function LoadingMoreCard() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.loadingMoreCard}>
       <ActivityIndicator color={colors.brandDark} size="small" />
@@ -259,6 +268,8 @@ export function RouteDaySuggestions({
   onScrollEnd,
   suggestions,
 }: RouteDaySuggestionsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [selectedSuggestion, setSelectedSuggestion] = useState<RouteStopSuggestion | null>(null);
   const loadMoreRequestedRef = useRef(false);
 
@@ -345,7 +356,7 @@ export function RouteDaySuggestions({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addButton: {
     backgroundColor: colors.brandGreen,
     borderRadius: 999,
@@ -353,7 +364,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   addButtonAdded: {
-    backgroundColor: "#DCFCE7",
+    backgroundColor: colors.surface.successSubtle,
   },
   addButtonText: {
     color: colors.brandDark,
@@ -402,17 +413,17 @@ const styles = StyleSheet.create({
   },
   cardDefault: {
     backgroundColor: "#FAFBF8",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
   },
   cardDescription: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 10,
     lineHeight: 14,
     marginBottom: 12,
     minHeight: 28,
   },
   cardMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 10,
     marginBottom: 4,
   },
@@ -441,21 +452,21 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   detailsButton: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   detailsButtonText: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 10,
     fontWeight: "700",
   },
   loadingMoreCard: {
     alignItems: "center",
     backgroundColor: "#FAFBF8",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     height: SUGGESTION_CAROUSEL_HEIGHT - 8,
@@ -464,7 +475,7 @@ const styles = StyleSheet.create({
     width: 120,
   },
   loadingMoreText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 8,
   },
@@ -475,7 +486,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   loadingText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
   },
   modalActions: {
@@ -505,7 +516,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   modalCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     bottom: 0,
@@ -516,25 +527,25 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   modalDescription: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 12,
   },
   modalDetailsButton: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   modalDetailsButtonText: {
-    color: "#4B5563",
+    color: colors.text.comment,
     fontSize: 14,
     fontWeight: "700",
   },
   modalMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 4,
   },
@@ -560,7 +571,7 @@ const styles = StyleSheet.create({
   },
   photoPlaceholder: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 12,
     height: 112,
     justifyContent: "center",
@@ -581,12 +592,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   ratingText: {
-    color: "#F59E0B",
+    color: colors.rating.star,
     fontSize: 12,
     fontWeight: "700",
   },
   ratingTextSmall: {
-    color: "#F59E0B",
+    color: colors.rating.star,
     fontSize: 10,
     fontWeight: "700",
   },
@@ -600,7 +611,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionTitle: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "800",
     letterSpacing: 1.8,

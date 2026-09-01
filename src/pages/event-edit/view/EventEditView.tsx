@@ -21,7 +21,7 @@ import {
 } from "@/pages/event-create/services/event-create.service";
 import type { EventCategory, EventPlaceReference } from "@/pages/event-create/types/event-create.types";
 import { fetchEventDetail } from "@/pages/event-detail/services/event-detail.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventEditLayout } from "../components/EventEditLayout";
 import { EventEditSection } from "../components/EventEditSection";
@@ -35,6 +35,8 @@ type EventEditViewProps = {
 };
 
 export function EventEditView({ eventId, onBack, onSaved }: EventEditViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [categories, setCategories] = useState<EventCategory[]>([]);
   const [hasError, setHasError] = useState(false);
   const [initialDraft, setInitialDraft] = useState<ReturnType<typeof mapEventDetailToDraft> | null>(
@@ -103,7 +105,7 @@ export function EventEditView({ eventId, onBack, onSaved }: EventEditViewProps) 
   if (hasError || !initialDraft) {
     return (
       <View style={styles.feedbackScreen}>
-        <Ionicons color="#9CA3AF" name="alert-circle-outline" size={32} />
+        <Ionicons color={colors.text.muted} name="alert-circle-outline" size={32} />
         <Text style={styles.feedbackText}>
           Não foi possível editar este evento. Ele já ocorreu ou está em andamento.
         </Text>
@@ -150,6 +152,8 @@ function EventEditForm({
   onSaved,
   onSavingChange,
 }: EventEditFormProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { buildPayload, draft, updateDraft } = useEventEditDraft(initialDraft, userId);
 
   const dateIsComplete = draft.date.length === 10;
@@ -358,7 +362,7 @@ function EventEditForm({
                   )
                 }
               >
-                <Ionicons color="#EF4444" name="close" size={18} />
+                <Ionicons color={colors.feedback.danger} name="close" size={18} />
               </Pressable>
             </View>
           </View>
@@ -369,7 +373,7 @@ function EventEditForm({
           style={styles.addStopButton}
           onPress={() => updateDraft("stops", [...draft.stops, null])}
         >
-          <Ionicons color="#6B7280" name="add" size={18} />
+          <Ionicons color={colors.text.secondary} name="add" size={18} />
           <Text style={styles.addStopText}>Adicionar ponto de parada (opcional)</Text>
         </Pressable>
       </EventEditSection>
@@ -386,7 +390,7 @@ function EventEditForm({
         >
           <View style={styles.toggleIcon}>
             <Ionicons
-              color={draft.hasParticipantLimit ? colors.brandDark : "#9CA3AF"}
+              color={draft.hasParticipantLimit ? colors.brandDark : colors.text.muted}
               name={draft.hasParticipantLimit ? "checkmark-circle" : "ellipse-outline"}
               size={24}
             />
@@ -437,10 +441,10 @@ function EventEditForm({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   addStopButton: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 18,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -451,7 +455,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   addStopText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -461,8 +465,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -473,7 +477,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   categoryText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -481,7 +485,7 @@ const styles = StyleSheet.create({
     color: colors.brandDark,
   },
   errorText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 6,
@@ -495,7 +499,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   feedbackText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "700",
     textAlign: "center",
@@ -504,7 +508,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   helperText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 6,
@@ -517,7 +521,7 @@ const styles = StyleSheet.create({
   },
   removeStopButton: {
     alignItems: "center",
-    borderColor: "#FECACA",
+    borderColor: colors.feedback.dangerBorder,
     borderRadius: 18,
     borderWidth: 1,
     height: 50,
@@ -542,8 +546,8 @@ const styles = StyleSheet.create({
   },
   toggleCard: {
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.disabled,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
@@ -552,14 +556,14 @@ const styles = StyleSheet.create({
   },
   toggleIcon: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 16,
     height: 42,
     justifyContent: "center",
     width: 42,
   },
   toggleSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 3,

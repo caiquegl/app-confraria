@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { EventAnalyticsParticipant } from "../types/event-analytics.types";
 
@@ -14,6 +14,7 @@ export function EventParticipantsList({
   participants,
   participantsCount,
 }: EventParticipantsListProps) {
+  const styles = useThemedStyles(createStyles);
   const hasParticipants = participants.length > 0;
 
   return (
@@ -69,19 +70,19 @@ function formatJoinedAt(value: string) {
   }).format(date);
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatar: {
     borderRadius: 14,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
   },
   emptyBox: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     paddingVertical: 22,
   },
   emptyText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "600",
     lineHeight: 19,
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   joinedAt: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 3,

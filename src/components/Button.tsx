@@ -1,6 +1,5 @@
 import { Children, isValidElement } from "react";
 import {
-  StyleSheet,
   Text,
   TouchableOpacity,
   type StyleProp,
@@ -9,7 +8,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { colors, radii, spacing, typography } from "@/theme";
+import { type AppColors, radii, spacing, typography, useThemedStyles } from "@/theme";
 
 type ButtonVariant = "default" | "secondary" | "destructive" | "outline" | "ghost";
 type ButtonSize = "sm" | "default" | "lg";
@@ -22,10 +21,23 @@ type ButtonProps = TouchableOpacityProps & {
   children: React.ReactNode;
 };
 
+const sizeStyles: Record<ButtonSize, ViewStyle> = {
+  default: { height: 40, paddingHorizontal: spacing["2xl"] },
+  lg: { height: 48, paddingHorizontal: spacing["4xl"] },
+  sm: { height: 32, paddingHorizontal: spacing.lg },
+};
+
+const sizeTextStyles: Record<ButtonSize, TextStyle> = {
+  default: typography.buttonMd,
+  lg: typography.buttonLg,
+  sm: typography.buttonSm,
+};
+
 function renderButtonChildren(
   children: React.ReactNode,
   size: ButtonSize,
   variant: ButtonVariant,
+  styles: ReturnType<typeof createStyles>,
   textStyle?: StyleProp<TextStyle>,
 ) {
   return Children.toArray(children).map((child, index) => {
@@ -33,7 +45,7 @@ function renderButtonChildren(
       return (
         <Text
           key={`button-text-${index}`}
-          style={[styles.text, sizeTextStyles[size], variantTextStyles[variant], textStyle]}
+          style={[styles.text as TextStyle, sizeTextStyles[size], styles.variantText[variant] as TextStyle, textStyle]}
         >
           {child}
         </Text>
@@ -53,6 +65,8 @@ export function Button({
   variant = "default",
   ...props
 }: ButtonProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <TouchableOpacity
       activeOpacity={0.65}
@@ -60,18 +74,18 @@ export function Button({
       style={[
         styles.base,
         sizeStyles[size],
-        variantStyles[variant],
+        styles.variant[variant],
         disabled && styles.disabled,
         style,
       ]}
       {...props}
     >
-      {renderButtonChildren(children, size, variant, textStyle)}
+      {renderButtonChildren(children, size, variant, styles, textStyle)}
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   base: {
     alignItems: "center",
     borderRadius: radii.md,
@@ -83,47 +97,33 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   text: {
-    fontWeight: "600",
+    ...typography.buttonMd,
     includeFontPadding: false,
     textAlign: "center",
     textAlignVertical: "center",
   },
+  variant: {
+    default: {
+      backgroundColor: colors.accent.brand,
+    },
+    destructive: { backgroundColor: colors.feedback.danger },
+    ghost: { backgroundColor: "transparent" },
+    outline: {
+      backgroundColor: "transparent",
+      borderColor: colors.border.default,
+      borderWidth: 1,
+    },
+    secondary: {
+      backgroundColor: colors.surface.primary,
+      borderColor: colors.surface.subtle,
+      borderWidth: 1,
+    },
+  },
+  variantText: {
+    default: { color: colors.text.primary },
+    destructive: { color: colors.feedback.dangerForeground },
+    ghost: { color: colors.text.secondary },
+    outline: { color: colors.text.primary },
+    secondary: { color: colors.text.primary },
+  },
 });
-
-const sizeStyles: Record<ButtonSize, ViewStyle> = {
-  default: { height: 40, paddingHorizontal: spacing["2xl"] },
-  lg: { height: 48, paddingHorizontal: spacing["4xl"] },
-  sm: { height: 32, paddingHorizontal: spacing.lg },
-};
-
-const sizeTextStyles: Record<ButtonSize, TextStyle> = {
-  default: typography.buttonMd,
-  lg: typography.buttonLg,
-  sm: typography.buttonSm,
-};
-
-const variantStyles: Record<ButtonVariant, ViewStyle> = {
-  default: {
-    backgroundColor: colors.accent.brand,
-  },
-  destructive: { backgroundColor: colors.feedback.danger },
-  ghost: { backgroundColor: "transparent" },
-  outline: {
-    backgroundColor: "transparent",
-    borderColor: colors.border.default,
-    borderWidth: 1,
-  },
-  secondary: {
-    backgroundColor: colors.surface.primary,
-    borderColor: colors.surface.subtle,
-    borderWidth: 1,
-  },
-};
-
-const variantTextStyles: Record<ButtonVariant, TextStyle> = {
-  default: { color: colors.text.primary },
-  destructive: { color: colors.feedback.dangerForeground },
-  ghost: { color: colors.text.secondary },
-  outline: { color: colors.text.primary },
-  secondary: { color: colors.text.primary },
-};

@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { FeedPost } from "@/pages/home/types/feed.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type PublicProfileDeletePostModalProps = {
   displayHandle: string;
@@ -29,6 +29,8 @@ export function PublicProfileDeletePostModal({
   onClose,
   onConfirm,
 }: PublicProfileDeletePostModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [hasImageError, setHasImageError] = useState(false);
@@ -73,7 +75,7 @@ export function PublicProfileDeletePostModal({
                 style={styles.closeButton}
                 onPress={onClose}
               >
-                <Ionicons color="#9CA3AF" name="close" size={22} />
+                <Ionicons color={colors.text.muted} name="close" size={22} />
               </Pressable>
             </View>
 
@@ -88,13 +90,13 @@ export function PublicProfileDeletePostModal({
                 />
               ) : (
                 <View style={styles.mediaFallback}>
-                  <Ionicons color="#9CA3AF" name="image-outline" size={34} />
+                  <Ionicons color={colors.text.muted} name="image-outline" size={34} />
                 </View>
               )}
 
               {hasVideo ? (
                 <View style={styles.videoBadge}>
-                  <Ionicons color="#FFFFFF" name="play" size={18} />
+                  <Ionicons color={colors.text.inverse} name="play" size={18} />
                 </View>
               ) : null}
 
@@ -130,7 +132,7 @@ export function PublicProfileDeletePostModal({
                       onPress={onConfirm}
                     >
                       {isDeleting ? (
-                        <ActivityIndicator color="#FFFFFF" />
+                        <ActivityIndicator color={colors.text.inverse} />
                       ) : (
                         <Text style={styles.deleteText}>Excluir</Text>
                       )}
@@ -156,7 +158,7 @@ export function PublicProfileDeletePostModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionsWrap: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -169,13 +171,13 @@ const styles = StyleSheet.create({
     top: 0,
   },
   backdropWrap: {
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     flex: 1,
     justifyContent: "flex-end",
   },
   cancelButton: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderWidth: 1,
   },
   cancelText: {
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   confirmBox: {
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
     borderColor: "#FEE2E2",
     borderRadius: 18,
     borderWidth: 1,
@@ -210,7 +212,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   confirmDescription: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 4,
@@ -224,16 +226,16 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   deleteButton: {
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
   },
   deleteText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "800",
   },
   header: {
     alignItems: "center",
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -241,7 +243,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerSubtitle: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 2,
   },
@@ -251,7 +253,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   labelBadge: {
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderRadius: 8,
     bottom: 12,
     left: 12,
@@ -261,7 +263,7 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   labelText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -272,17 +274,17 @@ const styles = StyleSheet.create({
   mediaFallback: {
     alignItems: "center",
     aspectRatio: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     justifyContent: "center",
     width: "100%",
   },
   mediaWrap: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     position: "relative",
   },
   openConfirmButton: {
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
     borderColor: "#FEE2E2",
     borderRadius: 18,
     borderWidth: 1,
@@ -292,19 +294,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   openConfirmText: {
-    color: "#DC2626",
+    color: colors.feedback.dangerStrong,
     fontSize: 14,
     fontWeight: "800",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     overflow: "hidden",
   },
   videoBadge: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     borderRadius: 999,
     height: 40,
     justifyContent: "center",

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, radii, spacing, typography } from "@/theme";
+import { type AppColors, radii, spacing, typography, useTheme, useThemedStyles } from "@/theme";
 
 import {
   isPremiumRouteStyle,
@@ -25,6 +25,8 @@ export function RouteStyleChips({
   onSelect,
   value,
 }: RouteStyleChipsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const handleSelect = (style: RouteStyle) => {
     if (style === value) return;
 
@@ -74,7 +76,7 @@ export function RouteStyleChips({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   chip: {
     alignItems: "center",
     backgroundColor: colors.surface.primary,

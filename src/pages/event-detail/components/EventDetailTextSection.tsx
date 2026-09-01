@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailTextSectionProps = {
   text: string;
@@ -8,6 +8,8 @@ type EventDetailTextSectionProps = {
 };
 
 export function EventDetailTextSection({ text, title }: EventDetailTextSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
@@ -16,16 +18,16 @@ export function EventDetailTextSection({ text, title }: EventDetailTextSectionPr
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
   },
   text: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "600",
     lineHeight: 21,

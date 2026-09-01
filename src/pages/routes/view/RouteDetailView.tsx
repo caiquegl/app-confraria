@@ -27,7 +27,7 @@ import { routeTrackingLog } from "@/lib/route-tracking-logger";
 import { fetchChatConversations, sendChatMessage } from "@/pages/messages/services/messages.service";
 import { getCurrentUserId } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/password-reset";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { RouteCompletedView } from "../components/RouteCompletedView";
 import { RouteDetailMap } from "../components/RouteDetailMap";
@@ -107,10 +107,13 @@ function formatCreatedAt(createdAt: string): string {
   });
 }
 
+import { getColors } from "@/theme";
+
 function getPlaceKindColor(role: RoutePlaceResponse["role"]): string {
+  const colors = getColors();
   if (role === "origin") return colors.brandGreen;
   if (role === "destination") return colors.brandDark;
-  return "#D1D5DB";
+  return colors.border.default;
 }
 
 function getRoutePlaceKey(
@@ -122,6 +125,7 @@ function getRoutePlaceKey(
 }
 
 function DayItineraryCard({ day }: { day: RouteDayApiResponse }) {
+  const styles = useThemedStyles(createStyles);
   const places = [...day.places].sort((a, b) => a.order - b.order);
 
   return (
@@ -163,6 +167,8 @@ function FinancialCard({
   value: string;
   variant?: "default" | "highlight";
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={[styles.financialCard, variant === "highlight" && styles.financialCardHighlight]}>
       <View
@@ -185,6 +191,8 @@ function FinancialCard({
 }
 
 export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const [route, setRoute] = useState<RouteApiResponse | null>(null);
@@ -734,7 +742,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
               <View style={styles.optionsMenu}>
                 {isScheduled ? (
                   <Pressable style={styles.optionsItem} onPress={handleEdit}>
-                    <Ionicons color="#9CA3AF" name="create-outline" size={15} />
+                    <Ionicons color={colors.text.muted} name="create-outline" size={15} />
                     <Text style={styles.optionsItemText}>Editar</Text>
                   </Pressable>
                 ) : null}
@@ -742,7 +750,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
                   <>
                     <View style={styles.optionsDivider} />
                     <Pressable style={styles.optionsItem} onPress={() => void handleFinishFromMenu()}>
-                      <Ionicons color="#9CA3AF" name="checkmark-circle-outline" size={15} />
+                      <Ionicons color={colors.text.muted} name="checkmark-circle-outline" size={15} />
                       <Text style={styles.optionsItemText}>Finalizar rota</Text>
                     </Pressable>
                   </>
@@ -751,7 +759,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
                   <>
                     <View style={styles.optionsDivider} />
                     <Pressable style={styles.optionsItemDanger} onPress={confirmDelete}>
-                      <Ionicons color="#EF4444" name="trash-outline" size={15} />
+                      <Ionicons color={colors.feedback.danger} name="trash-outline" size={15} />
                       <Text style={styles.optionsItemDangerText}>Excluir</Text>
                     </Pressable>
                   </>
@@ -886,7 +894,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Ionicons
                     key={star}
-                    color={route.myReview && route.myReview.rating >= star ? colors.brandGreen : "#D1D5DB"}
+                    color={route.myReview && route.myReview.rating >= star ? colors.brandGreen : colors.border.default}
                     name={route.myReview && route.myReview.rating >= star ? "star" : "star-outline"}
                     size={22}
                   />
@@ -971,7 +979,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
               <View style={[styles.dayCard, { width: dayCarouselWidth }]}>
                 <View style={styles.dayCardHeader}>
                   <View style={styles.dayCardHeaderLeft}>
-                    <Ionicons color="#9CA3AF" name="calendar-outline" size={14} />
+                    <Ionicons color={colors.text.muted} name="calendar-outline" size={14} />
                     <Text style={styles.dayCardTitle}>{day.label}</Text>
                     <Text style={styles.dayCardDistance}>
                       {formatRouteDistance(day.distanceMeters)}
@@ -1006,7 +1014,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
                             hitSlop={8}
                             onPress={() => handleRemoveStop(day.id, place.id)}
                           >
-                            <Ionicons color="#EF4444" name="trash-outline" size={16} />
+                            <Ionicons color={colors.feedback.danger} name="trash-outline" size={16} />
                           </Pressable>
                         ) : null}
                       </View>
@@ -1182,7 +1190,7 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   centered: {
     alignItems: "center",
     backgroundColor: colors.brandGray,
@@ -1198,8 +1206,8 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   dayCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 20,
     borderWidth: 1,
     height: "100%",
@@ -1211,11 +1219,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   dayCardDistance: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
   },
   dayCardHeader: {
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1249,19 +1257,19 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   dayStopText: {
-    color: "#4B5563",
+    color: colors.text.comment,
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
   },
   emptyPlacesText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     textAlign: "center",
   },
   financialCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     marginRight: 12,
@@ -1274,7 +1282,7 @@ const styles = StyleSheet.create({
   },
   financialIcon: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 12,
     height: 36,
     justifyContent: "center",
@@ -1285,12 +1293,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(200, 247, 99, 0.25)",
   },
   financialLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     marginBottom: 4,
   },
   financialSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 8,
   },
@@ -1324,8 +1332,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -1348,8 +1356,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   itineraryCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     marginRight: 12,
@@ -1370,9 +1378,9 @@ const styles = StyleSheet.create({
     width: 8,
   },
   itineraryMeta: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     marginTop: 8,
     paddingTop: 8,
@@ -1386,14 +1394,14 @@ const styles = StyleSheet.create({
     maxHeight: 160,
   },
   itineraryPlaceText: {
-    color: "#4B5563",
+    color: colors.text.comment,
     flex: 1,
     fontSize: 12,
     lineHeight: 16,
   },
   mapCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 224,
@@ -1409,7 +1417,7 @@ const styles = StyleSheet.create({
     top: 16,
   },
   mapOverlayLabel: {
-    color: "#728F21",
+    color: colors.brandActive,
     fontSize: 10,
     fontWeight: "800",
     letterSpacing: 1,
@@ -1422,14 +1430,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   noteCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
   },
   noteLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     marginBottom: 4,
   },
@@ -1456,8 +1464,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   reviewCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     gap: 10,
@@ -1469,7 +1477,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   reviewLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.6,
@@ -1484,7 +1492,7 @@ const styles = StyleSheet.create({
     zIndex: 15,
   },
   optionsDivider: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     height: 1,
     marginHorizontal: 12,
   },
@@ -1503,7 +1511,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   optionsItemDangerText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 14,
   },
   optionsItemText: {
@@ -1511,14 +1519,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   optionsMenu: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     minWidth: 160,
     position: "absolute",
     right: 0,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
@@ -1534,7 +1542,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   preferenceChipText: {
-    color: "#16A34A",
+    color: colors.status.open,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -1546,8 +1554,8 @@ const styles = StyleSheet.create({
   },
   scheduleCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -1566,12 +1574,12 @@ const styles = StyleSheet.create({
     width: 40,
   },
   scheduleLabel: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     marginBottom: 2,
   },
   scheduleMeta: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     marginTop: 4,
   },
@@ -1592,21 +1600,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sectionTitle: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },
   summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
   },
   summaryMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
   },
   summaryMetaDot: {
@@ -1621,7 +1629,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   summarySubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 4,
   },
@@ -1640,14 +1648,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
   },
   tabs: {
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     paddingHorizontal: 16,
   },
   tabText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 14,
     fontWeight: "600",
     textTransform: "capitalize",

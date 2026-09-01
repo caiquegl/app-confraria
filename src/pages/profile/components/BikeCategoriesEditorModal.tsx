@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 import type { BikeCategory, CurvePreference } from "@/pages/wizard/types/wizard.types";
 
 type BikeCategoriesEditorModalProps = {
@@ -44,6 +44,8 @@ export function BikeCategoriesEditorModal({
   onClose,
   onSave,
 }: BikeCategoriesEditorModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView | null>(null);
@@ -142,7 +144,7 @@ export function BikeCategoriesEditorModal({
               style={styles.closeButton}
               onPress={onClose}
             >
-              <Ionicons color="#9CA3AF" name="close" size={24} />
+              <Ionicons color={colors.text.muted} name="close" size={24} />
             </Pressable>
           </View>
 
@@ -206,7 +208,7 @@ export function BikeCategoriesEditorModal({
               <TextInput
                 autoCapitalize="sentences"
                 placeholder="Não achou? Digite sua categoria..."
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.text.placeholder}
                 style={styles.customCategoryInput}
                 value={customCategory}
                 onChangeText={setCustomCategory}
@@ -259,6 +261,8 @@ function RoadStyleOption({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const iconName = (icon ?? (selected ? "checkmark-circle" : "ellipse-outline")) as
     keyof typeof Ionicons.glyphMap;
 
@@ -287,12 +291,12 @@ function RoadStyleOption({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionButton: {
     flex: 1,
   },
   actions: {
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     flexDirection: "row",
     gap: 12,
@@ -316,15 +320,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 18,
     paddingHorizontal: 24,
   },
   customCategoryInput: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     color: colors.brandDark,
@@ -347,7 +351,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   grabber: {
-    backgroundColor: "#D1D5DB",
+    backgroundColor: colors.border.default,
     borderRadius: 999,
     height: 4,
     width: 40,
@@ -359,8 +363,8 @@ const styles = StyleSheet.create({
   },
   option: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 2,
     gap: 8,
@@ -390,7 +394,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   optionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "700",
     textAlign: "center",
@@ -402,12 +406,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sectionDescription: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 18,
   },
   sectionDivider: {
-    borderTopColor: "#E5E7EB",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingTop: 24,
   },
@@ -417,7 +421,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionMeta: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "700",
   },
@@ -428,8 +432,8 @@ const styles = StyleSheet.create({
   },
   selectedItem: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -437,7 +441,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   selectedList: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface.disabled,
     borderRadius: 16,
     gap: 8,
     padding: 10,
@@ -450,13 +454,13 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.brandGray,
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     borderTopWidth: 1,
     elevation: 12,
     overflow: "hidden",
-    shadowColor: "#1C2126",
+    shadowColor: colors.text.primary,
     shadowOffset: { height: -18, width: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 40,

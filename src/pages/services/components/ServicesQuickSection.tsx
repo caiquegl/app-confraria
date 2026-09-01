@@ -1,6 +1,6 @@
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { Service } from "../types/services.types";
 import {
@@ -20,6 +20,8 @@ export function ServicesQuickSection({
   services,
   onServicePress,
 }: ServicesQuickSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (services.length === 0) return null;
 
   return (
@@ -51,7 +53,7 @@ export function ServicesQuickSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   cardItem: {
     marginRight: CARD_GAP,
   },

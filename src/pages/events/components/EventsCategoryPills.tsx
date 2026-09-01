@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventsCategoryPillsProps = {
   categories: string[];
@@ -13,6 +13,8 @@ export function EventsCategoryPills({
   onChange,
   selectedCategory,
 }: EventsCategoryPillsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const pills = ["Tudo", ...categories];
 
   return (
@@ -42,14 +44,14 @@ export function EventsCategoryPills({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     gap: 8,
     paddingHorizontal: 24,
   },
   pill: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 16,
@@ -60,7 +62,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   pillText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "700",
   },

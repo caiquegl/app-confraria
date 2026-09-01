@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { Service } from "../types/services.types";
 
@@ -19,6 +19,8 @@ export function ServicesCard({
   onPress,
   onToggleFavorite,
 }: ServicesCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={styles.card} onPress={() => onPress(service)}>
       <View style={styles.imageWrap}>
@@ -42,7 +44,7 @@ export function ServicesCard({
             onPress={() => onToggleFavorite(service)}
           >
             <Ionicons
-              color={service.isFavorited ? colors.brandPrimary : "#9CA3AF"}
+              color={service.isFavorited ? colors.brandPrimary : colors.text.muted}
               name={service.isFavorited ? "heart" : "heart-outline"}
               size={16}
             />
@@ -67,9 +69,9 @@ export function ServicesCard({
             {service.category}
           </Text>
           <View style={styles.metaRow}>
-            <Ionicons color="#9CA3AF" name="location-outline" size={11} />
+            <Ionicons color={colors.text.muted} name="location-outline" size={11} />
             <Text style={styles.metaText}>({service.reviewCount})</Text>
-            <Ionicons color="#F59E0B" name="star" size={11} />
+            <Ionicons color={colors.rating.star} name="star" size={11} />
             <Text style={[styles.metaText, styles.ratingText]}>
               {service.rating.toFixed(1)}
             </Text>
@@ -84,10 +86,10 @@ export function ServicesCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     elevation: 1,
@@ -99,13 +101,13 @@ const styles = StyleSheet.create({
     width: SERVICES_CARD_WIDTH,
   },
   category: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 1,
   },
   favoriteButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 999,
     elevation: 2,
     height: 32,
@@ -134,8 +136,8 @@ const styles = StyleSheet.create({
   },
   logoPlaceholder: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.subtle,
+    borderColor: colors.border.subtle,
     borderRadius: 10,
     borderWidth: 1,
     height: 40,
@@ -149,7 +151,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   metaText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
   },
   name: {
@@ -158,12 +160,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   phone: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 3,
   },
   ratingText: {
-    color: "#F59E0B",
+    color: colors.rating.star,
     fontWeight: "600",
   },
   textWrap: {

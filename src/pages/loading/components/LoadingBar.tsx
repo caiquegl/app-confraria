@@ -1,11 +1,13 @@
 import { useEffect, useMemo } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 const TRACK_WIDTH = 96;
 
 export function LoadingBar() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const progress = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export function LoadingBar() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   bar: {
     backgroundColor: colors.brandDark,
     height: "100%",

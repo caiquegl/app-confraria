@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type FreeRouteLimitPaywallProps = {
   description?: string;
@@ -20,6 +20,8 @@ export function FreeRouteLimitPaywall({
   title = "Limite de rotas salvas",
   visible,
 }: FreeRouteLimitPaywallProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -55,17 +57,17 @@ export function FreeRouteLimitPaywall({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    ...StyleSheet.absoluteFill,
+    backgroundColor: colors.overlay.scrimMedium,
   },
   backdropWrap: {
     flex: 1,
     justifyContent: "flex-end",
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 21,
     marginTop: 8,
@@ -73,7 +75,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 4,
     marginBottom: 20,
@@ -99,12 +101,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   secondaryButtonText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "600",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,

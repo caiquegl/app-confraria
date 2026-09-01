@@ -18,7 +18,7 @@ import {
     subscribeStoredCurrentProfile,
 } from "@/lib/current-profile-store";
 import { useGeolocation } from "@/lib/location";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useNearbyServices } from "../business/useNearbyServices";
 import { useServices } from "../business/useServices";
@@ -33,6 +33,8 @@ const QUICK_CATEGORY = "Mecânicas";
 const NEARBY_CATEGORY = "Próximos";
 
 export function ServicesView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const storedProfile = getStoredCurrentProfile();
   const [isFocused, setIsFocused] = useState(true);
@@ -291,7 +293,7 @@ export function ServicesView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   body: {
     paddingTop: 12,
   },
@@ -306,7 +308,7 @@ const styles = StyleSheet.create({
   },
   importOverlay: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.6)",
+    backgroundColor: colors.map.overlayLight,
     bottom: 0,
     justifyContent: "center",
     left: 0,
@@ -331,7 +333,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stateText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     textAlign: "center",
   },

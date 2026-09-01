@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventsCreateActionSheetProps = {
   onClose: () => void;
@@ -19,6 +19,8 @@ export function EventsCreateActionSheet({
   onOpenMyQuickRides,
   visible,
 }: EventsCreateActionSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -47,7 +49,7 @@ export function EventsCreateActionSheet({
               style={styles.closeButton}
               onPress={onClose}
             >
-              <Ionicons color="#9CA3AF" name="close" size={20} />
+              <Ionicons color={colors.text.muted} name="close" size={20} />
             </Pressable>
           </View>
 
@@ -100,7 +102,7 @@ export function EventsCreateActionSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     bottom: 0,
     left: 0,
@@ -109,13 +111,13 @@ const styles = StyleSheet.create({
     top: 0,
   },
   backdropWrap: {
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.overlay.scrimSoft,
     flex: 1,
     justifyContent: "flex-end",
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -123,7 +125,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   handle: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 999,
     height: 4,
     width: 40,
@@ -151,14 +153,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionDescription: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
   },
   optionIconWrap: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     height: 40,
     justifyContent: "center",
@@ -191,7 +193,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 16,

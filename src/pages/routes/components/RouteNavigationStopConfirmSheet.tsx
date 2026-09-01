@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { formatRouteDistance, formatRouteDuration } from "../utils/route-format.utils";
 
@@ -27,6 +27,8 @@ export function RouteNavigationStopConfirmSheet({
   tripDurationSeconds,
   visible,
 }: RouteNavigationStopConfirmSheetProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -38,7 +40,7 @@ export function RouteNavigationStopConfirmSheet({
 
         <View style={styles.header}>
           <View style={styles.iconWrap}>
-            <Ionicons color="#EF4444" name="stop-circle" size={28} />
+            <Ionicons color={colors.feedback.danger} name="stop-circle" size={28} />
           </View>
           <Pressable
             disabled={isFinishing}
@@ -46,7 +48,7 @@ export function RouteNavigationStopConfirmSheet({
             style={styles.closeButton}
             onPress={onClose}
           >
-            <Ionicons color="#9CA3AF" name="close" size={20} />
+            <Ionicons color={colors.text.muted} name="close" size={20} />
           </Pressable>
         </View>
 
@@ -81,7 +83,7 @@ export function RouteNavigationStopConfirmSheet({
           onPress={onConfirm}
         >
           {isFinishing ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.text.inverse} />
           ) : (
             <Text style={styles.confirmButtonText}>Finalizar passeio</Text>
           )}
@@ -109,9 +111,11 @@ function InfoRow({
   strong?: boolean;
   text: string;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.infoRow}>
-      <Ionicons color="#9CA3AF" name={icon} size={16} />
+      <Ionicons color={colors.text.muted} name={icon} size={16} />
       <Text numberOfLines={2} style={[styles.infoText, strong && styles.infoTextStrong]}>
         {text}
       </Text>
@@ -119,7 +123,7 @@ function InfoRow({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     backgroundColor: "rgba(0, 0, 0, 0.55)",
     bottom: 0,
@@ -130,7 +134,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     height: 52,
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -156,11 +160,11 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     alignItems: "center",
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
-    shadowColor: "#EF4444",
+    shadowColor: colors.feedback.danger,
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -169,13 +173,13 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   confirmButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: "900",
   },
   handle: {
     alignSelf: "center",
-    backgroundColor: "#D1D5DB",
+    backgroundColor: colors.border.default,
     borderRadius: 999,
     height: 4,
     marginBottom: 18,
@@ -200,7 +204,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flex: 1,
     fontSize: 13,
     fontWeight: "600",
@@ -216,7 +220,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     bottom: 0,
@@ -227,7 +231,7 @@ const styles = StyleSheet.create({
     right: 0,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 20,

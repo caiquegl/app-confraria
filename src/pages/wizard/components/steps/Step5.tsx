@@ -3,13 +3,15 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
 import { OptionSelect } from "@/components/OptionSelect";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { WizardLayout } from "../WizardLayout";
 import { fetchRidingCompanions } from "../../services/wizard.service";
 import type { RidingCompanion, Step5Data, StepProps } from "../../types/wizard.types";
 
 export function Step5({ defaultValues, isPreparingProfile, onBack, onNext }: StepProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [companions, setCompanions] = useState<RidingCompanion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ridingCompanionIds, setRidingCompanionIds] = useState<string[]>(
@@ -99,7 +101,7 @@ export function Step5({ defaultValues, isPreparingProfile, onBack, onNext }: Ste
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actions: {
     gap: 12,
     marginTop: 32,
@@ -112,7 +114,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 21,
   },

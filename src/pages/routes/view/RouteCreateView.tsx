@@ -12,7 +12,7 @@ import type { GeolocationState } from "@/lib/location";
 import { useGeolocation } from "@/lib/location";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import { fetchSubscriptionMe } from "@/pages/subscription/services/subscription.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { RouteCreateStep1 } from "../components/RouteCreateStep1";
 import { RouteCreateStep2 } from "../components/RouteCreateStep2";
@@ -84,6 +84,8 @@ function getMaxReachableWizardStep(
 }
 
 function RouteCreateWizard({ editRouteId = null, location }: RouteCreateWizardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [quickPlannerSnapshot, setQuickPlannerSnapshot] = useState(
     null as ReturnType<typeof buildRouteCreateSnapshotFromQuickRoute> | null,
@@ -622,11 +624,11 @@ export function RouteCreateView({ editRouteId = null }: { editRouteId?: string |
   return <RouteCreateWizard editRouteId={editRouteId} location={location} />;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 48,

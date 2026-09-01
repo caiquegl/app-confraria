@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { AppNotification } from "../types/notifications.types";
 
@@ -11,6 +11,8 @@ type NotificationItemProps = {
 };
 
 export function NotificationItem({ notification, onPress }: NotificationItemProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isLike =
     notification.type === "post_like" || notification.type === "comment_like";
   const isEventUpdated = notification.type === "event_updated";
@@ -40,7 +42,7 @@ export function NotificationItem({ notification, onPress }: NotificationItemProp
       {!notification.read && <View style={styles.unreadDot} />}
 
       <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-        <Ionicons color="#FFFFFF" name={iconName} size={18} />
+        <Ionicons color={colors.text.inverse} name={iconName} size={18} />
       </View>
 
       <View style={styles.content}>
@@ -65,7 +67,7 @@ export function NotificationItem({ notification, onPress }: NotificationItemProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
     backgroundColor: "rgba(255,255,255)",
     borderColor: "rgba(255,255,255,0.8)",
@@ -76,7 +78,7 @@ const styles = StyleSheet.create({
     gap: 14,
     padding: 12,
     position: "relative",
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
@@ -104,23 +106,23 @@ const styles = StyleSheet.create({
     width: 48,
   },
   message: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 4,
   },
   messageUnread: {
     
-    color: "#4B5563",
+    color: colors.text.comment,
     fontWeight: "500",
   },
   time: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 10,
     fontWeight: "500",
   },
   title: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flex: 1,
     fontSize: 14,
     fontWeight: "600",
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
   },
   unreadDot: {
     backgroundColor: colors.brandGreen,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,
     height: 10,

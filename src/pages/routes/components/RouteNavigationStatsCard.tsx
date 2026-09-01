@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { NAV_CONTROL_BUTTON_SIZE } from "./route-navigation-controls.constants";
 
@@ -23,6 +23,8 @@ export function RouteNavigationStatsCard({
   onStop,
   state,
 }: RouteNavigationStatsCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <View style={styles.copy}>
@@ -52,13 +54,13 @@ export function RouteNavigationStatsCard({
         style={[styles.stopButton, !canFinish && styles.stopButtonDisabled]}
         onPress={onStop}
       >
-        <Ionicons color="#FFFFFF" name={canFinish ? "stop-circle" : "exit-outline"} size={22} />
+        <Ionicons color={colors.text.inverse} name={canFinish ? "stop-circle" : "exit-outline"} size={22} />
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
     alignItems: "center",
     backgroundColor: colors.brandDark,
@@ -67,7 +69,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
     paddingVertical: 18,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 18,
@@ -76,7 +78,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dot: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
   },
   duration: {
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   meta: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -105,19 +107,19 @@ const styles = StyleSheet.create({
   },
   stopButton: {
     alignItems: "center",
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 18,
     height: NAV_CONTROL_BUTTON_SIZE,
     justifyContent: "center",
-    shadowColor: "#EF4444",
+    shadowColor: colors.feedback.danger,
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     width: NAV_CONTROL_BUTTON_SIZE,
   },
   stopButtonDisabled: {
-    backgroundColor: "#6B7280",
-    shadowColor: "#6B7280",
+    backgroundColor: colors.text.secondary,
+    shadowColor: colors.text.secondary,
     shadowOpacity: 0.2,
   },
 });

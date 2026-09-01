@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { AppNotification } from "../types/notifications.types";
 import { NotificationItem } from "./NotificationItem";
@@ -17,13 +17,15 @@ export function NotificationsList({
   oldNotifications,
   onPressNotification,
 }: NotificationsListProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const isEmpty = newNotifications.length === 0 && oldNotifications.length === 0;
 
   if (isEmpty) {
     return (
       <View style={styles.empty}>
         <View style={styles.emptyIcon}>
-          <Ionicons color="#9CA3AF" name="notifications-outline" size={28} />
+          <Ionicons color={colors.text.muted} name="notifications-outline" size={28} />
         </View>
         <Text style={styles.emptyTitle}>Nenhuma notificação</Text>
       </View>
@@ -77,7 +79,7 @@ export function NotificationsList({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   badge: {
     backgroundColor: colors.brandGreen,
     borderRadius: 999,
@@ -103,7 +105,7 @@ const styles = StyleSheet.create({
   },
   emptyIcon: {
     alignItems: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     borderRadius: 16,
     height: 64,
     justifyContent: "center",

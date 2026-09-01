@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { StyleSheet, Text, View, type ImageStyle, type StyleProp, type ViewStyle } from "react-native";
 
 import { getUserInitials } from "@/lib/user-avatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type UserAvatarProps = {
   name: string;
@@ -12,6 +12,8 @@ type UserAvatarProps = {
 };
 
 export function UserAvatar({ avatarUrl, name, size = 40, style }: UserAvatarProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const radius = size / 2;
   const fontSize = Math.max(11, Math.round(size * 0.34));
 
@@ -44,7 +46,7 @@ export function UserAvatar({ avatarUrl, name, size = 40, style }: UserAvatarProp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   fallback: {
     alignItems: "center",
     backgroundColor: colors.brandGreen,

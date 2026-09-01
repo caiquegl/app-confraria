@@ -15,7 +15,7 @@ import type { EventDetailPlace } from "@/pages/event-detail/types/event-detail.t
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
 import { fetchChatConversations, sendChatMessage } from "@/pages/messages/services/messages.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventAnalyticsHeader } from "../components/EventAnalyticsHeader";
 import { EventAnalyticsHeroCard } from "../components/EventAnalyticsHeroCard";
@@ -41,6 +41,7 @@ const DEFAULT_DESCRIPTION =
 const FOOTER_BASE_HEIGHT = 92;
 
 export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps) {
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<EventAnalyticsTab>("analiticas");
   const [event, setEvent] = useState<EventAnalytics | null>(null);
@@ -386,12 +387,14 @@ function FeedbackState({
   loading = false,
   message,
 }: FeedbackStateProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.feedbackWrap}>
       {loading ? (
         <ActivityIndicator color={colors.brandPrimary} />
       ) : (
-        <Ionicons color="#9CA3AF" name={icon} size={32} />
+        <Ionicons color={colors.text.muted} name={icon} size={32} />
       )}
       <Text style={styles.feedbackText}>{message}</Text>
     </View>
@@ -459,14 +462,14 @@ function getTimeDurationMinutes(startTime: string, endTime: string) {
   return duration > 0 ? duration : null;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     gap: 14,
     paddingHorizontal: 16,
     paddingTop: 8,
   },
   feedbackText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "700",
     marginTop: 10,
@@ -479,7 +482,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   metricHelper: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 4,

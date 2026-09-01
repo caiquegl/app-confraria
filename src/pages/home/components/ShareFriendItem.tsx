@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { FeedShareFriend } from "../types/feed.types";
 
@@ -13,6 +13,8 @@ type ShareFriendItemProps = {
 };
 
 export function ShareFriendItem({ friend, isSent, onSend }: ShareFriendItemProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <UserAvatar avatarUrl={friend.avatar} name={friend.firstName} size={44} />
@@ -42,7 +44,7 @@ export function ShareFriendItem({ friend, isSent, onSend }: ShareFriendItemProps
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   button: {
     alignItems: "center",
     borderRadius: 999,
@@ -56,7 +58,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   buttonSent: {
-    backgroundColor: "#EEF3E2",
+    backgroundColor: colors.surface.brandSubtle,
   },
   buttonText: {
     color: colors.brandDark,
@@ -65,7 +67,7 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: "center",
-    borderColor: "#E8EBE3",
+    borderColor: colors.border.brandLight,
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: "row",
@@ -77,7 +79,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   location: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },

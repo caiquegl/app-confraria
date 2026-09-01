@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 import type {
   PlaceLiveInfo,
   Service,
@@ -14,6 +14,8 @@ type ServicePlaceInfoProps = {
 };
 
 export function ServicePlaceInfo({ service, liveInfo }: ServicePlaceInfoProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const hasCoords =
     typeof service.latitude === "number" &&
     typeof service.longitude === "number";
@@ -77,7 +79,7 @@ export function ServicePlaceInfo({ service, liveInfo }: ServicePlaceInfoProps) {
 
         {googleRating !== null ? (
           <View style={styles.row}>
-            <Ionicons color="#F59E0B" name="star" size={14} />
+            <Ionicons color={colors.rating.star} name="star" size={14} />
             <Text style={styles.rowText}>
               {googleRating.toFixed(1)}
               {googleRatingCount !== null
@@ -89,7 +91,7 @@ export function ServicePlaceInfo({ service, liveInfo }: ServicePlaceInfoProps) {
 
         {address ? (
           <View style={styles.row}>
-            <Ionicons color="#6B7280" name="location-outline" size={14} />
+            <Ionicons color={colors.text.secondary} name="location-outline" size={14} />
             <Text style={styles.rowText}>{address}</Text>
           </View>
         ) : null}
@@ -109,19 +111,19 @@ export function ServicePlaceInfo({ service, liveInfo }: ServicePlaceInfoProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
     marginHorizontal: 16,
     marginTop: 20,
   },
   hours: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface.disabled,
     borderRadius: 12,
     marginTop: 12,
     padding: 12,
   },
   hoursLine: {
-    color: "#374151",
+    color: colors.text.body,
     fontSize: 12,
     lineHeight: 20,
   },
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowText: {
-    color: "#374151",
+    color: colors.text.body,
     flex: 1,
     fontSize: 13,
   },

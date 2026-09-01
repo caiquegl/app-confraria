@@ -1,42 +1,37 @@
-/**
- * Cores de marca e tokens semânticos do Confraria.
- *
- * Preferir papéis semânticos (`text.secondary`, `border.subtle`) em código novo.
- * Aliases de marca (`brandGreen`, `brandDark`, etc.) permanecem para compatibilidade.
- */
-export const colors = {
-  brandGreen: "#C8F763",
-  brandDark: "#1C2126",
-  brandGray: "#F5F7F5",
-  brandPrimary: "#576D1E",
+import { darkColors } from "./palettes/dark";
+import { lightColors } from "./palettes/light";
+import { getColors } from "./theme-store";
+import type { AppColors } from "./types";
 
-  text: {
-    primary: "#1C2126",
-    secondary: "#6B7280",
-    muted: "#9CA3AF",
-    placeholder: "#9CA3AF",
-    inverse: "#FFFFFF",
-  },
+/** @deprecated Prefira `useTheme().colors` para suporte a dark mode. */
+export const colors: AppColors = lightColors;
 
-  surface: {
-    primary: "#FFFFFF",
-    subtle: "#F3F4F6",
-    disabled: "#F9FAFB",
-    canvas: "#F5F7F5",
-    dangerSubtle: "#FEF2F2",
-  },
+export { darkColors, lightColors, getColors };
+export type { AppColors, ColorScheme } from "./types";
 
-  border: {
-    subtle: "#E5E7EB",
-    default: "#D1D5DB",
-  },
+export function getRouteDayPalette(palette: AppColors) {
+  return [
+    palette.routes.paletteLime,
+    palette.accent.shadow,
+    palette.routes.paletteGreen,
+    palette.routes.paletteIndigo,
+    palette.rating.star,
+    palette.feedback.danger,
+  ] as const;
+}
 
-  feedback: {
-    danger: "#EF4444",
-    dangerForeground: "#FFFFFF",
-  },
+export function getRouteMiniStrokes(palette: AppColors) {
+  return [
+    palette.routes.paletteLime,
+    palette.routes.paletteCyan,
+    palette.routes.paletteCoral,
+    palette.brandActive,
+    palette.routes.paletteViolet,
+  ] as const;
+}
 
-  accent: {
-    brand: "#C8F763",
-  },
-} as const;
+/** @deprecated Use `getRouteDayPalette(useTheme().colors)`. */
+export const routeDayPalette = getRouteDayPalette(lightColors);
+
+/** @deprecated Use `getRouteMiniStrokes(useTheme().colors)`. */
+export const routeMiniStrokes = getRouteMiniStrokes(lightColors);

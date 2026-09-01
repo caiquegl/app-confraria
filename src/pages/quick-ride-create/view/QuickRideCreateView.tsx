@@ -22,11 +22,13 @@ import {
   createQuickRide,
   isQuickRideTimePast,
 } from "@/pages/quick-rides/services/quick-rides.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type QuickRideDay = "today" | "tomorrow";
 
 export function QuickRideCreateView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [title, setTitle] = useState("");
   const [origin, setOrigin] = useState<EventPlaceReference | null>(null);
@@ -137,7 +139,7 @@ export function QuickRideCreateView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     gap: 20,
     paddingHorizontal: 16,
@@ -147,16 +149,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footer: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   screen: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
   },
   submitButton: {

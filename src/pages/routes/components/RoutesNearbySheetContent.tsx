@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 import type { NearbyPlace } from "@/pages/services/types/services.types";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { RoutesSheetDetent } from "./RoutesHomeBottomSheet";
 import { NearbyCategoryIcon } from "./NearbyCategoryIcon";
@@ -22,6 +22,8 @@ type NearbyCategoryFilter = "all" | "Postos de Gasolina" | "Mecânicas" | "Resta
 const ADDRESS_MAX_CHARS = 28;
 
 function truncateAddress(address: string | null | undefined): string {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const value = address?.trim();
   if (!value) return " ";
   if (value.length <= ADDRESS_MAX_CHARS) return value;
@@ -61,6 +63,8 @@ export function RoutesNearbySheetContent({
   partners,
   recentRoutes,
 }: RoutesNearbySheetContentProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const showFilters = detent === "expanded";
   const showRecent = detent !== "collapsed";
 
@@ -109,7 +113,7 @@ export function RoutesNearbySheetContent({
 
       {locationBlocked ? (
         <View style={styles.locationBlocked}>
-          <Ionicons color="#9CA3AF" name="location-outline" size={22} />
+          <Ionicons color={colors.text.muted} name="location-outline" size={22} />
           <Text style={styles.locationBlockedTitle}>Ative a localização</Text>
           <Text style={styles.locationBlockedText}>
             Precisamos da sua localização para montar trajetos a partir de onde você está.
@@ -122,7 +126,7 @@ export function RoutesNearbySheetContent({
 
       {locationPending ? (
         <View style={styles.locationPending}>
-          <ActivityIndicator color="#9CA3AF" size="small" />
+          <ActivityIndicator color={colors.text.muted} size="small" />
           <Text style={styles.locationPendingText}>Localizando você…</Text>
         </View>
       ) : null}
@@ -183,7 +187,7 @@ export function RoutesNearbySheetContent({
                 >
                   <View style={styles.partnerCardHeader}>
                     <View style={styles.partnerTypeRow}>
-                      <NearbyCategoryIcon category={place.category} color="#9CA3AF" size={13} />
+                      <NearbyCategoryIcon category={place.category} color={colors.text.muted} size={13} />
                       <Text style={styles.partnerType}>{place.category}</Text>
                     </View>
                     {place.isConfrariaPartner ? <View style={styles.partnerDot} /> : null}
@@ -201,7 +205,7 @@ export function RoutesNearbySheetContent({
                     </Text>
                     {place.googleRating != null ? (
                       <View style={styles.partnerMeta}>
-                        <Ionicons color="#F59E0B" name="star" size={11} />
+                        <Ionicons color={colors.rating.star} name="star" size={11} />
                         <Text style={styles.partnerRating}>
                           {place.googleRating.toFixed(1)}
                         </Text>
@@ -241,7 +245,7 @@ export function RoutesNearbySheetContent({
                   onPress={() => router.push(`/routes/${route.id}` as Href)}
                 >
                   <View style={styles.recentIcon}>
-                    <Ionicons color="#6B7280" name="time-outline" size={15} />
+                    <Ionicons color={colors.text.secondary} name="time-outline" size={15} />
                   </View>
                   <View style={styles.recentCopy}>
                     <Text numberOfLines={1} style={styles.recentTitle}>
@@ -249,7 +253,7 @@ export function RoutesNearbySheetContent({
                     </Text>
                     <Text style={styles.recentMeta}>{route.distanceLabel}</Text>
                   </View>
-                  <Ionicons color="#D1D5DB" name="chevron-forward" size={16} />
+                  <Ionicons color={colors.border.default} name="chevron-forward" size={16} />
                 </Pressable>
               ))}
             </View>
@@ -262,19 +266,19 @@ export function RoutesNearbySheetContent({
 
 export type { NearbyCategoryFilter };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   content: {
     paddingBottom: 24,
   },
   emptyPartners: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     paddingHorizontal: 20,
     paddingVertical: 8,
   },
   filterChip: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -285,7 +289,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   filterChipText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -304,7 +308,7 @@ const styles = StyleSheet.create({
   },
   locationBlocked: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 16,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   locationBlockedText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 6,
@@ -341,7 +345,7 @@ const styles = StyleSheet.create({
   },
   locationPending: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -351,7 +355,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   locationPendingText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
   },
   partnerBadge: {
@@ -367,8 +371,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   partnerCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     overflow: "hidden",
@@ -390,7 +394,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   partnerClosed: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
   },
   partnerDot: {
     backgroundColor: colors.brandGreen,
@@ -423,7 +427,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   partnerType: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "600",
   },
@@ -443,20 +447,20 @@ const styles = StyleSheet.create({
   },
   recentIcon: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     height: 36,
     justifyContent: "center",
     width: 36,
   },
   recentMeta: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     marginTop: 2,
   },
   recentRow: {
     alignItems: "center",
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: colors.border.subtle,
     borderBottomWidth: 1,
     flexDirection: "row",
     gap: 12,
@@ -476,7 +480,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   sectionSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
@@ -487,8 +491,8 @@ const styles = StyleSheet.create({
   },
   shortcutCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flex: 1,
@@ -509,7 +513,7 @@ const styles = StyleSheet.create({
     width: 36,
   },
   shortcutSubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 10,
     marginTop: 1,
   },

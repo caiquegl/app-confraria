@@ -18,7 +18,7 @@ import Toast from "react-native-toast-message";
 import { Button } from "@/components/Button";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { SelectField } from "@/components/SelectField";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { BikeBrand, SaveUserBikePayload, UserBike } from "../types/bikes.types";
 
@@ -46,6 +46,8 @@ export function BikeDetailView({
   onDelete,
   onSave,
 }: BikeDetailViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<StepTab>("essential");
   const [brandId, setBrandId] = useState(bike?.brand.id ?? "");
@@ -270,7 +272,7 @@ export function BikeDetailView({
               </View>
             ) : (
               <Pressable style={styles.photoButton} onPress={() => setPhotoPickerOpen(true)}>
-                <Ionicons color="#6B7280" name="camera-outline" size={20} />
+                <Ionicons color={colors.text.secondary} name="camera-outline" size={20} />
                 <Text style={styles.photoButtonText}>Tirar ou escolher foto</Text>
               </Pressable>
             )}
@@ -373,6 +375,7 @@ function TabButton({
   label: string;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={[styles.tab, active && styles.tabActive]} onPress={onPress}>
       <Text style={[styles.tabText, active && styles.tabTextActive]}>{label}</Text>
@@ -381,6 +384,7 @@ function TabButton({
 }
 
 function FieldLabel({ text }: { text: string }) {
+  const styles = useThemedStyles(createStyles);
   return <Text style={styles.label}>{text}</Text>;
 }
 
@@ -401,6 +405,8 @@ function BikeInput({
   value: string;
   onChangeText: (value: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View>
       <FieldLabel text={label} />
@@ -408,7 +414,7 @@ function BikeInput({
         autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.text.placeholder}
         style={[styles.input, error && styles.inputError]}
         value={value}
         onChangeText={onChangeText}
@@ -429,6 +435,8 @@ function PhotoPickerSheet({
   onClose: () => void;
   onGallery: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (!visible) return null;
 
   return (
@@ -481,9 +489,9 @@ function maskPlate(value: string): string {
   return `${normalized.slice(0, 3)}-${normalized.slice(3)}`;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   actionSheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     gap: 10,
@@ -498,8 +506,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -511,13 +519,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   cancelSheetText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 14,
     fontWeight: "700",
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     gap: 14,
@@ -528,30 +536,30 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   dangerBox: {
-    borderColor: "#FECACA",
+    borderColor: colors.feedback.dangerBorder,
     borderRadius: 18,
     borderWidth: 1,
     gap: 8,
     padding: 16,
   },
   dangerText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     lineHeight: 18,
   },
   dangerTitle: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 14,
     fontWeight: "800",
   },
   errorText: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontSize: 12,
     marginTop: 4,
   },
   footer: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     paddingHorizontal: 24,
     paddingTop: 14,
@@ -575,8 +583,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     color: colors.brandDark,
@@ -585,7 +593,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   inputError: {
-    borderColor: "#EF4444",
+    borderColor: colors.feedback.danger,
   },
   label: {
     color: colors.brandDark,
@@ -600,7 +608,7 @@ const styles = StyleSheet.create({
   },
   photoButton: {
     alignItems: "center",
-    borderColor: "#D1D5DB",
+    borderColor: colors.border.default,
     borderRadius: 16,
     borderStyle: "dashed",
     borderWidth: 1,
@@ -610,7 +618,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   photoButtonText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -628,7 +636,7 @@ const styles = StyleSheet.create({
   },
   sheetOption: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -642,14 +650,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 18,
     borderWidth: 1,
     padding: 18,
   },
   summaryEyebrow: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1.4,
@@ -657,7 +665,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   summaryText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginTop: 8,
   },
@@ -688,15 +696,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   tabs: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
     padding: 4,
   },
   tabText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "700",
   },

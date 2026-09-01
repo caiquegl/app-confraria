@@ -10,7 +10,7 @@ import {
 
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatRelativeTime } from "@/pages/home/services/feed.service";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { useConversations } from "../business/useConversations";
 import type { ChatContact, ChatConversation, ChatUser } from "../types/messages.types";
@@ -24,6 +24,8 @@ export function MessagesListView({
   onBack,
   onOpenConversation,
 }: MessagesListViewProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const {
     contacts,
     conversations,
@@ -103,13 +105,16 @@ export function MessagesListView({
 }
 
 function SectionTitle({ title }: { title: string }) {
+  const styles = useThemedStyles(createStyles);
   return <Text style={styles.sectionTitle}>{title}</Text>;
 }
 
 function EmptyState({ text }: { text: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.emptyState}>
-      <Ionicons color="#D1D5DB" name="chatbubble-ellipses-outline" size={30} />
+      <Ionicons color={colors.border.default} name="chatbubble-ellipses-outline" size={30} />
       <Text style={styles.emptyText}>{text}</Text>
     </View>
   );
@@ -139,6 +144,7 @@ function ConversationRow({
   conversation: ChatConversation;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(createStyles);
   const preview = getConversationPreview(conversation);
 
   return (
@@ -171,6 +177,8 @@ function ContactRow({
   contact: ChatContact;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <Pressable style={styles.row} onPress={onPress}>
       <UserAvatar avatarUrl={contact.userAvatar} name={contact.userName} size={46} />
@@ -182,16 +190,16 @@ function ContactRow({
           {contact.conversationId ? "Continuar conversa" : "Iniciar conversa"}
         </Text>
       </View>
-      <Ionicons color="#9CA3AF" name="chevron-forward" size={18} />
+      <Ionicons color={colors.text.muted} name="chevron-forward" size={18} />
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -210,8 +218,8 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 22,
     borderWidth: 1,
     gap: 8,
@@ -219,11 +227,11 @@ const styles = StyleSheet.create({
     padding: 22,
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
   },
   errorText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     textAlign: "center",
   },
@@ -236,7 +244,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   previewText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     marginTop: 3,
   },
@@ -254,8 +262,8 @@ const styles = StyleSheet.create({
   },
   row: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 22,
     borderWidth: 1,
     flexDirection: "row",
@@ -289,12 +297,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   subtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     marginTop: 2,
   },
   timeText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     marginLeft: "auto",
   },

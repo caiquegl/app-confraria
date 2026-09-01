@@ -1,70 +1,83 @@
 import type { MapStyleElement } from "react-native-maps";
 
-export const ROUTE_PLANNER_MAP_STYLE: MapStyleElement[] = [
-  {
-    featureType: "poi",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "transit",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "administrative.land_parcel",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "landscape",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#eef1e8" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#dbe4ec" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#d8dece" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#c9d1bc" }],
-  },
-];
+import type { AppColors } from "@/theme";
+import { lightColors } from "@/theme/colors";
 
-export const ROUTE_NAVIGATION_MAP_STYLE_NIGHT: MapStyleElement[] = [
-  { elementType: "geometry", stylers: [{ color: "#1f2428" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8a9199" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1f2428" }] },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#38414a" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#212a33" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#17263c" }],
-  },
-  {
-    featureType: "poi",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "transit",
-    stylers: [{ visibility: "off" }],
-  },
-];
+export function getRoutePlannerMapStyle(colors: AppColors): MapStyleElement[] {
+  return [
+    {
+      featureType: "poi",
+      stylers: [{ visibility: "off" }],
+    },
+    {
+      featureType: "transit",
+      stylers: [{ visibility: "off" }],
+    },
+    {
+      featureType: "road",
+      elementType: "labels.icon",
+      stylers: [{ visibility: "off" }],
+    },
+    {
+      featureType: "administrative.land_parcel",
+      stylers: [{ visibility: "off" }],
+    },
+    {
+      featureType: "landscape",
+      elementType: "geometry.fill",
+      stylers: [{ color: colors.map.plannerLandscape }],
+    },
+    {
+      featureType: "water",
+      elementType: "geometry.fill",
+      stylers: [{ color: colors.map.plannerWater }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry.stroke",
+      stylers: [{ color: colors.map.plannerRoadStroke }],
+    },
+    {
+      featureType: "road.highway",
+      elementType: "geometry.stroke",
+      stylers: [{ color: colors.map.plannerHighwayStroke }],
+    },
+  ];
+}
+
+export function getRouteNavigationMapStyleNight(colors: AppColors): MapStyleElement[] {
+  return [
+    { elementType: "geometry", stylers: [{ color: colors.map.navigationGeometry }] },
+    { elementType: "labels.text.fill", stylers: [{ color: colors.map.navigationLabelFill }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: colors.map.navigationLabelStroke }] },
+    {
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [{ color: colors.map.navigationRoad }],
+    },
+    {
+      featureType: "road",
+      elementType: "geometry.stroke",
+      stylers: [{ color: colors.map.navigationRoadStroke }],
+    },
+    {
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [{ color: colors.map.navigationWater }],
+    },
+    {
+      featureType: "poi",
+      stylers: [{ visibility: "off" }],
+    },
+    {
+      featureType: "transit",
+      stylers: [{ visibility: "off" }],
+    },
+  ];
+}
+
+/** @deprecated Use `getRoutePlannerMapStyle(useTheme().colors)`. */
+export const ROUTE_PLANNER_MAP_STYLE = getRoutePlannerMapStyle(lightColors);
+
+/** @deprecated Use `getRouteNavigationMapStyleNight(useTheme().colors)`. */
+export const ROUTE_NAVIGATION_MAP_STYLE_NIGHT = getRouteNavigationMapStyleNight(lightColors);

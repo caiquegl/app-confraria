@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserAvatar } from "@/components/UserAvatar";
 import { formatRelativeTime } from "@/pages/home/services/feed.service";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { StoryOwnerOptionsSheet } from "./StoryOwnerOptionsSheet";
 import type { StoryGroup, StoryItem } from "../types/stories.types";
@@ -46,6 +47,8 @@ export function StoryViewer({
   onStoryVisible,
   onToggleLike,
 }: StoryViewerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const progress = useMemo(() => new Animated.Value(0), []);
   const didLongPressRef = useRef(false);
@@ -248,7 +251,7 @@ export function StoryViewer({
 
         {!isStoryLoaded && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator color="#FFFFFF" size="large" />
+            <ActivityIndicator color={colors.text.inverse} size="large" />
           </View>
         )}
 
@@ -286,7 +289,7 @@ export function StoryViewer({
                 style={styles.headerActionButton}
                 onPress={() => setOverlay("sheet")}
               >
-                <Ionicons color="#FFFFFF" name="ellipsis-horizontal" size={24} />
+                <Ionicons color={colors.text.inverse} name="ellipsis-horizontal" size={24} />
               </Pressable>
             )}
             <Pressable
@@ -295,7 +298,7 @@ export function StoryViewer({
               style={styles.headerActionButton}
               onPress={onClose}
             >
-              <Ionicons color="#FFFFFF" name="close" size={26} />
+              <Ionicons color={colors.text.inverse} name="close" size={26} />
             </Pressable>
           </View>
         </View>
@@ -325,7 +328,7 @@ export function StoryViewer({
             style={[styles.viewersButton, { bottom: Math.max(insets.bottom, 16) }]}
             onPress={() => onOpenViewers(story)}
           >
-            <Ionicons color="#FFFFFF" name="eye-outline" size={18} />
+            <Ionicons color={colors.text.inverse} name="eye-outline" size={18} />
             <Text style={styles.viewersText}>{story.viewerCount} visualizações</Text>
           </Pressable>
         )}
@@ -337,7 +340,7 @@ export function StoryViewer({
             onPress={() => onToggleLike(story)}
           >
             <Ionicons
-              color={story.isLiked ? "#EF4444" : "#FFFFFF"}
+              color={story.isLiked ? colors.feedback.danger : "#FFFFFF"}
               name={story.isLiked ? "heart" : "heart-outline"}
               size={26}
             />
@@ -354,7 +357,7 @@ export function StoryViewer({
         {overlay === "deleting" && (
           <View style={styles.deletingOverlay}>
             <View style={styles.deletingContent}>
-              <ActivityIndicator color="#FFFFFF" size="large" />
+              <ActivityIndicator color={colors.text.inverse} size="large" />
               <Text style={styles.deletingText}>Apagando story…</Text>
             </View>
             <Pressable style={styles.deletingCancelButton} onPress={handleCancelOverlay}>
@@ -374,6 +377,9 @@ function StoryMedia({
   story: StoryItem;
   onLoaded: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.image}>
       <Image
@@ -387,7 +393,7 @@ function StoryMedia({
       />
       {story.mediaType === "video" ? (
         <View style={styles.videoPlayBadge} pointerEvents="none">
-          <Ionicons name="play" size={28} color="#FFFFFF" />
+          <Ionicons name="play" size={28} color={colors.text.inverse} />
         </View>
       ) : null}
       <StoryOverlays overlays={story.overlays ?? []} />
@@ -396,6 +402,8 @@ function StoryMedia({
 }
 
 function StoryOverlays({ overlays }: { overlays: StoryItem["overlays"] }) {
+  const styles = useThemedStyles(createStyles);
+
   if (!overlays || overlays.length === 0) return null;
 
   return (
@@ -421,190 +429,191 @@ function StoryOverlays({ overlays }: { overlays: StoryItem["overlays"] }) {
   );
 }
 
-const styles = StyleSheet.create({
-  deletingCancelButton: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 999,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-  },
-  deletingCancelText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  deletingContent: {
-    alignItems: "center",
-    gap: 12,
-  },
-  deletingOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
-    bottom: 0,
-    gap: 24,
-    justifyContent: "center",
-    left: 0,
-    paddingHorizontal: 32,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 20,
-  },
-  deletingText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-  },
-  headerActionButton: {
-    padding: 4,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: 4,
-    marginLeft: "auto",
-  },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    position: "relative",
-    zIndex: 3,
-  },
-  image: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  loadingOverlay: {
-    alignItems: "center",
-    bottom: 0,
-    justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 1,
-  },
-  mediaFill: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  likeButton: {
-    alignItems: "center",
-    alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
-    borderColor: "rgba(255,255,255,0.22)",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    position: "absolute",
-    zIndex: 4,
-  },
-  likeText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  nextZone: {
-    bottom: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: "66%",
-    zIndex: 2,
-  },
-  overlay: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    backgroundColor: "rgba(0,0,0,0.16)",
-  },
-  prevZone: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    top: 0,
-    width: "34%",
-    zIndex: 2,
-  },
-  progressFull: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
-    height: "100%",
-  },
-  progressRow: {
-    flexDirection: "row",
-    gap: 4,
-    paddingHorizontal: 12,
-    position: "relative",
-    zIndex: 3,
-  },
-  progressTrack: {
-    backgroundColor: "rgba(255,255,255,0.35)",
-    borderRadius: 999,
-    flex: 1,
-    height: 3,
-    overflow: "hidden",
-  },
-  screen: {
-    backgroundColor: "#000000",
-    flex: 1,
-  },
-  storyStickerOverlay: {
-    aspectRatio: 1,
-    position: "absolute",
-  },
-  timeText: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 12,
-  },
-  userName: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  videoPlayBadge: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
-    borderRadius: 999,
-    height: 56,
-    justifyContent: "center",
-    left: "50%",
-    marginLeft: -28,
-    marginTop: -28,
-    position: "absolute",
-    top: "50%",
-    width: 56,
-    zIndex: 1,
-  },
-  viewersButton: {
-    alignItems: "center",
-    alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
-    borderColor: "rgba(255,255,255,0.22)",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    position: "absolute",
-    zIndex: 4,
-  },
-  viewersText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-});
+const createStyles = (colors: AppColors) =>
+  StyleSheet.create({
+    deletingCancelButton: {
+      backgroundColor: colors.overlay.iconFrosted,
+      borderRadius: 999,
+      paddingHorizontal: 24,
+      paddingVertical: 10,
+    },
+    deletingCancelText: {
+      color: colors.text.inverse,
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    deletingContent: {
+      alignItems: "center",
+      gap: 12,
+    },
+    deletingOverlay: {
+      alignItems: "center",
+      backgroundColor: colors.overlay.scrimHeavy,
+      bottom: 0,
+      gap: 24,
+      justifyContent: "center",
+      left: 0,
+      paddingHorizontal: 32,
+      position: "absolute",
+      right: 0,
+      top: 0,
+      zIndex: 20,
+    },
+    deletingText: {
+      color: colors.text.inverse,
+      fontSize: 14,
+    },
+    headerActionButton: {
+      padding: 4,
+    },
+    headerActions: {
+      flexDirection: "row",
+      gap: 4,
+      marginLeft: "auto",
+    },
+    header: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingTop: 10,
+      position: "relative",
+      zIndex: 3,
+    },
+    image: {
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+    },
+    loadingOverlay: {
+      alignItems: "center",
+      bottom: 0,
+      justifyContent: "center",
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+      zIndex: 1,
+    },
+    mediaFill: {
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+    },
+    likeButton: {
+      alignItems: "center",
+      alignSelf: "center",
+      backgroundColor: colors.overlay.scrimMedium,
+      borderColor: colors.overlay.borderLight,
+      borderRadius: 999,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      position: "absolute",
+      zIndex: 4,
+    },
+    likeText: {
+      color: colors.text.inverse,
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    nextZone: {
+      bottom: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+      width: "66%",
+      zIndex: 2,
+    },
+    overlay: {
+      backgroundColor: colors.overlay.borderFaint,
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
+    },
+    prevZone: {
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      top: 0,
+      width: "34%",
+      zIndex: 2,
+    },
+    progressFull: {
+      backgroundColor: colors.surface.primary,
+      borderRadius: 999,
+      height: "100%",
+    },
+    progressRow: {
+      flexDirection: "row",
+      gap: 4,
+      paddingHorizontal: 12,
+      position: "relative",
+      zIndex: 3,
+    },
+    progressTrack: {
+      backgroundColor: colors.overlay.dotIdle,
+      borderRadius: 999,
+      flex: 1,
+      height: 3,
+      overflow: "hidden",
+    },
+    screen: {
+      backgroundColor: colors.surface.video,
+      flex: 1,
+    },
+    storyStickerOverlay: {
+      aspectRatio: 1,
+      position: "absolute",
+    },
+    timeText: {
+      color: colors.overlay.textSecondary,
+      fontSize: 12,
+    },
+    userName: {
+      color: colors.text.inverse,
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    videoPlayBadge: {
+      alignItems: "center",
+      backgroundColor: colors.overlay.scrimMedium,
+      borderRadius: 999,
+      height: 56,
+      justifyContent: "center",
+      left: "50%",
+      marginLeft: -28,
+      marginTop: -28,
+      position: "absolute",
+      top: "50%",
+      width: 56,
+      zIndex: 1,
+    },
+    viewersButton: {
+      alignItems: "center",
+      alignSelf: "center",
+      backgroundColor: colors.overlay.scrimMedium,
+      borderColor: colors.overlay.borderLight,
+      borderRadius: 999,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      position: "absolute",
+      zIndex: 4,
+    },
+    viewersText: {
+      color: colors.text.inverse,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+  });

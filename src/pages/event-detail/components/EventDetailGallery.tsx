@@ -3,13 +3,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailGalleryProps = {
   imageUrls: string[];
 };
 
 export function EventDetailGallery({ imageUrls }: EventDetailGalleryProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   if (imageUrls.length === 0) return null;
@@ -56,7 +58,7 @@ export function EventDetailGallery({ imageUrls }: EventDetailGalleryProps) {
             style={styles.previewCloseButton}
             onPress={() => setSelectedIndex(null)}
           >
-            <Ionicons color="#FFFFFF" name="close" size={24} />
+            <Ionicons color={colors.text.inverse} name="close" size={24} />
           </Pressable>
 
           {selectedImageUrl ? (
@@ -76,14 +78,14 @@ export function EventDetailGallery({ imageUrls }: EventDetailGalleryProps) {
                 style={[styles.previewNavButton, styles.previewPrevButton]}
                 onPress={goToPreviousImage}
               >
-                <Ionicons color="#FFFFFF" name="chevron-back" size={28} />
+                <Ionicons color={colors.text.inverse} name="chevron-back" size={28} />
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 style={[styles.previewNavButton, styles.previewNextButton]}
                 onPress={goToNextImage}
               >
-                <Ionicons color="#FFFFFF" name="chevron-forward" size={28} />
+                <Ionicons color={colors.text.inverse} name="chevron-forward" size={28} />
               </Pressable>
             </>
           ) : null}
@@ -99,10 +101,10 @@ export function EventDetailGallery({ imageUrls }: EventDetailGalleryProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     aspectRatio: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 6,
     overflow: "hidden",
     width: "32%",
@@ -144,7 +146,7 @@ const styles = StyleSheet.create({
   },
   previewCounter: {
     bottom: 52,
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "800",
     position: "absolute",

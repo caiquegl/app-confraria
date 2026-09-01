@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 export type SegmentedTabItem<T extends string> = {
   count?: number;
@@ -19,6 +19,8 @@ export function SegmentedTabs<T extends string>({
   onChange,
   tabs,
 }: SegmentedTabsProps<T>) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <View style={styles.container}>
       {tabs.map((tab) => {
@@ -42,10 +44,10 @@ export function SegmentedTabs<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
@@ -59,13 +61,13 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: colors.brandGreen,
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: 1, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
   },
   tabText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: "600",
   },

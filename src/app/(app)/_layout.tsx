@@ -23,11 +23,13 @@ import {
   setActiveNavigationRouteId,
   subscribeActiveNavigation,
 } from "@/pages/routes/stores/active-navigation-store";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type AuthState = "loading" | "authenticated" | "unauthenticated";
 
 export default function AppLayout() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const pathname = usePathname() ?? "";
   const storedProfile = getStoredCurrentProfile();
   const [authState, setAuthState] = useState<AuthState>("loading");
@@ -147,7 +149,7 @@ export default function AppLayout() {
         <Stack
           screenOptions={{
             animation: "none",
-            contentStyle: { backgroundColor: colors.brandGray },
+            contentStyle: { backgroundColor: colors.surface.canvas },
             headerShown: false,
           }}
         />
@@ -166,9 +168,9 @@ export default function AppLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   container: {
-    backgroundColor: colors.brandGray,
+    backgroundColor: colors.surface.canvas,
     flex: 1,
   },
   content: {

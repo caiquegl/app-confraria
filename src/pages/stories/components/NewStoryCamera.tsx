@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { StoryPhotoEditor, type StoryPhotoEditorHandle } from "./StoryPhotoEditor";
 import type { StoryDraftMedia } from "../types/stories.types";
@@ -37,6 +37,8 @@ export function NewStoryCamera({
   onSelectMedia,
   onPublish,
 }: NewStoryCameraProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView | null>(null);
   const photoEditorRef = useRef<StoryPhotoEditorHandle | null>(null);
@@ -193,7 +195,7 @@ export function NewStoryCamera({
             style={[styles.iconButton, isBusy && styles.controlDisabled]}
             onPress={handleClose}
           >
-            <Ionicons name="close" size={24} color="#FFFFFF" />
+            <Ionicons name="close" size={24} color={colors.text.inverse} />
           </Pressable>
 
           <Pressable
@@ -218,7 +220,7 @@ export function NewStoryCamera({
             style={[styles.galleryButton, isBusy && styles.controlDisabled]}
             onPress={handleOpenGallery}
           >
-            <Ionicons name="images-outline" size={26} color="#FFFFFF" />
+            <Ionicons name="images-outline" size={26} color={colors.text.inverse} />
           </Pressable>
 
           {selectedMedia ? (
@@ -247,7 +249,7 @@ export function NewStoryCamera({
             style={[styles.flipButton, isBusy && styles.controlDisabled]}
             onPress={toggleFacing}
           >
-            <Ionicons name="camera-reverse-outline" size={26} color="#FFFFFF" />
+            <Ionicons name="camera-reverse-outline" size={26} color={colors.text.inverse} />
           </Pressable>
         </View>
 
@@ -293,6 +295,8 @@ const StoryMediaPreview = forwardRef<
 });
 
 function StoryVideoPreview({ uri }: { uri: string }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
 
   useEffect(() => {
@@ -331,14 +335,14 @@ function StoryVideoPreview({ uri }: { uri: string }) {
       ) : null}
       <View style={styles.videoPreviewScrim} />
       <View style={styles.videoPreviewIcon}>
-        <Ionicons name="play" size={34} color="#FFFFFF" />
+        <Ionicons name="play" size={34} color={colors.text.inverse} />
       </View>
       <Text style={styles.videoPreviewTitle}>Vídeo gravado</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   bottomControls: {
     alignItems: "center",
     bottom: 0,
@@ -354,7 +358,7 @@ const styles = StyleSheet.create({
   },
   captureButton: {
     alignItems: "center",
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface.primary,
     borderRadius: 42,
     borderWidth: 4,
     height: 78,
@@ -365,19 +369,19 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   captureButtonRecording: {
-    backgroundColor: "#EF4444",
-    borderColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
+    borderColor: colors.feedback.danger,
     borderRadius: 18,
     transform: [{ scale: 1.02 }],
   },
   captureInner: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 31,
     height: 62,
     width: 62,
   },
   captureInnerRecording: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 6,
     height: 28,
     width: 28,
@@ -415,7 +419,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: colors.overlay.scrimLight,
     borderRadius: 18,
     height: 42,
     justifyContent: "center",
@@ -424,7 +428,7 @@ const styles = StyleSheet.create({
   modeButton: {
     alignItems: "center",
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderColor: "rgba(255,255,255,0.24)",
     borderRadius: 999,
     borderWidth: 1,
@@ -440,7 +444,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   modeButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "900",
   },
@@ -460,12 +464,12 @@ const styles = StyleSheet.create({
   },
   permissionScreen: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     flex: 1,
     justifyContent: "center",
   },
   permissionText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 22,
     marginTop: 10,
@@ -482,18 +486,18 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   recordingDot: {
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 999,
     height: 8,
     width: 8,
   },
   recordingDotPaused: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: colors.rating.star,
   },
   recordingPill: {
     alignItems: "center",
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: colors.overlay.scrimHeavy,
     borderColor: "rgba(255,255,255,0.24)",
     borderRadius: 999,
     borderWidth: 1,
@@ -505,13 +509,13 @@ const styles = StyleSheet.create({
     zIndex: 6,
   },
   recordingText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "800",
   },
   retakeButton: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: colors.overlay.scrimStrong,
     borderColor: "rgba(255,255,255,0.4)",
     borderRadius: 999,
     borderWidth: 1,
@@ -520,12 +524,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   retakeText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "800",
   },
   screen: {
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
   },
   topControls: {
@@ -550,7 +554,7 @@ const styles = StyleSheet.create({
   },
   uploadOverlay: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: colors.overlay.scrimMedium,
     bottom: 0,
     justifyContent: "center",
     left: 0,
@@ -560,7 +564,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   uploadPercent: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "800",
     marginTop: 8,
@@ -586,7 +590,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   uploadTitle: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 17,
     fontWeight: "800",
     marginTop: 16,
@@ -602,7 +606,7 @@ const styles = StyleSheet.create({
   },
   videoPreviewPlaceholder: {
     alignItems: "center",
-    backgroundColor: "#000000",
+    backgroundColor: colors.surface.video,
     flex: 1,
     gap: 12,
     justifyContent: "center",
@@ -610,7 +614,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
   videoPreviewScrim: {
-    backgroundColor: "rgba(0,0,0,0.42)",
+    backgroundColor: colors.overlay.videoScrim,
     bottom: 0,
     left: 0,
     position: "absolute",
@@ -633,7 +637,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   videoPreviewTitle: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 18,
     fontWeight: "900",
     zIndex: 2,

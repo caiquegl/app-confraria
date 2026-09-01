@@ -1,16 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type RoutePhotoClusterMarkerProps = {
   photoCount: number;
 };
 
 export function RoutePhotoClusterMarker({ photoCount }: RoutePhotoClusterMarkerProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View collapsable={false} style={styles.cameraPin}>
-      <Ionicons color="#FFFFFF" name="camera" size={16} />
+      <Ionicons color={colors.text.inverse} name="camera" size={16} />
       {photoCount > 1 ? (
         <View style={styles.cameraPinBadge}>
           <Text style={styles.cameraPinBadgeText}>{photoCount}</Text>
@@ -20,7 +22,7 @@ export function RoutePhotoClusterMarker({ photoCount }: RoutePhotoClusterMarkerP
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   cameraPin: {
     alignItems: "center",
     backgroundColor: colors.brandDark,

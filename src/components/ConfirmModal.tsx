@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, radii, spacing, typography } from "@/theme";
+import { type AppColors, radii, spacing, typography, useTheme, useThemedStyles } from "@/theme";
 
 export type ConfirmModalVariant = "default" | "destructive";
 
@@ -41,6 +41,8 @@ export function ConfirmModal({
   variant = "default",
   visible,
 }: ConfirmModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const inFlightRef = useRef(false);
   const [isPending, setIsPending] = useState(false);
@@ -168,7 +170,7 @@ export function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     bottom: 0,
     left: 0,
@@ -177,7 +179,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   backdropWrap: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },

@@ -24,7 +24,7 @@ import { routeTrackingLog } from "@/lib/route-tracking-logger";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import { useGeolocation } from "@/lib/location";
 import { useNotificationBadge } from "@/pages/notifications";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { RoutesFiltersSheet, getUniqueBikeNames } from "../components/RoutesFiltersSheet";
 import { RoutesNewTripButton } from "../components/RoutesNewTripButton";
@@ -45,6 +45,8 @@ import {
 } from "../utils/saved-routes-filters.utils";
 
 export function RoutesMineView() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const { hasUnread } = useNotificationBadge();
   const { location } = useGeolocation();
@@ -200,7 +202,7 @@ export function RoutesMineView() {
               style={styles.filtersButton}
               onPress={openFiltersSheet}
             >
-              <Ionicons color="#6B7280" name="settings-outline" size={16} />
+              <Ionicons color={colors.text.secondary} name="settings-outline" size={16} />
               <Text style={styles.filtersButtonText}>Filtros</Text>
               {hasAppliedFilters ? (
                 <View style={styles.filtersBadge}>
@@ -411,7 +413,7 @@ export function RoutesMineView() {
                             Assine para ver seu histórico completo
                           </Text>
                         </View>
-                        <Ionicons color="#9CA3AF" name="chevron-forward" size={16} />
+                        <Ionicons color={colors.text.muted} name="chevron-forward" size={16} />
                       </Pressable>
                     ) : null}
 
@@ -461,7 +463,7 @@ export function RoutesMineView() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   activeChip: {
     alignItems: "center",
     backgroundColor: "rgba(200, 247, 99, 0.2)",
@@ -486,8 +488,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     height: 40,
@@ -510,7 +512,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   eyebrow: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 1.2,
@@ -533,8 +535,8 @@ const styles = StyleSheet.create({
   },
   filtersButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -548,7 +550,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   groupCount: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -574,8 +576,8 @@ const styles = StyleSheet.create({
   },
   historyBanner: {
     alignItems: "center",
-    backgroundColor: "#F8FAF3",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.routesCanvas,
+    borderColor: colors.border.subtle,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -590,7 +592,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   historySubtitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
   },
   historyTitle: {
@@ -600,8 +602,8 @@ const styles = StyleSheet.create({
   },
   quotaCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -627,7 +629,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   quotaTitle: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
     fontWeight: "700",
     textTransform: "uppercase",
@@ -664,7 +666,7 @@ const styles = StyleSheet.create({
   },
   navigationBanner: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderColor: colors.brandGreen,
     borderRadius: 16,
     borderWidth: 1,
@@ -678,7 +680,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   navigationEyebrow: {
-    color: "#728F21",
+    color: colors.brandActive,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
@@ -702,8 +704,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   quickChip: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 14,
@@ -714,7 +716,7 @@ const styles = StyleSheet.create({
     borderColor: colors.brandGreen,
   },
   quickChipText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -724,7 +726,7 @@ const styles = StyleSheet.create({
   },
   quickDivider: {
     alignSelf: "center",
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.border.subtle,
     height: 20,
     marginHorizontal: 4,
     width: 1,

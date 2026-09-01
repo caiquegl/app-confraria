@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventMetricCardProps = {
   children?: ReactNode;
@@ -18,6 +18,8 @@ export function EventMetricCard({
   label,
   value,
 }: EventMetricCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -37,16 +39,16 @@ export function EventMetricCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
   },
   deltaBadge: {
-    backgroundColor: "#DCFCE7",
+    backgroundColor: colors.surface.successSubtle,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   label: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "700",
   },

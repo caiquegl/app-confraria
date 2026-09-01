@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { FavoriteTab, FavoriteTabItem } from "../types/favorites.types";
 
@@ -11,6 +11,8 @@ type FavoritesTabsProps = {
 };
 
 export function FavoritesTabs({ activeTab, onChangeTab, tabs }: FavoritesTabsProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.tabs}>
       {tabs.map((tab) => {
@@ -33,7 +35,7 @@ export function FavoritesTabs({ activeTab, onChangeTab, tabs }: FavoritesTabsPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   tab: {
     alignItems: "center",
     borderRadius: 999,
@@ -44,7 +46,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandGreen,
   },
   tabText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -53,8 +55,8 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   tabs: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",

@@ -1,6 +1,6 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { Service } from "../types/services.types";
 import { SERVICES_CARD_WIDTH, ServicesCard } from "./ServicesCard";
@@ -23,6 +23,8 @@ export function ServicesSection({
   onToggleFavorite,
   onSeeMore,
 }: ServicesSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (services.length === 0) return null;
 
   return (
@@ -65,7 +67,7 @@ export function ServicesSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   cardItem: {
     marginRight: CARD_GAP,
   },

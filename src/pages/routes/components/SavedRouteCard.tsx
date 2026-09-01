@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { SavedRoute } from "../types/saved-route.types";
 import {
@@ -33,6 +33,7 @@ type MiniRouteTraceProps = {
 };
 
 function MiniRouteTrace({ route, size }: MiniRouteTraceProps) {
+  const styles = useThemedStyles(createStyles);
   const ongoing = isRouteOngoing(route);
   const seed = hashId(route.id);
   const path = MINI_PATHS[seed % MINI_PATHS.length];
@@ -50,6 +51,8 @@ function MiniRouteTrace({ route, size }: MiniRouteTraceProps) {
 }
 
 function StatusTag({ route }: { route: SavedRoute }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   if (isRouteCompleted(route)) {
     return (
       <View style={[styles.tag, styles.tagCompleted]}>
@@ -88,6 +91,8 @@ export function SavedRouteCard({
   route,
   showAuthor = false,
 }: SavedRouteCardProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const ongoing = isRouteOngoing(route);
 
   return (
@@ -159,9 +164,9 @@ export function SavedRouteCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   authorName: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     flex: 1,
     fontSize: 12,
     fontWeight: "600",
@@ -169,7 +174,7 @@ const styles = StyleSheet.create({
   },
   authorRow: {
     alignItems: "center",
-    borderTopColor: "#F3F4F6",
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -177,22 +182,22 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderRadius: 18,
     padding: 14,
   },
   cardDefault: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderWidth: 1,
     width: 236,
   },
   cardFullWidth: {
-    borderColor: "#728F21",
+    borderColor: colors.brandActive,
     borderWidth: 1.5,
     width: "100%",
   },
   cardOngoing: {
-    borderColor: "#728F21",
+    borderColor: colors.brandActive,
     borderWidth: 1.5,
     shadowColor: "rgba(114, 143, 33, 0.14)",
     shadowOffset: { height: 4, width: 0 },
@@ -213,7 +218,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   metaDot: {
-    backgroundColor: "#D1D5DB",
+    backgroundColor: colors.border.default,
     borderRadius: 999,
     height: 3,
     width: 3,
@@ -226,11 +231,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   metaText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 11,
   },
   pathArrow: {
-    color: "#728F21",
+    color: colors.brandActive,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -249,12 +254,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   progressFill: {
-    backgroundColor: "#728F21",
+    backgroundColor: colors.brandActive,
     borderRadius: 999,
     height: "100%",
   },
   progressTrack: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.surface.subtle,
     borderRadius: 999,
     height: 4,
     marginTop: 10,
@@ -276,28 +281,28 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   tagMuted: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
   },
   tagMutedText: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 10,
     fontWeight: "600",
   },
   tagOngoing: {
     backgroundColor: "rgba(114, 143, 33, 0.1)",
-    borderColor: "#728F21",
+    borderColor: colors.brandActive,
   },
   tagOngoingText: {
-    color: "#728F21",
+    color: colors.brandActive,
     fontSize: 10,
     fontWeight: "800",
   },
   tagRating: {
     backgroundColor: "rgba(114, 143, 33, 0.08)",
-    borderColor: "#728F21",
+    borderColor: colors.brandActive,
   },
   tagRatingText: {
-    color: "#728F21",
+    color: colors.brandActive,
     fontSize: 10,
     fontWeight: "800",
   },
@@ -308,13 +313,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   title: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
     marginTop: 2,
   },
   trace: {
     backgroundColor: "#EEF2EA",
-    borderColor: "#F3F4F6",
+    borderColor: colors.border.subtle,
     borderRadius: 13,
     borderWidth: 1,
     overflow: "hidden",

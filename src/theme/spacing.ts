@@ -12,4 +12,6 @@ export const spacing = {
   "3xl": 20,
   "4xl": 24,
   "5xl": 48,
+  fabOffset: 18,
+  screenPadding: 32,
 } as const;

@@ -1,12 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 import type { ServiceReview } from "@/pages/services/types/services.types";
 
 import { StarRating } from "./StarRating";
 
 function formatDate(iso: string): string {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   try {
     return new Date(iso).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -23,6 +25,8 @@ type ReviewItemProps = {
 };
 
 export function ReviewItem({ review }: ReviewItemProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <UserAvatar
@@ -50,9 +54,9 @@ export function ReviewItem({ review }: ReviewItemProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   comment: {
-    color: "#374151",
+    color: colors.text.body,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 6,
@@ -66,7 +70,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   date: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 11,
   },
   headerRow: {

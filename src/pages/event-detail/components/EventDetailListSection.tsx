@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailListSectionProps = {
   emptyText?: string;
@@ -14,6 +14,8 @@ export function EventDetailListSection({
   items,
   title,
 }: EventDetailListSectionProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
@@ -33,10 +35,10 @@ export function EventDetailListSection({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
@@ -47,13 +49,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   itemText: {
-    color: "#374151",
+    color: colors.text.body,
     flex: 1,
     fontSize: 14,
     fontWeight: "700",
   },
   emptyText: {
-    color: "#9CA3AF",
+    color: colors.text.muted,
     fontSize: 13,
     fontWeight: "600",
     lineHeight: 19,

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDeleteConfirmModalProps = {
   eventTitle: string;
@@ -26,6 +26,8 @@ export function EventDeleteConfirmModal({
   onConfirm,
   visible,
 }: EventDeleteConfirmModalProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -48,13 +50,13 @@ export function EventDeleteConfirmModal({
               style={styles.closeButton}
               onPress={onClose}
             >
-              <Ionicons color="#9CA3AF" name="close" size={20} />
+              <Ionicons color={colors.text.muted} name="close" size={20} />
             </Pressable>
           </View>
 
           <View style={styles.content}>
             <View style={styles.iconWrap}>
-              <Ionicons color="#EF4444" name="trash-outline" size={28} />
+              <Ionicons color={colors.feedback.danger} name="trash-outline" size={28} />
             </View>
             <Text style={styles.title}>Tem certeza que quer apagar “{eventTitle}”?</Text>
             <Text style={styles.description}>
@@ -69,7 +71,7 @@ export function EventDeleteConfirmModal({
             onPress={onConfirm}
           >
             {isDeleting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.text.inverse} />
             ) : (
               <Text style={styles.primaryButtonText}>Apagar evento</Text>
             )}
@@ -88,7 +90,7 @@ export function EventDeleteConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   backdrop: {
     bottom: 0,
     left: 0,
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   backdropWrap: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: "flex-end",
   },
@@ -106,7 +108,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
     borderRadius: 16,
     borderWidth: 1,
     height: 40,
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   description: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,
@@ -138,7 +140,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: "center",
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
     borderRadius: 18,
     height: 56,
     justifyContent: "center",
@@ -147,7 +149,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
@@ -155,7 +157,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   primaryButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 15,
     fontWeight: "800",
   },
@@ -172,7 +174,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface.primary,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,

@@ -5,7 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { UserAvatar } from "@/components/UserAvatar";
-import { colors } from "@/theme/colors";
+import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type AuthRoute = "/feed" | "/events" | "/routes" | "/services" | "/profile";
 
@@ -66,6 +66,8 @@ type BottomNavProps = {
 };
 
 export function BottomNav({ userAvatar, userName }: BottomNavProps) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const isNavigatingRef = useRef(false);
@@ -152,10 +154,10 @@ export function BottomNav({ userAvatar, userName }: BottomNavProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => ({
   avatar: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
     borderRadius: 12,
     borderWidth: 1,
     height: 24,
@@ -166,12 +168,12 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   bar: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#E5E7EB",
+    backgroundColor: colors.surface.primary,
+    borderTopColor: colors.border.subtle,
     borderTopWidth: 1,
     elevation: 12,
     flexDirection: "row",
-    shadowColor: "#000000",
+    shadowColor: colors.surface.video,
     shadowOffset: { height: -4, width: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -198,7 +200,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   label: {
-    color: "#6B7280",
+    color: colors.text.secondary,
     fontSize: 10,
     fontWeight: "400",
   },
