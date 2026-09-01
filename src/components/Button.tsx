@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { colors, radii, spacing, typography } from "@/theme";
 
 type ButtonVariant = "default" | "secondary" | "destructive" | "outline" | "ghost";
 type ButtonSize = "sm" | "default" | "lg";
@@ -74,9 +74,9 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     alignItems: "center",
-    borderRadius: 16,
+    borderRadius: radii.md,
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.md,
     justifyContent: "center",
   },
   disabled: {
@@ -91,35 +91,39 @@ const styles = StyleSheet.create({
 });
 
 const sizeStyles: Record<ButtonSize, ViewStyle> = {
-  default: { height: 40, paddingHorizontal: 16 },
-  lg: { height: 48, paddingHorizontal: 24 },
-  sm: { height: 32, paddingHorizontal: 12 },
+  default: { height: 40, paddingHorizontal: spacing["2xl"] },
+  lg: { height: 48, paddingHorizontal: spacing["4xl"] },
+  sm: { height: 32, paddingHorizontal: spacing.lg },
 };
 
 const sizeTextStyles: Record<ButtonSize, TextStyle> = {
-  default: { fontSize: 14 },
-  lg: { fontSize: 16 },
-  sm: { fontSize: 13 },
+  default: typography.buttonMd,
+  lg: typography.buttonLg,
+  sm: typography.buttonSm,
 };
 
 const variantStyles: Record<ButtonVariant, ViewStyle> = {
   default: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
   },
-  destructive: { backgroundColor: "#EF4444" },
+  destructive: { backgroundColor: colors.feedback.danger },
   ghost: { backgroundColor: "transparent" },
-  outline: { backgroundColor: "transparent", borderColor: "#D1D5DB", borderWidth: 1 },
+  outline: {
+    backgroundColor: "transparent",
+    borderColor: colors.border.default,
+    borderWidth: 1,
+  },
   secondary: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F3F4F6",
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.surface.subtle,
     borderWidth: 1,
   },
 };
 
 const variantTextStyles: Record<ButtonVariant, TextStyle> = {
-  default: { color: colors.brandDark },
-  destructive: { color: "#FFFFFF" },
-  ghost: { color: "#6B7280" },
-  outline: { color: colors.brandDark },
-  secondary: { color: colors.brandDark },
+  default: { color: colors.text.primary },
+  destructive: { color: colors.feedback.dangerForeground },
+  ghost: { color: colors.text.secondary },
+  outline: { color: colors.text.primary },
+  secondary: { color: colors.text.primary },
 };

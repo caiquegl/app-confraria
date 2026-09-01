@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { colors, radii, spacing, typography } from "@/theme";
 
 export type InputFieldProps = TextInputProps & {
   error?: string;
@@ -87,7 +87,7 @@ export const InputField = forwardRef<TextInput, InputFieldProps>(function InputF
           multiline={multiline}
           nativeID={inputId}
           placeholder={resolvedPlaceholder}
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.text.placeholder}
           returnKeyType={returnKeyType ?? (multiline ? "default" : undefined)}
           secureTextEntry={isPassword && !showPassword}
           style={[styles.input, multiline ? styles.inputMultiline : null, style]}
@@ -100,12 +100,12 @@ export const InputField = forwardRef<TextInput, InputFieldProps>(function InputF
             accessibilityLabel={showPassword ? "Ocultar senha" : "Mostrar senha"}
             accessibilityRole="button"
             disabled={isDisabled}
-            hitSlop={8}
+            hitSlop={spacing.md}
             style={styles.icon}
             onPress={() => setShowPassword((prev) => !prev)}
           >
             <Ionicons
-              color="#9CA3AF"
+              color={colors.text.muted}
               name={showPassword ? "eye-outline" : "eye-off-outline"}
               size={18}
             />
@@ -117,11 +117,11 @@ export const InputField = forwardRef<TextInput, InputFieldProps>(function InputF
             accessibilityLabel="Limpar campo"
             accessibilityRole="button"
             disabled={isDisabled}
-            hitSlop={8}
+            hitSlop={spacing.md}
             style={styles.icon}
             onPress={onClear}
           >
-            <Ionicons color="#9CA3AF" name="close-circle" size={18} />
+            <Ionicons color={colors.text.muted} name="close-circle" size={18} />
           </Pressable>
         ) : null}
       </View>
@@ -147,60 +147,58 @@ export const InputField = forwardRef<TextInput, InputFieldProps>(function InputF
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    backgroundColor: colors.surface.primary,
+    borderRadius: radii.md,
     borderWidth: 1,
     flexDirection: "row",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing["2xl"],
   },
   containerDefault: {
-    borderColor: "#E5E7EB",
+    borderColor: colors.border.subtle,
   },
   containerDisabled: {
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.surface.disabled,
     opacity: 0.7,
   },
   containerError: {
-    borderColor: "#EF4444",
+    borderColor: colors.feedback.danger,
   },
   containerMultiline: {
     alignItems: "flex-start",
   },
   error: {
-    color: "#EF4444",
-    fontSize: 12,
-    marginLeft: 4,
-    marginTop: 4,
+    color: colors.feedback.danger,
+    fontSize: typography.caption.fontSize,
+    marginLeft: spacing.xs,
+    marginTop: spacing.xs,
   },
   helper: {
-    color: "#6B7280",
-    fontSize: 12,
-    marginLeft: 4,
-    marginTop: 4,
+    color: colors.text.secondary,
+    fontSize: typography.caption.fontSize,
+    marginLeft: spacing.xs,
+    marginTop: spacing.xs,
   },
   icon: {
-    paddingLeft: 8,
-    paddingVertical: 16,
+    paddingLeft: spacing.md,
+    paddingVertical: spacing["2xl"],
   },
   input: {
-    color: colors.brandDark,
+    color: colors.text.primary,
     flex: 1,
-    fontSize: 15,
-    paddingVertical: 16,
+    fontSize: typography.input.fontSize,
+    paddingVertical: spacing["2xl"],
   },
   inputMultiline: {
     minHeight: 96,
-    paddingBottom: 12,
-    paddingTop: 12,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.lg,
   },
   label: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 6,
+    ...typography.label,
+    marginBottom: spacing.sm,
   },
   requiredMark: {
-    color: "#EF4444",
+    color: colors.feedback.danger,
     fontWeight: "700",
   },
   wrapper: {

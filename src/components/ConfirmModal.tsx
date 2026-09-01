@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { colors, radii, spacing, typography } from "@/theme";
 
 export type ConfirmModalVariant = "default" | "destructive";
 
@@ -85,7 +85,7 @@ export function ConfirmModal({
           style={styles.backdrop}
           onPress={handleClose}
         />
-        <View style={[styles.sheet, { paddingBottom: insets.bottom + 24 }]}>
+        <View style={[styles.sheet, { paddingBottom: insets.bottom + spacing["4xl"] }]}>
           <View style={styles.header}>
             <Text accessibilityRole="header" style={styles.headerTitle}>
               {resolvedHeader}
@@ -95,11 +95,11 @@ export function ConfirmModal({
               accessibilityRole="button"
               accessibilityState={{ disabled: isBusy }}
               disabled={isBusy}
-              hitSlop={8}
+              hitSlop={spacing.md}
               style={styles.closeButton}
               onPress={handleClose}
             >
-              <Ionicons color="#9CA3AF" name="close" size={20} />
+              <Ionicons color={colors.text.muted} name="close" size={20} />
             </Pressable>
           </View>
 
@@ -111,10 +111,10 @@ export function ConfirmModal({
               ]}
             >
               {isDestructive ? (
-                <Ionicons color="#EF4444" name="warning-outline" size={28} />
+                <Ionicons color={colors.feedback.danger} name="warning-outline" size={28} />
               ) : (
                 <MaterialCommunityIcons
-                  color={colors.brandDark}
+                  color={colors.text.primary}
                   name="motorbike"
                   size={28}
                 />
@@ -137,7 +137,9 @@ export function ConfirmModal({
             onPress={handleConfirm}
           >
             {isBusy ? (
-              <ActivityIndicator color={isDestructive ? "#FFFFFF" : colors.brandDark} />
+              <ActivityIndicator
+                color={isDestructive ? colors.feedback.dangerForeground : colors.text.primary}
+              />
             ) : (
               <Text
                 style={[
@@ -184,8 +186,8 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignItems: "center",
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
+    borderColor: colors.border.subtle,
+    borderRadius: radii.md,
     borderWidth: 1,
     height: 40,
     justifyContent: "center",
@@ -193,66 +195,65 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: "center",
-    marginBottom: 20,
-    paddingHorizontal: 8,
+    marginBottom: spacing["3xl"],
+    paddingHorizontal: spacing.md,
   },
   description: {
-    color: "#6B7280",
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
+    ...typography.body,
+    color: colors.text.secondary,
+    marginTop: spacing.md,
     textAlign: "center",
   },
   header: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: spacing["3xl"],
   },
   headerTitle: {
-    color: colors.brandDark,
+    color: colors.text.primary,
     flex: 1,
     fontSize: 20,
     fontWeight: "900",
-    paddingRight: 12,
+    paddingRight: spacing.lg,
   },
   iconWrap: {
     alignItems: "center",
     borderRadius: 18,
     height: 56,
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: spacing["2xl"],
     width: 56,
   },
   iconWrapBrand: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
   },
   iconWrapDanger: {
-    backgroundColor: "#FEF2F2",
+    backgroundColor: colors.surface.dangerSubtle,
   },
   primaryButton: {
     alignItems: "center",
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: spacing.md,
     width: "100%",
   },
   primaryButtonBrand: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
   },
   primaryButtonDanger: {
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.feedback.danger,
   },
   primaryButtonText: {
-    fontSize: 15,
+    fontSize: typography.input.fontSize,
     fontWeight: "800",
   },
   primaryButtonTextBrand: {
-    color: colors.brandDark,
+    color: colors.text.primary,
   },
   primaryButtonTextDanger: {
-    color: "#FFFFFF",
+    color: colors.feedback.dangerForeground,
   },
   secondaryButton: {
     alignItems: "center",
@@ -263,21 +264,21 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   secondaryButtonText: {
-    color: colors.brandDark,
-    fontSize: 15,
+    color: colors.text.primary,
+    fontSize: typography.input.fontSize,
     fontWeight: "800",
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    backgroundColor: colors.surface.primary,
+    borderTopLeftRadius: radii.sheet,
+    borderTopRightRadius: radii.sheet,
+    paddingHorizontal: spacing["4xl"],
+    paddingTop: spacing["4xl"],
     width: "100%",
   },
   title: {
-    color: colors.brandDark,
-    fontSize: 16,
+    color: colors.text.primary,
+    fontSize: spacing["2xl"],
     fontWeight: "900",
     textAlign: "center",
   },

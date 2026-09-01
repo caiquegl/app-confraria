@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { colors, radii, spacing, typography } from "@/theme";
 
 import {
   isPremiumRouteStyle,
@@ -55,13 +55,17 @@ export function RouteStyleChips({
             onPress={() => handleSelect(style)}
           >
             {active ? (
-              <Ionicons color={colors.brandDark} name="checkmark" size={compact ? 14 : 16} />
+              <Ionicons color={colors.text.primary} name="checkmark" size={compact ? 14 : 16} />
             ) : null}
             <Text style={[styles.chipText, compact && styles.chipTextCompact, active && styles.chipTextActive]}>
               {ROUTE_STYLE_LABELS[style]}
             </Text>
             {locked ? (
-              <Ionicons color={active ? colors.brandDark : "#9CA3AF"} name="lock-closed" size={11} />
+              <Ionicons
+                color={active ? colors.text.primary : colors.text.muted}
+                name="lock-closed"
+                size={11}
+              />
             ) : null}
           </Pressable>
         );
@@ -73,38 +77,37 @@ export function RouteStyleChips({
 const styles = StyleSheet.create({
   chip: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 999,
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
+    borderRadius: radii.pill,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
   },
   chipActive: {
-    backgroundColor: colors.brandGreen,
-    borderColor: colors.brandGreen,
+    backgroundColor: colors.accent.brand,
+    borderColor: colors.accent.brand,
   },
   chipCompact: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   chipText: {
-    color: "#6B7280",
-    fontSize: 13,
-    fontWeight: "600",
+    ...typography.buttonSm,
+    color: colors.text.secondary,
   },
   chipTextActive: {
-    color: colors.brandDark,
+    color: colors.text.primary,
     fontWeight: "800",
   },
   chipTextCompact: {
-    fontSize: 12,
+    fontSize: typography.caption.fontSize,
   },
   row: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.md,
   },
 });

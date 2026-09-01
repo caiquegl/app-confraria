@@ -8,7 +8,7 @@ import type {
   RouteDaySuggestionsResponse,
   RouteStopSuggestion,
 } from "@/lib/places";
-import { colors } from "@/theme/colors";
+import { colors, radii, spacing, typography } from "@/theme";
 
 import { RouteDayCarousel } from "./RouteDayCarousel";
 import type { RouteDraftDay } from "../types/route-create.types";
@@ -120,7 +120,7 @@ export function RouteCreateStep1({
       />
 
       <Pressable accessibilityRole="button" style={styles.addDayButton} onPress={onAddDay}>
-        <Ionicons color={colors.brandDark} name="add" size={18} />
+        <Ionicons color={colors.text.primary} name="add" size={18} />
         <Text style={styles.addDayText}>Adicionar novo dia ao roteiro</Text>
       </Pressable>
     </ScrollComponent>
@@ -130,35 +130,33 @@ export function RouteCreateStep1({
 const styles = StyleSheet.create({
   addDayButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 22,
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
+    borderRadius: radii.xl,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.md,
     justifyContent: "center",
-    marginHorizontal: 24,
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    marginHorizontal: spacing["4xl"],
+    marginTop: spacing["2xl"],
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing["2xl"],
   },
   addDayText: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
+    ...typography.bodyStrong,
+    color: colors.text.primary,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
-    paddingTop: 20,
+    paddingBottom: spacing["4xl"],
+    paddingTop: spacing["3xl"],
   },
   title: {
-    color: colors.brandDark,
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 20,
-    paddingHorizontal: 24,
+    ...typography.titlePageLarge,
+    color: colors.text.primary,
+    marginBottom: spacing["3xl"],
+    paddingHorizontal: spacing["4xl"],
   },
 });

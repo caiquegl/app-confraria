@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 import { Button } from "@/components/Button";
-import { colors } from "@/theme/colors";
+import { colors, radii, spacing, typography } from "@/theme";
 
 export type ErrorStateAction = {
   accessibilityLabel?: string;
@@ -61,7 +61,7 @@ export function ErrorState({
           importantForAccessibility="no-hide-descendants"
           style={isCard || layout === "inline" ? styles.compactIcon : styles.pageIcon}
         >
-          <Ionicons color="#9CA3AF" name={icon} size={isCard || layout === "inline" ? 28 : 48} />
+          <Ionicons color={colors.text.muted} name={icon} size={isCard || layout === "inline" ? 28 : 48} />
         </View>
       ) : null}
 
@@ -88,7 +88,7 @@ export function ErrorState({
       >
         {retrying ? (
           <>
-            <ActivityIndicator color={colors.brandDark} size="small" />
+            <ActivityIndicator color={colors.text.primary} size="small" />
             Tentando...
           </>
         ) : (
@@ -116,68 +116,64 @@ export function ErrorState({
 const styles = StyleSheet.create({
   card: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
+    backgroundColor: colors.surface.primary,
+    borderColor: colors.border.subtle,
+    borderRadius: radii.md,
     borderWidth: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: spacing["4xl"],
+    paddingVertical: spacing["4xl"],
   },
   cardAction: {
-    marginTop: 16,
+    marginTop: spacing["2xl"],
   },
   cardDescription: {
-    color: "#6B7280",
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 4,
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
     textAlign: "center",
   },
   cardTitle: {
-    color: colors.brandDark,
-    fontSize: 14,
-    fontWeight: "700",
+    ...typography.bodyStrong,
+    color: colors.text.primary,
     textAlign: "center",
   },
   compactIcon: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: spacing.lg,
   },
   inline: {
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing["4xl"],
   },
   page: {
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingHorizontal: spacing["4xl"],
+    paddingTop: spacing["5xl"],
   },
   pageAction: {
-    marginTop: 24,
+    marginTop: spacing["4xl"],
     minWidth: 220,
   },
   pageDescription: {
-    color: "#6B7280",
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
+    ...typography.body,
+    color: colors.text.secondary,
+    marginTop: spacing.md,
     maxWidth: 280,
     textAlign: "center",
   },
   pageIcon: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    borderRadius: 999,
+    backgroundColor: colors.surface.subtle,
+    borderRadius: radii.pill,
     height: 96,
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: spacing["4xl"],
     width: 96,
   },
   pageTitle: {
-    color: colors.brandDark,
-    fontSize: 18,
-    fontWeight: "800",
+    ...typography.titleSection,
+    color: colors.text.primary,
     textAlign: "center",
   },
 });
