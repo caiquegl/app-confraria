@@ -1,5 +1,12 @@
 export { formatReverseGeocodeLabel } from "./format-location-label";
 export {
+  buildNativeDirectionsUrl,
+  buildWebDirectionsUrl,
+  hasValidCoordinates,
+  openDirections,
+} from "./open-directions";
+export type { DirectionsTarget } from "./open-directions";
+export {
   getStoredGeolocation,
   prefetchGeolocation,
   refreshGeolocation,

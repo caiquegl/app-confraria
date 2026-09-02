@@ -1,12 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import type { ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type EventDetailInfoSectionProps = {
+  canOpenDirections?: boolean;
   dateLabel: string;
   destinationLabel?: string | null;
   durationLabel: string;
+  onOpenDirections?: () => void;
   originLabel: string;
   participantsCount: number;
   participantLimit: number | null;
@@ -15,9 +18,11 @@ type EventDetailInfoSectionProps = {
 };
 
 export function EventDetailInfoSection({
+  canOpenDirections = false,
   dateLabel,
   destinationLabel,
   durationLabel,
+  onOpenDirections,
   originLabel,
   participantsCount,
   participantLimit,
@@ -50,7 +55,20 @@ export function EventDetailInfoSection({
           iconColor="#6B7280"
           subtitle={destinationLabel ? `Destino: ${destinationLabel}` : undefined}
           title={`Ponto de Encontro: ${originLabel}`}
-        />
+        >
+          {canOpenDirections && onOpenDirections ? (
+            <Pressable
+              accessibilityLabel="Como chegar"
+              accessibilityRole="button"
+              hitSlop={8}
+              style={({ pressed }) => [styles.directionsButton, pressed && styles.directionsButtonPressed]}
+              onPress={onOpenDirections}
+            >
+              <Ionicons color={colors.brandPrimary} name="navigate-outline" size={16} />
+              <Text style={styles.directionsLabel}>Como chegar</Text>
+            </Pressable>
+          ) : null}
+        </InfoItem>
         <InfoItem
           icon="people-outline"
           iconColor={colors.brandPrimary}
@@ -63,13 +81,14 @@ export function EventDetailInfoSection({
 }
 
 type InfoItemProps = {
+  children?: ReactNode;
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   subtitle?: string;
   title: string;
 };
 
-function InfoItem({ icon, iconColor, subtitle, title }: InfoItemProps) {
+function InfoItem({ children, icon, iconColor, subtitle, title }: InfoItemProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   return (
@@ -80,6 +99,7 @@ function InfoItem({ icon, iconColor, subtitle, title }: InfoItemProps) {
       <View style={styles.infoTextWrap}>
         <Text style={styles.infoTitle}>{title}</Text>
         {subtitle ? <Text style={styles.infoSubtitle}>{subtitle}</Text> : null}
+        {children}
       </View>
     </View>
   );
@@ -92,6 +112,27 @@ const createStyles = (colors: AppColors) => ({
     borderRadius: 28,
     borderWidth: 1,
     padding: 16,
+  },
+  directionsButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: colors.surface.subtle,
+    borderColor: colors.border.subtle,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  directionsButtonPressed: {
+    opacity: 0.7,
+  },
+  directionsLabel: {
+    color: colors.brandPrimary,
+    fontSize: 12,
+    fontWeight: "800",
   },
   iconBox: {
     alignItems: "center",

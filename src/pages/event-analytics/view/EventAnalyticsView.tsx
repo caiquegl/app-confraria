@@ -15,6 +15,7 @@ import type { EventDetailPlace } from "@/pages/event-detail/types/event-detail.t
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
 import { fetchChatConversations, sendChatMessage } from "@/pages/messages/services/messages.service";
+import { hasValidCoordinates, openDirections } from "@/lib/location";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventAnalyticsHeader } from "../components/EventAnalyticsHeader";
@@ -92,6 +93,28 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
       stops: eventPlaces.filter((place) => place.role === "stop"),
     };
   }, [event?.places]);
+
+  const directionsTarget = useMemo(() => {
+    const place = places.destination ?? places.origin;
+    if (!place) return null;
+
+    return {
+      label: place.mainText || place.description,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    };
+  }, [places.destination, places.origin]);
+
+  const handleOpenDirections = useCallback(async () => {
+    const opened = await openDirections(directionsTarget);
+    if (opened) return;
+
+    Toast.show({
+      type: "error",
+      text1: "Não foi possível abrir o app de navegação",
+      text2: "Verifique se há um aplicativo de mapas instalado no dispositivo.",
+    });
+  }, [directionsTarget]);
 
   const loadShareFriends = useCallback(async () => {
     try {
@@ -244,9 +267,11 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
             {activeTab === "detalhes" ? (
               <View style={styles.sections}>
                 <EventDetailInfoSection
+                  canOpenDirections={hasValidCoordinates(directionsTarget)}
                   dateLabel={formatDateLabel(event.date)}
                   destinationLabel={formatPlaceLabel(places.destination)}
                   durationLabel={formatDurationLabel(event)}
+                  onOpenDirections={() => void handleOpenDirections()}
                   originLabel={formatPlaceLabel(places.origin) || "A definir"}
                   participantsCount={event.participantsCount}
                   participantLimit={event.participantLimit}

@@ -11,6 +11,7 @@ import { fetchChatConversations, sendChatMessage } from "@/pages/messages/servic
 import {
   togglePublicProfileEventFavorite,
 } from "@/pages/public-profile-events/services/public-profile-events.service";
+import { hasValidCoordinates, openDirections } from "@/lib/location";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventDetailGallery } from "../components/EventDetailGallery";
@@ -139,6 +140,28 @@ export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
     };
   }, [event?.places]);
 
+  const directionsTarget = useMemo(() => {
+    const place = places.destination ?? places.origin;
+    if (!place) return null;
+
+    return {
+      label: place.mainText || place.description,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    };
+  }, [places.destination, places.origin]);
+
+  const handleOpenDirections = useCallback(async () => {
+    const opened = await openDirections(directionsTarget);
+    if (opened) return;
+
+    Toast.show({
+      type: "error",
+      text1: "Não foi possível abrir o app de navegação",
+      text2: "Verifique se há um aplicativo de mapas instalado no dispositivo.",
+    });
+  }, [directionsTarget]);
+
   const handleToggleFavorite = useCallback(async () => {
     if (!event) return;
     const previousFavorited = event.isFavorited;
@@ -250,9 +273,11 @@ export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
             />
 
             <EventDetailInfoSection
+              canOpenDirections={hasValidCoordinates(directionsTarget)}
               dateLabel={formatDateLabel(event.date)}
               destinationLabel={formatPlaceLabel(places.destination)}
               durationLabel={formatDurationLabel(event)}
+              onOpenDirections={() => void handleOpenDirections()}
               originLabel={formatPlaceLabel(places.origin) || "A definir"}
               participantsCount={event.participantsCount}
               participantLimit={event.participantLimit}
