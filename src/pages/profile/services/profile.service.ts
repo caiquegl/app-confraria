@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import { getApiBaseUrl } from "@/lib/api-environment";
 import { apiRoutes } from "@/lib/api-routes";
+import { appLog } from "@/lib/app-log";
 import { getToken } from "@/lib/auth";
 
 import type {
@@ -18,6 +19,7 @@ export async function updateOwnProfile(
   payload: UpdateProfilePayload,
 ): Promise<OwnProfile> {
   const formData = new FormData();
+  const hasAvatar = Boolean(payload.avatarUri);
 
   formData.append("name", payload.name.trim());
   formData.append("email", payload.email.trim());
@@ -39,13 +41,30 @@ export async function updateOwnProfile(
 
   const baseURL = await getApiBaseUrl();
   const token = await getToken();
-  const responseText = await sendProfileRequest({
-    formData,
-    token,
-    url: `${baseURL}${apiRoutes.users.me}`,
-  });
 
-  return JSON.parse(responseText) as OwnProfile;
+  appLog.info("profile.update.start", { hasAvatar });
+
+  try {
+    const { requestId, responseText } = await sendProfileRequest({
+      formData,
+      token,
+      url: `${baseURL}${apiRoutes.users.me}`,
+    });
+
+    const profile = JSON.parse(responseText) as OwnProfile;
+    appLog.info("profile.update.success", {
+      hasAvatar,
+      requestId: requestId ?? undefined,
+      userId: profile.id,
+    });
+    return profile;
+  } catch (error) {
+    appLog.warn("profile.update.failed", {
+      hasAvatar,
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    throw error;
+  }
 }
 
 export async function updateOwnProfileRoadStyle(payload: {
@@ -84,7 +103,7 @@ function sendProfileRequest(params: {
   formData: FormData;
   token: string | null;
   url: string;
-}): Promise<string> {
+}): Promise<{ requestId: string | null; responseText: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
@@ -97,8 +116,12 @@ function sendProfileRequest(params: {
     }
 
     xhr.onload = () => {
+      const requestId = xhr.getResponseHeader("x-request-id");
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(xhr.responseText);
+        resolve({
+          requestId,
+          responseText: xhr.responseText,
+        });
         return;
       }
 
