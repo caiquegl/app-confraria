@@ -3,4 +3,4 @@
  * Incremente este número ANTES de cada `eas update`.
  * O admin compara com `min_ota_version` no banco.
  */
-export const OTA_VERSION = 23;
+export const OTA_VERSION = 24;

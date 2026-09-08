@@ -5,8 +5,10 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import Toast from "react-native-toast-message";
 
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { appLog } from "@/lib/app-log";
 import { getCurrentUserId, removeToken } from "@/lib/auth";
 import { setStoredCurrentProfile } from "@/lib/current-profile-store";
+import { clearFaroUser } from "@/lib/faro";
 import { unregisterPushNotificationsAsync } from "@/lib/push-notifications";
 import { getUpdateInfo } from "@/lib/updates";
 import { BikeCategoriesEditorModal } from "@/pages/profile/components/BikeCategoriesEditorModal";
@@ -140,6 +142,8 @@ export default function ProfileSettingsScreen() {
   const handleLogout = async () => {
     await unregisterPushNotificationsAsync();
     await removeToken();
+    clearFaroUser();
+    appLog.info("logout");
     setStoredCurrentProfile({ avatar: null, name: null });
     setIsSettingsOpen(false);
     router.replace("/landing");

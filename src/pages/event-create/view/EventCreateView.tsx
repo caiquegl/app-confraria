@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 
+import { appLog } from "@/lib/app-log";
+
 import { EventCreatedSuccessModal } from "../components/EventCreatedSuccessModal";
 import { EventStep1 } from "../components/EventStep1";
 import { EventStep2 } from "../components/EventStep2";
@@ -51,8 +53,13 @@ export function EventCreateView({ onClose, onPublished, userId }: EventCreateVie
     setIsPublishing(true);
     try {
       await createEvent(buildPayload());
+      appLog.info("event publish success", { userId });
       setSuccessVisible(true);
     } catch (error) {
+      appLog.warn("event publish failed", {
+        reason: error instanceof Error ? error.message : "unknown",
+        userId,
+      });
       Toast.show({
         type: "error",
         text1: "Não foi possível criar o evento",

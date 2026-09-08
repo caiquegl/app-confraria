@@ -1,6 +1,7 @@
 import { create } from "axios";
 
 import { getApiBaseUrl } from "./api-environment";
+import { appLog } from "./app-log";
 import { getToken } from "./auth";
 import { captureApiError, isIgnorableApiError } from "./sentry";
 
@@ -72,17 +73,31 @@ api.interceptors.response.use(
       typeof config?.url === "string" && config.url.trim()
         ? config.url.trim()
         : "(unknown)";
+    const method = (config?.method ?? "get").toUpperCase();
+    const status = response?.status ?? null;
+    const requestIdHeader =
+      response?.headers?.["x-request-id"] ??
+      response?.headers?.["X-Request-Id"];
+    const requestId =
+      typeof requestIdHeader === "string" ? requestIdHeader : undefined;
 
     if (!isIgnorableApiError(error)) {
       captureApiError(error, {
         baseURL: config?.baseURL ?? null,
-        method: (config?.method ?? "get").toUpperCase(),
+        method,
         params: config?.params ?? null,
         requestData: serializeRequestData(config?.data),
         responseData: response?.data ?? null,
         route,
-        status: response?.status ?? null,
+        status,
         statusText: response?.statusText ?? null,
+        url: route,
+      });
+
+      appLog.warn("api error", {
+        method,
+        requestId,
+        status,
         url: route,
       });
     }

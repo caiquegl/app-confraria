@@ -1,6 +1,8 @@
 import { api } from "./api";
 import { apiRoutes } from "./api-routes";
-import { saveToken } from "./auth";
+import { appLog } from "./app-log";
+import { getCurrentUserId, saveToken } from "./auth";
+import { setFaroUser } from "./faro";
 import { socialAuthConfig } from "./social-auth-config";
 
 export type SocialProvider = "google" | "facebook" | "apple";
@@ -74,11 +76,32 @@ async function getProviderToken(provider: SocialProvider): Promise<string> {
 }
 
 export async function socialLogin(provider: SocialProvider): Promise<SocialLoginResult> {
-  const token = await getProviderToken(provider);
-  const { data } = await api.post<{ token: string; isNewUser: boolean }>(
-    apiRoutes.auth.social,
-    { provider, token },
-  );
-  await saveToken(data.token);
-  return { isNewUser: data.isNewUser };
+  try {
+    const token = await getProviderToken(provider);
+    const { data } = await api.post<{ token: string; isNewUser: boolean }>(
+      apiRoutes.auth.social,
+      { provider, token },
+    );
+    await saveToken(data.token);
+
+    const userId = await getCurrentUserId();
+    if (userId) {
+      setFaroUser({ id: userId });
+    }
+    appLog.info("social login success", {
+      isNewUser: data.isNewUser,
+      provider,
+      userId: userId ?? undefined,
+    });
+
+    return { isNewUser: data.isNewUser };
+  } catch (error) {
+    if (!(error instanceof SocialCancelledError)) {
+      appLog.warn("social login failed", {
+        provider,
+        reason: error instanceof Error ? error.message : "unknown",
+      });
+    }
+    throw error;
+  }
 }

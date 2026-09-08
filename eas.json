@@ -11,6 +11,9 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_SENTRY_DSN": "https://a1e75dbaf565a4a6c5c6d20f28a26030@o4511631547105280.ingest.us.sentry.io/4511631549071360",
+        "EXPO_PUBLIC_FARO_URL": "https://faro-collector-prod-sa-east-1.grafana.net/collect/2d7615b9a2fbd3092ed8ff1a2e294a09",
+        "EXPO_PUBLIC_FARO_APP_NAME": "app-confraria",
+        "EXPO_PUBLIC_FARO_APP_NAMESPACE": "confraria",
         "SENTRY_ORG": "confraria",
         "SENTRY_PROJECT": "react-native"
       }
@@ -26,6 +29,9 @@
       },
       "env": {
         "EXPO_PUBLIC_SENTRY_DSN": "https://a1e75dbaf565a4a6c5c6d20f28a26030@o4511631547105280.ingest.us.sentry.io/4511631549071360",
+        "EXPO_PUBLIC_FARO_URL": "https://faro-collector-prod-sa-east-1.grafana.net/collect/2d7615b9a2fbd3092ed8ff1a2e294a09",
+        "EXPO_PUBLIC_FARO_APP_NAME": "app-confraria",
+        "EXPO_PUBLIC_FARO_APP_NAMESPACE": "confraria",
         "SENTRY_ORG": "confraria",
         "SENTRY_PROJECT": "react-native"
       }
@@ -35,6 +41,9 @@
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_SENTRY_DSN": "https://a1e75dbaf565a4a6c5c6d20f28a26030@o4511631547105280.ingest.us.sentry.io/4511631549071360",
+        "EXPO_PUBLIC_FARO_URL": "https://faro-collector-prod-sa-east-1.grafana.net/collect/2d7615b9a2fbd3092ed8ff1a2e294a09",
+        "EXPO_PUBLIC_FARO_APP_NAME": "app-confraria",
+        "EXPO_PUBLIC_FARO_APP_NAMESPACE": "confraria",
         "SENTRY_ORG": "confraria",
         "SENTRY_PROJECT": "react-native"
       }
