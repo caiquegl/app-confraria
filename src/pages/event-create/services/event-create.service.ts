@@ -2,6 +2,7 @@ import { api } from "@/lib/api";
 import { getApiBaseUrl } from "@/lib/api-environment";
 import { apiRoutes } from "@/lib/api-routes";
 import { getToken } from "@/lib/auth";
+import { parseBrazilDateTime } from "@/lib/event-period";
 import { fetchPlaceAutocomplete } from "@/lib/places";
 
 import type {
@@ -82,9 +83,9 @@ export function formatTimeInput(value: string) {
 export function createInitialEventDraft(): EventDraft {
   return {
     category: "",
-    date: "",
     description: "",
     destination: null,
+    endDate: "",
     endTime: "",
     gallery: [],
     hasParticipantLimit: false,
@@ -93,6 +94,7 @@ export function createInitialEventDraft(): EventDraft {
     location: null,
     maxParticipants: undefined,
     requirements: [],
+    startDate: "",
     startTime: "",
     stops: [],
     title: "",
@@ -106,22 +108,87 @@ export function formatEventWeekday(dateValue: string) {
   return new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(date);
 }
 
-export function formatEventDuration(startTime: string, endTime: string) {
+export function formatEventDuration(
+  startTime: string,
+  endTime: string,
+  startDate?: string,
+  endDate?: string,
+) {
   if (!isValidTime(startTime) || !isValidTime(endTime)) return "";
+
+  if (
+    startDate &&
+    endDate &&
+    isValidBrazilianDate(startDate) &&
+    isValidBrazilianDate(endDate)
+  ) {
+    const startsAt = parseBrazilDateTime(startDate, startTime);
+    const endsAt = parseBrazilDateTime(endDate, endTime);
+    if (!startsAt || !endsAt) return "";
+
+    const durationMinutes = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
+    if (durationMinutes <= 0) return "";
+    return formatDurationMinutesLabel(durationMinutes);
+  }
 
   const [startHour, startMinute] = startTime.split(":").map(Number);
   const [endHour, endMinute] = endTime.split(":").map(Number);
 
   if ([startHour, startMinute, endHour, endMinute].some(Number.isNaN)) return "";
 
-  const startTotal = startHour * 60 + startMinute;
-  const endTotal = endHour * 60 + endMinute;
-  const duration = endTotal - startTotal;
-
+  const duration = endHour * 60 + endMinute - (startHour * 60 + startMinute);
   if (duration <= 0) return "";
+  return formatDurationMinutesLabel(duration);
+}
 
-  const hours = Math.floor(duration / 60);
-  const minutes = duration % 60;
+export function isEventPeriodOrdered(
+  startDate: string,
+  endDate: string,
+  startTime: string,
+  endTime: string,
+) {
+  if (
+    !isValidBrazilianDate(startDate) ||
+    !isValidBrazilianDate(endDate) ||
+    !isValidTime(startTime) ||
+    !isValidTime(endTime)
+  ) {
+    return false;
+  }
+
+  const startsAt = parseBrazilDateTime(startDate, startTime);
+  const endsAt = parseBrazilDateTime(endDate, endTime);
+  if (!startsAt || !endsAt) return false;
+
+  return endsAt.getTime() > startsAt.getTime();
+}
+
+export function validateEventPeriodFields(draft: Pick<
+  EventDraft,
+  "endDate" | "endTime" | "startDate" | "startTime"
+>): string | null {
+  if (!draft.startDate.trim()) return "Informe a data de início.";
+  if (!isValidBrazilianDate(draft.startDate)) return "Informe uma data de início válida.";
+  if (isPastBrazilianDate(draft.startDate)) {
+    return "Não é permitido usar data passada no evento.";
+  }
+  if (!draft.endDate.trim()) return "Informe a data de término.";
+  if (!isValidBrazilianDate(draft.endDate)) return "Informe uma data de término válida.";
+  if (!draft.startTime.trim() || !isValidTime(draft.startTime)) {
+    return "Informe um horário de início válido.";
+  }
+  if (!draft.endTime.trim() || !isValidTime(draft.endTime)) {
+    return "Informe um horário de término válido.";
+  }
+  if (!isEventPeriodOrdered(draft.startDate, draft.endDate, draft.startTime, draft.endTime)) {
+    return "O término deve ser depois do início.";
+  }
+  return null;
+}
+
+function formatDurationMinutesLabel(durationMinutes: number) {
+  const hours = Math.floor(durationMinutes / 60);
+  const minutes = durationMinutes % 60;
 
   if (hours && minutes) return `${hours}h${String(minutes).padStart(2, "0")} de duração`;
   if (hours) return `${hours}h de duração`;

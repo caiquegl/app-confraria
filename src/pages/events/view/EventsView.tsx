@@ -69,11 +69,12 @@ function filterEventsBySearch(events: PublicProfileEvent[], searchQuery: string)
     return events;
   }
 
-  return events.filter((event) =>
-    [event.title, event.category, event.location, event.organizer, event.date].some((value) =>
-      value.toLowerCase().includes(normalizedSearch),
-    ),
-  );
+  return events.filter((event) => {
+    const periodLabel = event.date;
+    return [event.title, event.category, event.location, event.organizer, periodLabel].some(
+      (value) => value.toLowerCase().includes(normalizedSearch),
+    );
+  });
 }
 
 function EventsContentEmpty({

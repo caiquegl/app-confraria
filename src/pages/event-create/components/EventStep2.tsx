@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
@@ -16,6 +16,7 @@ import {
   isPastBrazilianDate,
   isValidBrazilianDate,
   isValidTime,
+  validateEventPeriodFields,
 } from "../services/event-create.service";
 import type {
   EventDraft,
@@ -34,27 +35,42 @@ type EventStep2Props = {
 export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: EventStep2Props) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const dateIsComplete = draft.date.length === 10;
-  const dateIsPast = dateIsComplete && isPastBrazilianDate(draft.date);
+  const startDateIsComplete = draft.startDate.length === 10;
+  const endDateIsComplete = draft.endDate.length === 10;
+  const startDateIsPast = startDateIsComplete && isPastBrazilianDate(draft.startDate);
   const startTimeIsComplete = draft.startTime.length === 5;
   const endTimeIsComplete = draft.endTime.length === 5;
-  const hasInvalidDate =
-    draft.date.length > 0 && (!dateIsComplete || !isValidBrazilianDate(draft.date) || dateIsPast);
+  const hasInvalidStartDate =
+    draft.startDate.length > 0 &&
+    (!startDateIsComplete || !isValidBrazilianDate(draft.startDate) || startDateIsPast);
+  const hasInvalidEndDate =
+    draft.endDate.length > 0 && (!endDateIsComplete || !isValidBrazilianDate(draft.endDate));
   const hasInvalidStartTime =
     draft.startTime.length > 0 && (!startTimeIsComplete || !isValidTime(draft.startTime));
   const hasInvalidEndTime =
     draft.endTime.length > 0 && (!endTimeIsComplete || !isValidTime(draft.endTime));
+  const periodError = validateEventPeriodFields(draft);
   const canAdvance =
-    isValidBrazilianDate(draft.date) &&
-    !dateIsPast &&
-    Boolean(draft.location?.placeId) &&
-    !hasInvalidStartTime &&
-    !hasInvalidEndTime;
-  const weekday = formatEventWeekday(draft.date);
-  const duration = formatEventDuration(draft.startTime, draft.endTime);
+    !periodError && Boolean(draft.location?.placeId) && !hasInvalidStartTime && !hasInvalidEndTime;
+  const weekday = formatEventWeekday(draft.startDate);
+  const duration = formatEventDuration(
+    draft.startTime,
+    draft.endTime,
+    draft.startDate,
+    draft.endDate,
+  );
 
-  const handleDateChange = (value: string) => {
-    updateDraft("date", formatBrazilianDateInput(value));
+  const handleStartDateChange = (value: string) => {
+    const previousStart = draft.startDate;
+    const nextStart = formatBrazilianDateInput(value);
+    updateDraft("startDate", nextStart);
+    if (!draft.endDate || draft.endDate === previousStart) {
+      updateDraft("endDate", nextStart);
+    }
+  };
+
+  const handleEndDateChange = (value: string) => {
+    updateDraft("endDate", formatBrazilianDateInput(value));
   };
 
   const handleStartTimeChange = (value: string) => {
@@ -82,19 +98,46 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
     >
       <View style={styles.form}>
         <View>
-          <EventFormField
-            keyboardType="number-pad"
-            label="Data *"
-            maxLength={10}
-            placeholder="DD/MM/AAAA"
-            value={draft.date}
-            onChangeText={handleDateChange}
-          />
+          <Text style={styles.label}>Data</Text>
+          <View style={styles.timeRow}>
+            <View style={styles.timeField}>
+              <EventFormField
+                keyboardType="number-pad"
+                label="Início *"
+                maxLength={10}
+                placeholder="DD/MM/AAAA"
+                value={draft.startDate}
+                onChangeText={handleStartDateChange}
+              />
+              {hasInvalidStartDate ? (
+                <Text style={styles.errorText}>
+                  {startDateIsPast
+                    ? "Não é permitido criar evento em data passada."
+                    : "Informe uma data válida."}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.timeField}>
+              <EventFormField
+                keyboardType="number-pad"
+                label="Término *"
+                maxLength={10}
+                placeholder="DD/MM/AAAA"
+                value={draft.endDate}
+                onChangeText={handleEndDateChange}
+              />
+              {hasInvalidEndDate ? (
+                <Text style={styles.errorText}>Informe uma data válida.</Text>
+              ) : null}
+            </View>
+          </View>
           {weekday ? <Text style={styles.helperText}>{weekday}</Text> : null}
-          {hasInvalidDate ? (
-            <Text style={styles.errorText}>
-              {dateIsPast ? "Não é permitido criar evento em data passada." : "Informe uma data válida."}
-            </Text>
+          {periodError &&
+          !hasInvalidStartDate &&
+          !hasInvalidEndDate &&
+          !hasInvalidStartTime &&
+          !hasInvalidEndTime ? (
+            <Text style={styles.errorText}>{periodError}</Text>
           ) : null}
         </View>
 
@@ -104,7 +147,7 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
             <View style={styles.timeField}>
               <EventFormField
                 keyboardType="number-pad"
-                label="Início"
+                label="Início *"
                 maxLength={5}
                 placeholder="07:00"
                 value={draft.startTime}
@@ -117,7 +160,7 @@ export function EventStep2({ draft, onBack, onClose, onNext, updateDraft }: Even
             <View style={styles.timeField}>
               <EventFormField
                 keyboardType="number-pad"
-                label="Término"
+                label="Término *"
                 maxLength={5}
                 placeholder="18:00"
                 value={draft.endTime}

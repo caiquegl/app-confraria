@@ -16,6 +16,7 @@ export type EventDetail = {
   date: string;
   description: string | null;
   endTime: string | null;
+  endsAt?: string | null;
   galleryImageUrls: string[];
   id: string;
   included: string[];
@@ -35,6 +36,7 @@ export type EventDetail = {
   routeDistanceMeters: number | null;
   routeDurationSeconds: number | null;
   startTime: string | null;
+  startsAt?: string | null;
   title: string;
 };
 

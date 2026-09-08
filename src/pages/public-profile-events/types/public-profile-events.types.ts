@@ -5,6 +5,7 @@ export type PublicProfileEvent = {
   category: string;
   date: string;
   description?: string;
+  endsAt: string;
   image: string;
   isFavorited: boolean;
   isLatestVisit?: boolean;
@@ -22,6 +23,7 @@ export type PublicProfileEventListItem = {
   createdAt: string;
   date: string;
   description: string | null;
+  endsAt?: string;
   id: string;
   image: string | null;
   isFavorited: boolean;
@@ -36,6 +38,7 @@ export type PublicProfileEventListItem = {
   region: string | null;
   routeDistanceMeters: number | null;
   routeDurationSeconds: number | null;
+  startsAt?: string;
   title: string;
 };
 

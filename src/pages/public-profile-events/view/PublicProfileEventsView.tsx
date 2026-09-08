@@ -5,6 +5,7 @@ import Toast from "react-native-toast-message";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
+import { isEventOngoing } from "@/lib/event-period";
 
 import { CreatePublicProfileEventCard } from "../components/CreatePublicProfileEventCard";
 import { PublicProfileEventCard } from "../components/PublicProfileEventCard";
@@ -253,11 +254,12 @@ function filterEventsBySearch(events: PublicProfileEvent[], searchQuery: string)
   const normalizedSearch = searchQuery.trim().toLowerCase();
   if (!normalizedSearch) return events;
 
-  return events.filter((event) =>
-    [event.title, event.category, event.location, event.organizer, event.date].some((value) =>
-      value.toLowerCase().includes(normalizedSearch),
-    ),
-  );
+  return events.filter((event) => {
+    const periodLabel = event.date;
+    return [event.title, event.category, event.location, event.organizer, periodLabel].some(
+      (value) => value.toLowerCase().includes(normalizedSearch),
+    );
+  });
 }
 
 function getPrimaryEventBadge(
@@ -271,22 +273,11 @@ function getPrimaryEventBadge(
       : { icon: "calendar-outline", label: event.date };
   }
 
-  if (isEventToday(event.startsAt)) {
+  if (isEventOngoing(event.startsAt, event.endsAt)) {
     return { icon: "star", label: "Em andamento" };
   }
 
   return { icon: "calendar-outline", label: event.date };
-}
-
-function isEventToday(dateValue: string) {
-  const eventDate = new Date(dateValue);
-  const today = new Date();
-
-  return (
-    eventDate.getFullYear() === today.getFullYear() &&
-    eventDate.getMonth() === today.getMonth() &&
-    eventDate.getDate() === today.getDate()
-  );
 }
 
 function getSectionTitle(tab: PublicProfileEventTab) {

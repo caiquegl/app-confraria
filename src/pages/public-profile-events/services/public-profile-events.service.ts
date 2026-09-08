@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
+import { formatEventPeriodLabel, resolvePeriodFromLegacy } from "@/lib/event-period";
 
 import type {
   PublicProfileEvent,
@@ -27,13 +28,14 @@ const MOCK_VISITED_EVENTS: PublicProfileEvent[] = [
     isFavorited: false,
     rating: 5,
     reviews: 1200,
-    date: "Outubro / 25",
+    date: "18 out · 12:00–18:00",
     isLatestVisit: true,
     organizer: "Confraria Riders",
     organizerAvatar:
       "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
     location: "Foz do Iguaçu",
-    startsAt: "2025-10-18T12:00:00.000Z",
+    startsAt: "2025-10-18T15:00:00.000Z",
+    endsAt: "2025-10-18T21:00:00.000Z",
   },
 ];
 
@@ -108,10 +110,20 @@ function mapCreatedEvent(event: PublicProfileEventListItem): PublicProfileEvent 
 }
 
 function mapEventListItem(event: PublicProfileEventListItem): PublicProfileEvent {
+  const period = resolvePeriodFromLegacy({
+    date: event.date,
+    endsAt: event.endsAt,
+    startsAt: event.startsAt,
+  });
+
   return {
     category: event.category,
-    date: formatEventDateLabel(event.date),
+    date: formatEventPeriodLabel({
+      endsAt: period.endsAt,
+      startsAt: period.startsAt,
+    }),
     description: event.description ?? undefined,
+    endsAt: period.endsAt,
     id: event.id,
     image: event.image ?? "",
     isFavorited: event.isFavorited,
@@ -120,20 +132,9 @@ function mapEventListItem(event: PublicProfileEventListItem): PublicProfileEvent
     organizerAvatar: event.organizer.avatarUrl ?? undefined,
     rating: 0,
     reviews: 0,
-    startsAt: event.date,
+    startsAt: period.startsAt,
     title: event.title,
   };
-}
-
-function formatEventDateLabel(dateValue: string) {
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "2-digit",
-  }).format(date);
 }
 
 function prefetchEventImages(events: PublicProfileEvent[]) {

@@ -1,21 +1,24 @@
-import type { PublicProfileEventListItem, PublicProfileEvent } from "@/pages/public-profile-events/types/public-profile-events.types";
-
-export function formatDiscoverEventDate(dateValue: string) {
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "2-digit",
-  }).format(date);
-}
+import type {
+  PublicProfileEventListItem,
+  PublicProfileEvent,
+} from "@/pages/public-profile-events/types/public-profile-events.types";
+import { formatEventPeriodLabel, resolvePeriodFromLegacy } from "@/lib/event-period";
 
 export function mapDiscoverEvent(event: PublicProfileEventListItem): PublicProfileEvent {
+  const period = resolvePeriodFromLegacy({
+    date: event.date,
+    endsAt: event.endsAt,
+    startsAt: event.startsAt,
+  });
+
   return {
     category: event.category,
-    date: formatDiscoverEventDate(event.date),
+    date: formatEventPeriodLabel({
+      endsAt: period.endsAt,
+      startsAt: period.startsAt,
+    }),
     description: event.description ?? undefined,
+    endsAt: period.endsAt,
     id: event.id,
     image: event.image ?? "",
     isFavorited: event.isFavorited,
@@ -24,7 +27,7 @@ export function mapDiscoverEvent(event: PublicProfileEventListItem): PublicProfi
     organizerAvatar: event.organizer.avatarUrl ?? undefined,
     rating: 0,
     reviews: 0,
-    startsAt: event.date,
+    startsAt: period.startsAt,
     title: event.title,
   };
 }

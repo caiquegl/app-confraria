@@ -24,24 +24,31 @@ export function useEventCreateDraft(userId: string) {
   }, []);
 
   const buildPayload = useCallback(
-    (): EventCreatePayload => ({
-      category: draft.category.trim(),
-      coverImageUri: nullableTrim(draft.image),
-      date: draft.date.trim(),
-      description: nullableTrim(draft.description),
-      destination: draft.destination,
-      endTime: nullableTrim(draft.endTime),
-      galleryUris: draft.gallery.filter(Boolean),
-      hasParticipantLimit: draft.hasParticipantLimit,
-      included: cleanList(draft.included),
-      location: draft.location,
-      maxParticipants: draft.hasParticipantLimit ? draft.maxParticipants ?? null : null,
-      requirements: cleanList(draft.requirements),
-      startTime: nullableTrim(draft.startTime),
-      stops: draft.stops.filter((stop) => stop !== null),
-      title: draft.title.trim(),
-      userId,
-    }),
+    (): EventCreatePayload => {
+      const startDate = draft.startDate.trim();
+      const endDate = draft.endDate.trim();
+
+      return {
+        category: draft.category.trim(),
+        coverImageUri: nullableTrim(draft.image),
+        date: startDate,
+        description: nullableTrim(draft.description),
+        destination: draft.destination,
+        endDate,
+        endTime: nullableTrim(draft.endTime),
+        galleryUris: draft.gallery.filter(Boolean),
+        hasParticipantLimit: draft.hasParticipantLimit,
+        included: cleanList(draft.included),
+        location: draft.location,
+        maxParticipants: draft.hasParticipantLimit ? draft.maxParticipants ?? null : null,
+        requirements: cleanList(draft.requirements),
+        startDate,
+        startTime: nullableTrim(draft.startTime),
+        stops: draft.stops.filter((stop) => stop !== null),
+        title: draft.title.trim(),
+        userId,
+      };
+    },
     [draft, userId],
   );
 

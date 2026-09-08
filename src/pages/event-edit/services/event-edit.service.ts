@@ -4,6 +4,11 @@ import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/api-routes";
 import { getApiBaseUrl } from "@/lib/api-environment";
 import { getToken } from "@/lib/auth";
+import {
+  formatBrazilianDateFromInstant,
+  formatTimeInBrazil,
+  resolvePeriodFromLegacy,
+} from "@/lib/event-period";
 import type {
   EventCreatePayload,
   EventDraft,
@@ -43,13 +48,24 @@ export function mapEventDetailToDraft(event: EventDetail): EventDraft {
   const destination =
     event.places.find((place) => place.role === "destination") ?? null;
   const stops = event.places.filter((place) => place.role === "stop");
+  const period = resolvePeriodFromLegacy({
+    date: event.date,
+    endTime: event.endTime,
+    endsAt: event.endsAt,
+    startTime: event.startTime,
+    startsAt: event.startsAt,
+  });
+  const startsAt = new Date(period.startsAt);
+  const endsAt = new Date(period.endsAt);
 
   return {
     category: event.category,
-    date: formatIsoDateToBrazilian(event.date),
     description: event.description ?? "",
     destination: destination ? mapPlaceToReference(destination) : null,
-    endTime: event.endTime ?? "",
+    endDate: Number.isNaN(endsAt.getTime())
+      ? formatIsoDateToBrazilian(event.date)
+      : formatBrazilianDateFromInstant(endsAt),
+    endTime: event.endTime?.trim() || period.endTime || formatTimeInBrazil(endsAt),
     gallery: event.galleryImageUrls,
     hasParticipantLimit: event.participantLimit !== null,
     image: event.coverImageUrl ?? "",
@@ -57,7 +73,10 @@ export function mapEventDetailToDraft(event: EventDetail): EventDraft {
     location: origin ? mapPlaceToReference(origin) : null,
     maxParticipants: event.participantLimit ?? undefined,
     requirements: event.requirements,
-    startTime: event.startTime ?? "",
+    startDate: Number.isNaN(startsAt.getTime())
+      ? formatIsoDateToBrazilian(event.date)
+      : formatBrazilianDateFromInstant(startsAt),
+    startTime: event.startTime?.trim() || period.startTime || formatTimeInBrazil(startsAt),
     stops: stops.map((stop) => mapPlaceToReference(stop)),
     title: event.title,
   };

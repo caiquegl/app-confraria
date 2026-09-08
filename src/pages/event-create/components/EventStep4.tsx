@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
+import { formatEventPeriodLabel, parseBrazilDateTime } from "@/lib/event-period";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventGalleryImagePicker } from "./EventGalleryImagePicker";
@@ -29,6 +30,8 @@ export function EventStep4({
 }: EventStep4Props) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const periodLabel = formatDraftPeriodLabel(draft);
+
   return (
     <EventWizardLayout
       step={4}
@@ -58,9 +61,7 @@ export function EventStep4({
               {draft.title || "Nome do evento"}
             </Text>
             <Text style={styles.reviewMeta}>{draft.category || "Categoria não definida"}</Text>
-            <Text style={styles.reviewMeta}>
-              {[draft.date, draft.startTime].filter(Boolean).join(" • ") || "Data e horário"}
-            </Text>
+            <Text style={styles.reviewMeta}>{periodLabel || "Data e horário"}</Text>
             <Text numberOfLines={2} style={styles.reviewDescription}>
               {draft.description || "Descrição do evento aparecerá aqui."}
             </Text>
@@ -94,6 +95,19 @@ export function EventStep4({
       </View>
     </EventWizardLayout>
   );
+}
+
+function formatDraftPeriodLabel(draft: EventDraft) {
+  const startsAt = parseBrazilDateTime(draft.startDate, draft.startTime);
+  const endsAt = parseBrazilDateTime(draft.endDate, draft.endTime);
+  if (!startsAt || !endsAt) return "";
+
+  return formatEventPeriodLabel({
+    endsAt,
+    endTime: draft.endTime,
+    startsAt,
+    startTime: draft.startTime,
+  });
 }
 
 const createStyles = (colors: AppColors) => ({

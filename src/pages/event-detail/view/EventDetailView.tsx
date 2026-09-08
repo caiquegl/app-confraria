@@ -12,6 +12,7 @@ import {
   togglePublicProfileEventFavorite,
 } from "@/pages/public-profile-events/services/public-profile-events.service";
 import { hasValidCoordinates, openDirections } from "@/lib/location";
+import { formatEventPeriodLabel, resolvePeriodFromLegacy } from "@/lib/event-period";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { EventDetailGallery } from "../components/EventDetailGallery";
@@ -274,7 +275,7 @@ export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
 
             <EventDetailInfoSection
               canOpenDirections={hasValidCoordinates(directionsTarget)}
-              dateLabel={formatDateLabel(event.date)}
+              dateLabel={formatEventPeriodDisplay(event)}
               destinationLabel={formatPlaceLabel(places.destination)}
               durationLabel={formatDurationLabel(event)}
               onOpenDirections={() => void handleOpenDirections()}
@@ -282,7 +283,7 @@ export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
               participantsCount={event.participantsCount}
               participantLimit={event.participantLimit}
               timeLabel={formatTimeLabel(event)}
-              weekdayLabel={formatWeekdayLabel(event.date)}
+              weekdayLabel={formatWeekdayLabel(event)}
             />
 
             <EventDetailTextSection
@@ -325,10 +326,10 @@ export function EventDetailView({ eventId, onBack }: EventDetailViewProps) {
           ) : null}
 
           <EventParticipationConfirmSheet
-            dateLabel={formatDateLabel(event.date)}
+            dateLabel={formatEventPeriodDisplay(event)}
             isConfirming={isConfirmingPresence}
             locationLabel={formatPlaceLabel(places.origin) || "Local a definir"}
-            timeLabel={formatTimeLabel(event)}
+            timeLabel=""
             title={event.title}
             visible={showPresenceConfirmSheet}
             onClose={() => setShowPresenceConfirmSheet(false)}
@@ -393,18 +394,41 @@ function FeedbackState({
   );
 }
 
-function formatDateLabel(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Data a definir";
+function formatEventPeriodDisplay(event: EventDetail) {
+  const period = resolvePeriodFromLegacy({
+    date: event.date,
+    endTime: event.endTime,
+    endsAt: event.endsAt,
+    startTime: event.startTime,
+    startsAt: event.startsAt,
+  });
 
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(date);
+  const label = formatEventPeriodLabel({
+    endsAt: period.endsAt,
+    endTime: event.endTime ?? period.endTime,
+    startsAt: period.startsAt,
+    startTime: event.startTime ?? period.startTime,
+  });
+
+  return label || "Data a definir";
 }
 
 function formatDurationLabel(event: EventDetail) {
+  const period = resolvePeriodFromLegacy({
+    date: event.date,
+    endTime: event.endTime,
+    endsAt: event.endsAt,
+    startTime: event.startTime,
+    startsAt: event.startsAt,
+  });
+  const startsAt = new Date(period.startsAt);
+  const endsAt = new Date(period.endsAt);
+
+  if (!Number.isNaN(startsAt.getTime()) && !Number.isNaN(endsAt.getTime())) {
+    const durationMinutes = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
+    if (durationMinutes > 0) return formatMinutesDuration(durationMinutes);
+  }
+
   if (event.startTime && event.endTime) {
     const duration = getTimeDurationMinutes(event.startTime, event.endTime);
     if (duration) return formatMinutesDuration(duration);
@@ -434,14 +458,35 @@ function formatPlaceLabel(place: EventDetailPlace | null) {
 function formatTimeLabel(event: EventDetail) {
   if (event.startTime && event.endTime) return `${event.startTime} - ${event.endTime}`;
   if (event.startTime) return event.startTime;
+
+  const period = resolvePeriodFromLegacy({
+    date: event.date,
+    endTime: event.endTime,
+    endsAt: event.endsAt,
+    startTime: event.startTime,
+    startsAt: event.startsAt,
+  });
+
+  if (period.startTime && period.endTime) return `${period.startTime} - ${period.endTime}`;
+  if (period.startTime) return period.startTime;
   return "Horário a definir";
 }
 
-function formatWeekdayLabel(value: string) {
-  const date = new Date(value);
+function formatWeekdayLabel(event: EventDetail) {
+  const period = resolvePeriodFromLegacy({
+    date: event.date,
+    endTime: event.endTime,
+    endsAt: event.endsAt,
+    startTime: event.startTime,
+    startsAt: event.startsAt,
+  });
+  const date = new Date(period.startsAt);
   if (Number.isNaN(date.getTime())) return "";
 
-  return new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(date);
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "long",
+  }).format(date);
 }
 
 function getTimeDurationMinutes(startTime: string, endTime: string) {
