@@ -1,5 +1,12 @@
 import Constants from "expo-constants";
 
+import {
+  FARO_APP_NAME,
+  FARO_APP_NAMESPACE,
+  FARO_COLLECTOR_URL,
+} from "./faro-config";
+import { OTA_VERSION } from "./ota-version";
+
 type FaroModule = typeof import("@grafana/faro-react-native");
 
 type FaroApi = {
@@ -13,9 +20,15 @@ type FaroApi = {
   };
 };
 
+type FaroUser = { email?: string; id?: string };
+
 let faroInstance: FaroApi | null = null;
 let faroModule: FaroModule | null = null;
 let initPromise: Promise<FaroApi | null> | null = null;
+let faroUser: FaroUser | null = null;
+let httpSessionId =
+  Math.random().toString(36).slice(2, 10) +
+  Math.random().toString(36).slice(2, 6);
 
 export function getFaroLogLevel(
   level: "info" | "warn" | "error",
@@ -29,15 +42,64 @@ export function getFaroLogLevel(
   return LogLevel.INFO;
 }
 
-export async function initFaro(): Promise<FaroApi | null> {
+function resolveAppVersion(): string {
+  return (
+    Constants.expoConfig?.version ??
+    Constants.nativeAppVersion ??
+    `ota-${OTA_VERSION}`
+  );
+}
+
+/** Reliable path: POST directly to the Faro collector (does not depend on SDK session). */
+export async function sendFaroHttpLog(input: {
+  level: "info" | "warn" | "error";
+  message: string;
+  context?: Record<string, string>;
+}): Promise<void> {
   if (__DEV__) {
-    return null;
+    return;
   }
 
-  const url =
-    process.env.EXPO_PUBLIC_FARO_URL?.trim() ||
-    "https://faro-collector-prod-sa-east-1.grafana.net/collect/2d7615b9a2fbd3092ed8ff1a2e294a09";
-  if (!url) {
+  const body = {
+    logs: [
+      {
+        context: input.context,
+        level: input.level,
+        message: input.message,
+        timestamp: new Date().toISOString(),
+      },
+    ],
+    meta: {
+      app: {
+        name: FARO_APP_NAME,
+        namespace: FARO_APP_NAMESPACE,
+        version: resolveAppVersion(),
+      },
+      sdk: {
+        name: "confraria-app-http",
+        version: String(OTA_VERSION),
+      },
+      session: { id: httpSessionId },
+      ...(faroUser ? { user: faroUser } : {}),
+    },
+  };
+
+  const response = await fetch(FARO_COLLECTOR_URL, {
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+      "x-faro-session-id": httpSessionId,
+    },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Faro HTTP ${response.status}`);
+  }
+}
+
+export async function initFaro(): Promise<FaroApi | null> {
+  if (__DEV__) {
     return null;
   }
 
@@ -55,29 +117,37 @@ export async function initFaro(): Promise<FaroApi | null> {
       const sdk = require("@grafana/faro-react-native") as FaroModule;
       faroModule = sdk;
 
+      const SamplingRate = sdk.SamplingRate;
       const instance = await sdk.initializeFaro({
         app: {
           environment: "production",
-          name: process.env.EXPO_PUBLIC_FARO_APP_NAME ?? "app-confraria",
-          namespace: process.env.EXPO_PUBLIC_FARO_APP_NAMESPACE ?? "confraria",
-          version:
-            Constants.expoConfig?.version ??
-            Constants.nativeAppVersion ??
-            "1.0.0",
+          name: FARO_APP_NAME,
+          namespace: FARO_APP_NAMESPACE,
+          version: resolveAppVersion(),
         },
         enableConsoleCapture: false,
         enableErrorReporting: true,
         sessionTracking: {
           enabled: true,
           persistent: false,
+          ...(SamplingRate ? { sampling: new SamplingRate(1) } : {}),
         },
-        url,
+        url: FARO_COLLECTOR_URL,
       });
 
-      faroInstance = instance as unknown as FaroApi;
+      // Prefer returned instance; fall back to package singleton.
+      faroInstance =
+        (instance as unknown as FaroApi | undefined) ??
+        (sdk.faro as unknown as FaroApi | undefined) ??
+        null;
+
+      if (faroUser && faroInstance) {
+        faroInstance.api.setUser(faroUser);
+      }
+
       return faroInstance;
     } catch (error) {
-      console.warn("[faro] Falha ao inicializar SDK; logs locais apenas.", error);
+      console.warn("[faro] SDK init falhou; HTTP fallback ativo.", error);
       faroInstance = null;
       return null;
     }
@@ -98,12 +168,14 @@ export async function ensureFaro(): Promise<FaroApi | null> {
 }
 
 export function setFaroUser(user: { email?: string; id: string }): void {
+  faroUser = user;
   void ensureFaro().then((instance) => {
     instance?.api.setUser(user);
   });
 }
 
 export function clearFaroUser(): void {
+  faroUser = null;
   void ensureFaro().then((instance) => {
     instance?.api.resetUser();
   });

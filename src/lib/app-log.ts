@@ -1,4 +1,8 @@
-import { ensureFaro, getFaroLogLevel } from "./faro";
+import {
+  ensureFaro,
+  getFaroLogLevel,
+  sendFaroHttpLog,
+} from "./faro";
 
 type Attrs = Record<string, unknown>;
 
@@ -31,12 +35,20 @@ function push(
     return;
   }
 
+  const context = toContext(attrs);
+
+  // Primary path: direct HTTP to collector (hardcoded URL).
+  void sendFaroHttpLog({ context, level, message }).catch(() => {
+    // Telemetry must never break user flows.
+  });
+
+  // Secondary: SDK if it initialized (Frontend Observability extras).
   void ensureFaro()
     .then((instance) => {
       if (!instance) return;
       const faroLevel = getFaroLogLevel(level);
       instance.api.pushLog([message], {
-        context: toContext(attrs),
+        context,
         ...(faroLevel != null ? { level: faroLevel } : {}),
       });
     })
