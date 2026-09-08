@@ -31,10 +31,6 @@ function push(
     return;
   }
 
-  if (!process.env.EXPO_PUBLIC_FARO_URL?.trim()) {
-    return;
-  }
-
   void ensureFaro()
     .then((instance) => {
       if (!instance) return;
