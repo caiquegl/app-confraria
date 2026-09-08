@@ -1,0 +1,16 @@
+---
+description: Observabilidade — Grafana Faro + Sentry em paralelo
+alwaysApply: true
+---
+
+# Observabilidade (Grafana + Sentry)
+
+Use **Sentry e Grafana em paralelo** ao investigar bugs ou fluxos.
+
+- **Sentry**: exceptions / crashes
+- **Grafana Faro → Loki**: `appLog` (`src/lib/app-log.ts`) — trilha operacional
+- Loki: `{service_name="app-confraria"}`
+- Faro só em builds não-`__DEV__` (preview/production OTA)
+- Correlação com backend: `requestId`
+- Sem PII (senha, JWT, CPF completo)
+- MCP: `query_loki_logs` no datasource `grafanacloud-logs` quando disponível
