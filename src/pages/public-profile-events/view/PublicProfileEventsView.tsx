@@ -16,7 +16,6 @@ import { PublicProfileEventTag } from "../components/PublicProfileEventTag";
 import {
   fetchCreatedPublicProfileEvents,
   fetchJoinedPublicProfileEvents,
-  getMockPublicProfileEvents,
   PUBLIC_PROFILE_EVENT_TABS,
   togglePublicProfileEventFavorite,
 } from "../services/public-profile-events.service";
@@ -145,14 +144,10 @@ export function PublicProfileEventsView({
     }
   }, []);
 
-  const events = useMemo(
-    () => {
-      if (activeTab === "Criados") return createdEvents;
-      if (activeTab === "Inscrito") return joinedEvents;
-      return filterEventsBySearch(getMockPublicProfileEvents(activeTab), searchQuery);
-    },
-    [activeTab, createdEvents, joinedEvents, searchQuery],
-  );
+  const events = useMemo(() => {
+    if (activeTab === "Criados") return createdEvents;
+    return joinedEvents;
+  }, [activeTab, createdEvents, joinedEvents]);
   const shouldShowLoading =
     (activeTab === "Criados" && isLoadingCreatedEvents) ||
     (activeTab === "Inscrito" && isLoadingJoinedEvents);
@@ -209,7 +204,7 @@ export function PublicProfileEventsView({
           {!shouldShowLoading && !shouldShowError && events.length > 0 ? (
             <View style={styles.eventsList}>
               {events.map((event, index) => {
-                const primaryBadge = getPrimaryEventBadge(event, activeTab, index);
+                const primaryBadge = getPrimaryEventBadge(event);
 
                 return (
                   <View key={event.id} style={styles.eventBlock}>
@@ -231,9 +226,7 @@ export function PublicProfileEventsView({
 
                         onOpenEvent(selectedEvent.id);
                       }}
-                      onToggleFavorite={
-                        activeTab === "Visitados" ? undefined : handleToggleFavorite
-                      }
+                      onToggleFavorite={handleToggleFavorite}
                     />
                   </View>
                 );
@@ -250,29 +243,9 @@ export function PublicProfileEventsView({
   );
 }
 
-function filterEventsBySearch(events: PublicProfileEvent[], searchQuery: string) {
-  const normalizedSearch = searchQuery.trim().toLowerCase();
-  if (!normalizedSearch) return events;
-
-  return events.filter((event) => {
-    const periodLabel = event.date;
-    return [event.title, event.category, event.location, event.organizer, periodLabel].some(
-      (value) => value.toLowerCase().includes(normalizedSearch),
-    );
-  });
-}
-
 function getPrimaryEventBadge(
   event: PublicProfileEvent,
-  tab: PublicProfileEventTab,
-  eventIndex: number,
 ): { icon: "calendar-outline" | "star"; label: string } {
-  if (tab === "Visitados") {
-    return event.isLatestVisit || eventIndex === 0
-      ? { icon: "star", label: "Último evento" }
-      : { icon: "calendar-outline", label: event.date };
-  }
-
   if (isEventOngoing(event.startsAt, event.endsAt)) {
     return { icon: "star", label: "Em andamento" };
   }
@@ -284,8 +257,6 @@ function getSectionTitle(tab: PublicProfileEventTab) {
   switch (tab) {
     case "Inscrito":
       return "Eventos que participa";
-    case "Visitados":
-      return "Eventos visitados";
     case "Criados":
     default:
       return "Meus eventos criados";

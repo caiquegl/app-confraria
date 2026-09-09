@@ -13,42 +13,8 @@ import type {
 
 export const PUBLIC_PROFILE_EVENT_TABS: PublicProfileEventTab[] = [
   "Inscrito",
-  //"Visitados",
   "Criados",
 ];
-
-const MOCK_VISITED_EVENTS: PublicProfileEvent[] = [
-  {
-    id: "visited-1",
-    title: "Encontro Nacional de Motociclistas",
-    category: "Evento nacional",
-    description: "Grande encontro com shows, expositores e rotas guiadas durante o fim de semana.",
-    image:
-      "https://images.unsplash.com/photo-1558981359-219d6364c9c8?q=80&w=900&auto=format&fit=crop",
-    isFavorited: false,
-    rating: 5,
-    reviews: 1200,
-    date: "18 out · 12:00–18:00",
-    isLatestVisit: true,
-    organizer: "Confraria Riders",
-    organizerAvatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
-    location: "Foz do Iguaçu",
-    startsAt: "2025-10-18T15:00:00.000Z",
-    endsAt: "2025-10-18T21:00:00.000Z",
-  },
-];
-
-export function getMockPublicProfileEvents(tab: PublicProfileEventTab): PublicProfileEvent[] {
-  switch (tab) {
-    case "Visitados":
-      return MOCK_VISITED_EVENTS;
-    case "Inscrito":
-    case "Criados":
-    default:
-      return [];
-  }
-}
 
 export async function fetchCreatedPublicProfileEvents(
   userId: string,
