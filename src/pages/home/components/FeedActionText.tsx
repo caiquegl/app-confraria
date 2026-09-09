@@ -1,6 +1,6 @@
 import { Text, type TextStyle } from "react-native";
 
-import { colors } from "@/theme/colors";
+import { type AppColors, useThemedStyles } from "@/theme";
 
 import type { FeedPost } from "../types/feed.types";
 
@@ -10,6 +10,8 @@ type FeedActionTextProps = {
 };
 
 export function FeedActionText({ post, style }: FeedActionTextProps) {
+  const styles = useThemedStyles(createStyles);
+
   switch (post.type) {
     case "event_attended":
       return (
@@ -47,9 +49,9 @@ export function FeedActionText({ post, style }: FeedActionTextProps) {
   }
 }
 
-const styles = {
+const createStyles = (colors: AppColors) => ({
   strong: {
     color: colors.brandDark,
     fontWeight: "700" as const,
   },
-};
+});

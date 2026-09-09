@@ -11,6 +11,7 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 
+import { appLog } from "@/lib/app-log";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import type { FeedPostMedia } from "../types/feed.types";
@@ -20,6 +21,8 @@ const HORIZONTAL_PADDING = 32;
 const CARD_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING;
 /** Alinhado ao preview do composer (Instagram portrait). */
 const MEDIA_ASPECT_RATIO = 4 / 5;
+/** Altura explícita — % dentro de ScrollView horizontal colapsa em RN. */
+const MEDIA_HEIGHT = Math.round(CARD_WIDTH / MEDIA_ASPECT_RATIO);
 
 type FeedMediaCarouselProps = {
   media: FeedPostMedia[];
@@ -33,8 +36,15 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const lastPressAtRef = useRef(0);
+  const loggedEmptyRef = useRef(false);
 
-  if (media.length === 0) return null;
+  if (media.length === 0) {
+    if (!loggedEmptyRef.current) {
+      loggedEmptyRef.current = true;
+      appLog.warn("feed.media.empty", { title });
+    }
+    return null;
+  }
 
   const scrollToIndex = (index: number) => {
     const clamped = Math.max(0, Math.min(index, media.length - 1));
@@ -89,6 +99,24 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
                 cachePolicy="memory-disk"
                 contentFit="contain"
                 recyclingKey={item.url}
+                onError={() => {
+                  appLog.warn("feed.media.load_failed", {
+                    index,
+                    mediaType: item.mediaType,
+                    title,
+                    urlHost: safeUrlHost(item.url),
+                  });
+                }}
+                onLoad={() => {
+                  if (index === 0) {
+                    appLog.info("feed.media.load_ok", {
+                      count: media.length,
+                      height: MEDIA_HEIGHT,
+                      title,
+                      width: CARD_WIDTH,
+                    });
+                  }
+                }}
               />
             )}
           </Pressable>
@@ -144,6 +172,11 @@ function FeedVideoPoster({ thumbnailUrl }: { thumbnailUrl?: string | null }) {
           cachePolicy="memory-disk"
           contentFit="contain"
           recyclingKey={thumbnailUrl}
+          onError={() => {
+            appLog.warn("feed.media.video_thumb_failed", {
+              urlHost: safeUrlHost(thumbnailUrl),
+            });
+          }}
         />
       ) : (
         <View style={[styles.video, styles.videoFallback]} />
@@ -153,6 +186,14 @@ function FeedVideoPoster({ thumbnailUrl }: { thumbnailUrl?: string | null }) {
       </View>
     </View>
   );
+}
+
+function safeUrlHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "invalid";
+  }
 }
 
 const createStyles = (colors: AppColors) =>
@@ -196,8 +237,9 @@ const createStyles = (colors: AppColors) =>
       right: 0,
     },
     image: {
-      ...StyleSheet.absoluteFillObject,
       backgroundColor: colors.surface.media,
+      height: MEDIA_HEIGHT,
+      width: CARD_WIDTH,
     },
     playBadge: {
       alignItems: "center",
@@ -213,27 +255,29 @@ const createStyles = (colors: AppColors) =>
       width: 48,
     },
     scroll: {
-      flex: 1,
+      height: MEDIA_HEIGHT,
     },
     slide: {
-      height: "100%",
+      height: MEDIA_HEIGHT,
       width: CARD_WIDTH,
     },
     video: {
-      ...StyleSheet.absoluteFillObject,
+      height: MEDIA_HEIGHT,
+      width: CARD_WIDTH,
     },
     videoContainer: {
-      ...StyleSheet.absoluteFillObject,
       alignItems: "center",
       backgroundColor: colors.surface.video,
+      height: MEDIA_HEIGHT,
       justifyContent: "center",
+      width: CARD_WIDTH,
     },
     videoFallback: {
       backgroundColor: colors.surface.videoFallback,
     },
     wrapper: {
-      aspectRatio: MEDIA_ASPECT_RATIO,
       backgroundColor: colors.surface.media,
+      height: MEDIA_HEIGHT,
       overflow: "hidden",
       position: "relative",
       width: CARD_WIDTH,
