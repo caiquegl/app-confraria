@@ -367,7 +367,6 @@ export function usePublicProfilePosts(userId: string) {
           firstName: contact.userName,
           id: contact.userId,
           isFriend: true,
-          isPremium: false,
           location: "Confraria",
           userId: contact.userId,
         })),

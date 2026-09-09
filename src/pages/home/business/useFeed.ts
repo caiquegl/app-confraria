@@ -310,7 +310,6 @@ export function useFeed() {
           firstName: contact.userName,
           id: contact.userId,
           isFriend: true,
-          isPremium: false,
           location: "Confraria",
           userId: contact.userId,
         })),
