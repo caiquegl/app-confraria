@@ -1,4 +1,4 @@
-export type PublicProfileEventTab = "Inscrito" | "Visitados" | "Criados";
+export type PublicProfileEventTab = "Inscrito" | "Criados";
 
 export type PublicProfileEvent = {
   id: string;
@@ -8,7 +8,6 @@ export type PublicProfileEvent = {
   endsAt: string;
   image: string;
   isFavorited: boolean;
-  isLatestVisit?: boolean;
   location: string;
   organizer: string;
   organizerAvatar?: string;
