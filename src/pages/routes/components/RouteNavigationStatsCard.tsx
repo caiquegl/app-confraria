@@ -10,21 +10,33 @@ import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 type RouteNavigationStatsCardProps = {
   canFinish: boolean;
   isOffRoute?: boolean;
+  onRecalculate?: () => void;
   onStop: () => void;
   state: Pick<
     RouteNavigationState,
-    "etaLabel" | "isRerouting" | "remainingDistanceLabel" | "remainingDurationLabel" | "speedLabel"
+    | "etaLabel"
+    | "isRerouting"
+    | "remainingDistanceLabel"
+    | "remainingDurationLabel"
+    | "rerouteFailed"
+    | "speedLabel"
   >;
 };
 
 export function RouteNavigationStatsCard({
   canFinish,
   isOffRoute = false,
+  onRecalculate,
   onStop,
   state,
 }: RouteNavigationStatsCardProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const showRecalculate =
+    Boolean(onRecalculate) &&
+    !state.isRerouting &&
+    (state.rerouteFailed || isOffRoute);
+
   return (
     <View style={styles.card}>
       <View style={styles.copy}>
@@ -32,6 +44,8 @@ export function RouteNavigationStatsCard({
         <View style={styles.metaRow}>
           {state.isRerouting ? (
             <Text style={styles.offRouteMeta}>Recalculando rota...</Text>
+          ) : state.rerouteFailed ? (
+            <Text style={styles.offRouteMeta}>Falha ao recalcular</Text>
           ) : isOffRoute ? (
             <Text style={styles.offRouteMeta}>Fora da rota</Text>
           ) : (
@@ -44,6 +58,18 @@ export function RouteNavigationStatsCard({
             </>
           )}
         </View>
+        {showRecalculate ? (
+          <Pressable
+            accessibilityLabel="Recalcular agora"
+            accessibilityRole="button"
+            hitSlop={8}
+            style={({ pressed }) => [styles.recalculateButton, pressed && styles.pressed]}
+            onPress={onRecalculate}
+          >
+            <Ionicons color={colors.brandDark} name="refresh" size={14} />
+            <Text style={styles.recalculateText}>Recalcular agora</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <Pressable
@@ -102,6 +128,25 @@ const createStyles = (colors: AppColors) => ({
   },
   offRouteMeta: {
     color: "#FBBF24",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  recalculateButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: colors.accent.brand,
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  recalculateText: {
+    color: colors.brandDark,
     fontSize: 12,
     fontWeight: "700",
   },

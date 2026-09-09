@@ -60,12 +60,17 @@ export async function fetchPlaceDirections(
   });
 
   let lastError: unknown;
+  const maxAttempts = Math.max(1, options.maxAttempts ?? DIRECTIONS_MAX_ATTEMPTS);
 
-  for (let attempt = 1; attempt <= DIRECTIONS_MAX_ATTEMPTS; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       const { data } = await api.post<PlaceDirectionsResponse>(
         apiRoutes.places.directions,
         payload,
+        {
+          signal: options.signal,
+          timeout: options.timeoutMs,
+        },
       );
       const route = data.routes[0];
       console.log("[CON-49] directions response", {
@@ -82,7 +87,7 @@ export async function fetchPlaceDirections(
       const canRetry =
         status != null &&
         DIRECTIONS_RETRY_STATUSES.has(status) &&
-        attempt < DIRECTIONS_MAX_ATTEMPTS;
+        attempt < maxAttempts;
 
       if (!canRetry) {
         throw error;
