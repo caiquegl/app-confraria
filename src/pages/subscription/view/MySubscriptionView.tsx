@@ -84,7 +84,7 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
   subscriptionRef.current = subscription;
 
   const load = useCallback(async () => {
-    if (inFlightRef.current) return;
+    if (inFlightRef.current) return subscriptionRef.current;
     inFlightRef.current = true;
 
     const hasData = subscriptionRef.current != null;
@@ -98,6 +98,7 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
       const data = await fetchSubscriptionMe();
       setSubscription(data);
       setHasError(false);
+      return data;
     } catch {
       if (hasData) {
         Toast.show({
@@ -108,6 +109,7 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
       } else {
         setHasError(true);
       }
+      return subscriptionRef.current;
     } finally {
       hasAttemptedRef.current = true;
       inFlightRef.current = false;
@@ -139,15 +141,24 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
         SUCCESS_URL,
       );
 
-      if (result.type === "success" || result.type === "dismiss") {
-        await load();
+      if (result.type === "success") {
+        const latest = await load();
         Toast.show({
           type: "success",
-          text1: "Checkout finalizado",
-          text2:
-            result.type === "success"
-              ? "Atualizamos o status da sua assinatura."
-              : "Se o pagamento foi confirmado, o VIP aparece em breve.",
+          text1: latest?.isVip ? "Pagamento confirmado" : "Checkout finalizado",
+          text2: latest?.isVip
+            ? "Seu VIP já está ativo."
+            : "Se o pagamento foi aprovado, o VIP aparece em breve.",
+        });
+        return;
+      }
+
+      if (result.type === "dismiss") {
+        await load();
+        Toast.show({
+          type: "info",
+          text1: "Checkout fechado",
+          text2: "Se você concluiu o pagamento, o VIP pode levar alguns segundos para ativar.",
         });
       }
     } catch (error) {

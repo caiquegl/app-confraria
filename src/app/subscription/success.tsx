@@ -1,5 +1,5 @@
-import { Redirect } from "expo-router";
+import { CheckoutReturnView } from "@/pages/subscription/view/CheckoutReturnView";
 
 export default function SubscriptionSuccessScreen() {
-  return <Redirect href="/profile/subscription" />;
+  return <CheckoutReturnView kind="success" />;
 }
