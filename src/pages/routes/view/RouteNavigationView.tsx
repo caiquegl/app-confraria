@@ -359,9 +359,35 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
           canFinish={isOwner}
           isOffRoute={navigation.state.isOffRoute}
           state={navigation.state}
+          onRecalculate={navigation.requestReroute}
           onStop={openStopConfirm}
         />
       </View>
+
+      {reports.failedReports.length > 0 ? (
+        <View
+          pointerEvents="box-none"
+          style={[styles.retryBannerWrap, { bottom: insets.bottom + 118 }]}
+        >
+          <Pressable
+            accessibilityLabel="Reenviar reportes pendentes"
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.retryBanner, pressed && styles.retryBannerPressed]}
+            onPress={() => {
+              const first = reports.failedReports[0];
+              if (first) {
+                void reports.retryFailedReport(first.clientReportId);
+              }
+            }}
+          >
+            <Text style={styles.retryBannerText}>
+              {reports.failedReports.length === 1
+                ? "1 reporte pendente — toque para reenviar"
+                : `${reports.failedReports.length} reportes pendentes — toque para reenviar`}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {isOwner ? (
         <RouteNavigationStopConfirmSheet
@@ -524,6 +550,27 @@ const createStyles = (colors: AppColors) => ({
     position: "absolute",
     right: 16,
     top: 0,
+  },
+  retryBanner: {
+    alignSelf: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  retryBannerPressed: {
+    opacity: 0.85,
+  },
+  retryBannerText: {
+    color: colors.text.inverse,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  retryBannerWrap: {
+    left: 16,
+    position: "absolute",
+    right: 16,
+    zIndex: 25,
   },
   screen: {
     backgroundColor: colors.brandGray,

@@ -99,13 +99,34 @@ function projectPointOnSegment(
   };
 }
 
-export function sumPolylineDistanceMeters(
+export function sumPolylineDistanceMeters(polyline: Coordinate[]): number {
+  return sumPolylineDistanceUpToIndex(polyline, polyline.length - 1);
+}
+
+/** Distância ao longo da polyline do início até o vértice `endIndex` (inclusive como extremo). */
+export function sumPolylineDistanceUpToIndex(
+  polyline: Coordinate[],
+  endIndex: number,
+): number {
+  const last = Math.min(Math.max(0, endIndex), Math.max(0, polyline.length - 1));
+  let total = 0;
+
+  for (let index = 0; index < last; index += 1) {
+    total += haversineDistanceMeters(polyline[index], polyline[index + 1]);
+  }
+
+  return total;
+}
+
+/** Distância restante ao longo da polyline a partir do vértice `startIndex`. */
+export function sumPolylineDistanceFromIndex(
   polyline: Coordinate[],
   startIndex = 0,
 ): number {
+  const first = Math.max(0, startIndex);
   let total = 0;
 
-  for (let index = Math.max(0, startIndex); index < polyline.length - 1; index += 1) {
+  for (let index = first; index < polyline.length - 1; index += 1) {
     total += haversineDistanceMeters(polyline[index], polyline[index + 1]);
   }
 

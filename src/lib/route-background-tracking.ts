@@ -14,6 +14,8 @@ const API_ENVIRONMENT_KEY = "@confraria/api_environment";
 export const ROUTE_BACKGROUND_TRACKING_KEY = "@confraria/route_background_tracking";
 export const ROUTE_LOCATION_TASK_NAME = "route-location-tracking";
 const PENDING_LOCATION_KEY = "@confraria/route_background_pending_location";
+const PENDING_LOCATIONS_QUEUE_KEY = "@confraria/route_background_pending_locations";
+const PENDING_LOCATION_QUEUE_LIMIT = 20;
 
 const NETWORK_ERROR_PATTERNS = [
   /network request failed/i,
@@ -209,38 +211,82 @@ function toPendingLocation(
   };
 }
 
-async function readPendingLocation(
+async function readPendingLocationQueue(
   routeId: string,
-): Promise<PendingRouteLocation | null> {
-  const raw = await AsyncStorage.getItem(PENDING_LOCATION_KEY);
-  if (!raw) return null;
+): Promise<PendingRouteLocation[]> {
+  const rawQueue = await AsyncStorage.getItem(PENDING_LOCATIONS_QUEUE_KEY);
+  if (rawQueue) {
+    try {
+      const parsed = JSON.parse(rawQueue) as PendingRouteLocation[];
+      if (!Array.isArray(parsed)) {
+        await AsyncStorage.removeItem(PENDING_LOCATIONS_QUEUE_KEY);
+        return [];
+      }
+
+      return parsed
+        .filter(
+          (item) =>
+            item &&
+            item.routeId === routeId &&
+            typeof item.latitude === "number" &&
+            typeof item.longitude === "number" &&
+            typeof item.updatedAt === "string",
+        )
+        .sort((left, right) => Date.parse(left.updatedAt) - Date.parse(right.updatedAt))
+        .slice(-PENDING_LOCATION_QUEUE_LIMIT);
+    } catch {
+      await AsyncStorage.removeItem(PENDING_LOCATIONS_QUEUE_KEY);
+      return [];
+    }
+  }
+
+  // Migra o formato antigo (último ponto único) para a fila.
+  const legacy = await AsyncStorage.getItem(PENDING_LOCATION_KEY);
+  if (!legacy) return [];
 
   try {
-    const pending = JSON.parse(raw) as PendingRouteLocation;
-    if (pending.routeId !== routeId) {
-      await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
-      return null;
-    }
+    const pending = JSON.parse(legacy) as PendingRouteLocation;
+    await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
     if (
+      pending.routeId !== routeId ||
       typeof pending.latitude !== "number" ||
       typeof pending.longitude !== "number"
     ) {
-      await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
-      return null;
+      return [];
     }
-    return pending;
+    await AsyncStorage.setItem(PENDING_LOCATIONS_QUEUE_KEY, JSON.stringify([pending]));
+    return [pending];
   } catch {
     await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
-    return null;
+    return [];
   }
 }
 
-async function savePendingLocation(pending: PendingRouteLocation): Promise<void> {
-  await AsyncStorage.setItem(PENDING_LOCATION_KEY, JSON.stringify(pending));
+async function writePendingLocationQueue(queue: PendingRouteLocation[]): Promise<void> {
+  if (queue.length === 0) {
+    await AsyncStorage.multiRemove([PENDING_LOCATION_KEY, PENDING_LOCATIONS_QUEUE_KEY]);
+    return;
+  }
+
+  const trimmed = queue
+    .slice()
+    .sort((left, right) => Date.parse(left.updatedAt) - Date.parse(right.updatedAt))
+    .slice(-PENDING_LOCATION_QUEUE_LIMIT);
+
+  await AsyncStorage.setItem(PENDING_LOCATIONS_QUEUE_KEY, JSON.stringify(trimmed));
+  await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
 }
 
-async function clearPendingLocation(): Promise<void> {
-  await AsyncStorage.removeItem(PENDING_LOCATION_KEY);
+async function enqueuePendingLocation(pending: PendingRouteLocation): Promise<void> {
+  const current = await readPendingLocationQueue(pending.routeId);
+  const withoutSameTimestamp = current.filter(
+    (item) => item.updatedAt !== pending.updatedAt,
+  );
+  await writePendingLocationQueue([...withoutSameTimestamp, pending]);
+}
+
+async function clearPendingLocationQueue(): Promise<void> {
+  await AsyncStorage.multiRemove([PENDING_LOCATION_KEY, PENDING_LOCATIONS_QUEUE_KEY]);
 }
 
 async function patchLocationToApi(
@@ -315,41 +361,46 @@ async function sendLocationToApi(
   location: LocationObject,
 ): Promise<boolean> {
   const pending = toPendingLocation(session, location);
-  const result = await patchLocationToApi(session, pending);
-
-  if (result === "ok") {
-    await clearPendingLocation();
-    return true;
-  }
-
-  if (result === "stop") {
-    await clearPendingLocation();
-    return false;
-  }
-
-  await savePendingLocation(pending);
-  return true;
+  await enqueuePendingLocation(pending);
+  const result = await flushPendingLocationIfNeeded(session);
+  return result !== "stop";
 }
 
 async function flushPendingLocationIfNeeded(
   session: RouteBackgroundTrackingSession,
-): Promise<void> {
-  const pending = await readPendingLocation(session.routeId);
-  if (!pending) return;
+): Promise<"ok" | "stop" | "retry"> {
+  const queue = await readPendingLocationQueue(session.routeId);
+  if (queue.length === 0) return "ok";
 
-  const result = await patchLocationToApi(session, pending);
-  if (result === "ok") {
-    await clearPendingLocation();
+  const remaining: PendingRouteLocation[] = [];
+
+  for (let index = 0; index < queue.length; index += 1) {
+    const pending = queue[index]!;
+    const result = await patchLocationToApi(session, pending);
+    if (result === "ok") {
+      continue;
+    }
+
+    if (result === "stop") {
+      await clearPendingLocationQueue();
+      return "stop";
+    }
+
+    remaining.push(...queue.slice(index));
+    break;
+  }
+
+  await writePendingLocationQueue(remaining);
+
+  if (remaining.length < queue.length) {
     routeTrackingLog.info("flushPendingLocation:sent", {
+      remaining: remaining.length,
       routeId: session.routeId,
-      updatedAt: pending.updatedAt,
+      sent: queue.length - remaining.length,
     });
-    return;
   }
 
-  if (result === "stop") {
-    await clearPendingLocation();
-  }
+  return remaining.length === 0 ? "ok" : "retry";
 }
 
 export async function processBackgroundLocationTask({
@@ -377,14 +428,13 @@ export async function processBackgroundLocationTask({
     const session = await readTrackingSession();
     if (!session) {
       routeTrackingLog.warn("processBackgroundLocationTask:no-session");
-      await clearPendingLocation();
+      await clearPendingLocationQueue();
       await safeStopLocationUpdates();
       return;
     }
 
     const locations = data?.locations ?? [];
-    const latestLocation = locations[locations.length - 1];
-    if (!latestLocation) {
+    if (locations.length === 0) {
       // Sem ponto novo: ainda tenta reenviar o pendente se a rede voltou.
       await flushPendingLocationIfNeeded(session);
       routeTrackingLog.warn("processBackgroundLocationTask:no-locations", {
@@ -393,12 +443,18 @@ export async function processBackgroundLocationTask({
       return;
     }
 
+    const latestLocation = locations[locations.length - 1]!;
+
     routeTrackingLog.info("processBackgroundLocationTask:location-received", {
       count: locations.length,
       latitude: latestLocation.coords.latitude,
       longitude: latestLocation.coords.longitude,
       routeId: session.routeId,
     });
+
+    for (const location of locations.slice(0, -1)) {
+      await enqueuePendingLocation(toPendingLocation(session, location));
+    }
 
     const shouldContinue = await sendLocationToApi(session, latestLocation);
     if (!shouldContinue) {
@@ -596,6 +652,7 @@ export async function stopRouteBackgroundTracking(): Promise<void> {
   await AsyncStorage.multiRemove([
     ROUTE_BACKGROUND_TRACKING_KEY,
     PENDING_LOCATION_KEY,
+    PENDING_LOCATIONS_QUEUE_KEY,
   ]);
   await safeStopLocationUpdates();
   routeTrackingLog.info("stopRouteBackgroundTracking:done");

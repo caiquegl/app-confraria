@@ -21,6 +21,23 @@ type UseRouteLiveLocationsParams = {
   routeId: string;
 };
 
+function locationTimestampMs(location: RouteLiveLocation): number {
+  const parsed = Date.parse(location.updatedAt);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function mergePartnerLocation(
+  current: RouteLiveLocation[],
+  incoming: RouteLiveLocation,
+): RouteLiveLocation[] {
+  const existing = current.find((item) => item.userId === incoming.userId);
+  if (existing && locationTimestampMs(incoming) < locationTimestampMs(existing)) {
+    return current;
+  }
+
+  return [...current.filter((item) => item.userId !== incoming.userId), incoming];
+}
+
 export function useRouteLiveLocations({
   currentPosition,
   enabled,
@@ -31,6 +48,7 @@ export function useRouteLiveLocations({
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isJoined, setIsJoined] = useState(false);
   const currentUserIdRef = useRef<string | null>(null);
+  const lastAppliedAtByUserRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     void getCurrentUserId().then((userId) => {
@@ -43,6 +61,7 @@ export function useRouteLiveLocations({
       setPartners([]);
       setConnectionError(null);
       setIsJoined(false);
+      lastAppliedAtByUserRef.current.clear();
       return;
     }
 
@@ -61,28 +80,45 @@ export function useRouteLiveLocations({
     const unsubscribeSnapshot = subscribeRouteLocationsSnapshot((payload) => {
       if (!isMounted || payload.routeId !== routeId) return;
 
-      setPartners(
-        payload.locations.filter((location) => location.userId !== currentUserIdRef.current),
-      );
+      const nextApplied = new Map<string, number>();
+      const filtered = payload.locations.filter((location) => {
+        if (location.userId === currentUserIdRef.current) return false;
+        nextApplied.set(location.userId, locationTimestampMs(location));
+        return true;
+      });
+      lastAppliedAtByUserRef.current = nextApplied;
+      setPartners(filtered);
     });
 
     const unsubscribeUpdate = subscribeRouteLocationUpdate((location) => {
       if (!isMounted || location.userId === currentUserIdRef.current) return;
 
-      setPartners((current) => {
-        const next = current.filter((item) => item.userId !== location.userId);
-        return [...next, location];
-      });
+      const incomingAt = locationTimestampMs(location);
+      const lastApplied = lastAppliedAtByUserRef.current.get(location.userId) ?? 0;
+      if (incomingAt < lastApplied) {
+        return;
+      }
+
+      lastAppliedAtByUserRef.current.set(location.userId, incomingAt);
+      setPartners((current) => mergePartnerLocation(current, location));
     });
 
     const unsubscribeLeft = subscribeRouteParticipantLeft(({ userId }) => {
       if (!isMounted) return;
+      lastAppliedAtByUserRef.current.delete(userId);
       setPartners((current) => current.filter((item) => item.userId !== userId));
     });
 
     void (async () => {
       try {
-        await connectRouteNavigationSocket();
+        const activeSocket = await connectRouteNavigationSocket();
+        if (!activeSocket) {
+          if (!isMounted) return;
+          setIsJoined(false);
+          setConnectionError("Não foi possível conectar na navegação em tempo real");
+          return;
+        }
+
         await joinRouteNavigationRoom(routeId);
         if (isMounted) {
           setIsJoined(true);
@@ -94,6 +130,7 @@ export function useRouteLiveLocations({
           error instanceof Error
             ? error.message
             : "Não foi possível entrar na sala da rota";
+        setIsJoined(false);
         setConnectionError(message);
         Toast.show({
           text1: "Navegação em tempo real",
@@ -125,5 +162,5 @@ export function useRouteLiveLocations({
     });
   }, [currentPosition, enabled, heading, isJoined, routeId]);
 
-  return { connectionError, partners };
+  return { connectionError, isJoined, partners };
 }

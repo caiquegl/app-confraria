@@ -38,6 +38,7 @@ export type RoutePhotoCreatedPayload = {
 
 export type RouteLiveReport = {
   avatarUrl: string | null;
+  clientReportId?: string | null;
   createdAt: string;
   id: string;
   latitude: number;
@@ -51,6 +52,14 @@ type RouteReportsSnapshotPayload = {
   reports: RouteLiveReport[];
   routeId: string;
 };
+
+type RouteReportAck =
+  | RouteLiveReport
+  | {
+      error: {
+        message: string;
+      };
+    };
 
 type Listener<T> = (payload: T) => void;
 
@@ -67,6 +76,9 @@ const finishedListeners = new Set<Listener<{ routeId: string }>>();
 const photoCreatedListeners = new Set<Listener<RoutePhotoCreatedPayload>>();
 const reportSnapshotListeners = new Set<Listener<RouteReportsSnapshotPayload>>();
 const reportCreatedListeners = new Set<Listener<RouteLiveReport>>();
+const connectedListeners = new Set<Listener<void>>();
+
+const REPORT_ACK_TIMEOUT_MS = 10_000;
 
 function notify<T>(listeners: Set<Listener<T>>, payload: T) {
   listeners.forEach((listener) => listener(payload));
@@ -106,6 +118,7 @@ function attachSocketListeners(nextSocket: Socket) {
   });
 
   nextSocket.on("connect", () => {
+    notify(connectedListeners, undefined);
     if (activeRouteId) {
       nextSocket.emit("route:join", { routeId: activeRouteId });
     }
@@ -272,13 +285,54 @@ export function subscribeRoutePhotoCreated(listener: Listener<RoutePhotoCreatedP
 }
 
 export async function emitRouteReport(params: {
+  clientReportId: string;
   latitude: number;
   longitude: number;
   routeId: string;
   type: string;
-}): Promise<void> {
+}): Promise<RouteLiveReport> {
   const activeSocket = await connectRouteNavigationSocket();
-  activeSocket?.emit("route:report", params);
+
+  if (!activeSocket?.connected) {
+    throw new Error("Navegação em tempo real desconectada");
+  }
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error("Tempo esgotado ao enviar o reporte"));
+    }, REPORT_ACK_TIMEOUT_MS);
+
+    activeSocket.emit("route:report", params, (ack: RouteReportAck) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+
+      if (!ack || typeof ack !== "object") {
+        reject(new Error("Resposta inválida do servidor"));
+        return;
+      }
+
+      if ("error" in ack && ack.error) {
+        reject(new Error(ack.error.message || "Não foi possível enviar o reporte"));
+        return;
+      }
+
+      if (!("id" in ack) || typeof ack.id !== "string") {
+        reject(new Error("Resposta inválida do servidor"));
+        return;
+      }
+
+      resolve(ack);
+    });
+  });
+}
+
+export function subscribeRouteNavigationConnected(listener: Listener<void>) {
+  connectedListeners.add(listener);
+  return () => connectedListeners.delete(listener);
 }
 
 export function subscribeRouteReportsSnapshot(
