@@ -8,15 +8,16 @@ export const darkColors: AppColors = {
   brandGreen: "#C8F763",
   brandDark: "#F8FAFC",
   brandGray: "#0F172A",
-  brandPrimary: "#3C4B1C",
-  brandActive: "#728F21",
+  /** Ênfase legível em ícones/labels sobre slate (não usar como fundo oliva). */
+  brandPrimary: "#9FC132",
+  brandActive: "#B8E43A",
 
   text: {
     primary: "#F8FAFC",
     secondary: "#94A3B8",
-    muted: "#64748B",
-    placeholder: "#64748B",
-    placeholderMuted: "#475569",
+    muted: "#94A3B8",
+    placeholder: "#94A3B8",
+    placeholderMuted: "#64748B",
     inverse: "#0F172A",
     body: "#CBD5E1",
     comment: "#94A3B8",

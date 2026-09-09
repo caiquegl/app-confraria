@@ -18,7 +18,8 @@ import type { FeedPostMedia } from "../types/feed.types";
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = 32;
 const CARD_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING;
-const DEFAULT_MEDIA_HEIGHT = Math.round(CARD_WIDTH * 0.75);
+/** Alinhado ao preview do composer (Instagram portrait). */
+const MEDIA_ASPECT_RATIO = 4 / 5;
 
 type FeedMediaCarouselProps = {
   media: FeedPostMedia[];
@@ -26,22 +27,14 @@ type FeedMediaCarouselProps = {
   title: string;
 };
 
-function resolveImageHeight(width: number, height: number): number {
-  if (!width || !height) return DEFAULT_MEDIA_HEIGHT;
-  return Math.round((CARD_WIDTH / width) * height);
-}
-
 export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCarouselProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [imageHeights, setImageHeights] = useState<Record<number, number>>({});
   const scrollRef = useRef<ScrollView>(null);
   const lastPressAtRef = useRef(0);
 
   if (media.length === 0) return null;
-
-  const activeHeight = imageHeights[activeIndex] ?? DEFAULT_MEDIA_HEIGHT;
 
   const scrollToIndex = (index: number) => {
     const clamped = Math.max(0, Math.min(index, media.length - 1));
@@ -52,15 +45,6 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const nextIndex = Math.round(event.nativeEvent.contentOffset.x / CARD_WIDTH);
     setActiveIndex(nextIndex);
-  };
-
-  const handleImageLoad = (index: number, width?: number | null, height?: number | null) => {
-    if (!width || !height) return;
-
-    setImageHeights((current) => ({
-      ...current,
-      [index]: resolveImageHeight(width, height),
-    }));
   };
 
   const handleMediaPress = () => {
@@ -76,7 +60,7 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   };
 
   return (
-    <View style={[styles.wrapper, { height: activeHeight }]}>
+    <View style={styles.wrapper}>
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -85,34 +69,30 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH}
+        style={styles.scroll}
         onMomentumScrollEnd={handleScrollEnd}
       >
-        {media.map((item, index) => {
-          const slideHeight = imageHeights[index] ?? activeHeight;
-
-          return (
-            <Pressable
-              key={`${item.url}-${index}`}
-              accessibilityLabel={`Mídia ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
-              accessibilityRole="imagebutton"
-              style={[styles.slide, { height: slideHeight }]}
-              onPress={handleMediaPress}
-            >
-              {item.mediaType === "video" ? (
-                <FeedVideoPoster height={slideHeight} thumbnailUrl={item.thumbnailUrl} />
-              ) : (
-                <Image
-                  source={{ uri: item.url }}
-                  style={[styles.image, { height: slideHeight }]}
-                  cachePolicy="memory-disk"
-                  contentFit="contain"
-                  recyclingKey={item.url}
-                  onLoad={({ source }) => handleImageLoad(index, source.width, source.height)}
-                />
-              )}
-            </Pressable>
-          );
-        })}
+        {media.map((item, index) => (
+          <Pressable
+            key={`${item.url}-${index}`}
+            accessibilityLabel={`Mídia ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
+            accessibilityRole="imagebutton"
+            style={styles.slide}
+            onPress={handleMediaPress}
+          >
+            {item.mediaType === "video" ? (
+              <FeedVideoPoster thumbnailUrl={item.thumbnailUrl} />
+            ) : (
+              <Image
+                source={{ uri: item.url }}
+                style={styles.image}
+                cachePolicy="memory-disk"
+                contentFit="contain"
+                recyclingKey={item.url}
+              />
+            )}
+          </Pressable>
+        ))}
       </ScrollView>
 
       {media.length > 1 && (
@@ -151,28 +131,22 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   );
 }
 
-function FeedVideoPoster({
-  height,
-  thumbnailUrl,
-}: {
-  height: number;
-  thumbnailUrl?: string | null;
-}) {
+function FeedVideoPoster({ thumbnailUrl }: { thumbnailUrl?: string | null }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
 
   return (
-    <View style={[styles.videoContainer, { height }]}>
+    <View style={styles.videoContainer}>
       {thumbnailUrl ? (
         <Image
           source={{ uri: thumbnailUrl }}
-          style={[styles.video, { height }]}
+          style={styles.video}
           cachePolicy="memory-disk"
           contentFit="contain"
           recyclingKey={thumbnailUrl}
         />
       ) : (
-        <View style={[styles.video, styles.videoFallback, { height }]} />
+        <View style={[styles.video, styles.videoFallback]} />
       )}
       <View style={styles.playBadge} pointerEvents="none">
         <Ionicons name="play" size={22} color={colors.text.inverse} />
@@ -222,8 +196,8 @@ const createStyles = (colors: AppColors) =>
       right: 0,
     },
     image: {
-      backgroundColor: colors.border.subtle,
-      width: CARD_WIDTH,
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.surface.media,
     },
     playBadge: {
       alignItems: "center",
@@ -238,24 +212,30 @@ const createStyles = (colors: AppColors) =>
       top: "50%",
       width: 48,
     },
+    scroll: {
+      flex: 1,
+    },
     slide: {
+      height: "100%",
       width: CARD_WIDTH,
     },
     video: {
-      width: CARD_WIDTH,
+      ...StyleSheet.absoluteFillObject,
     },
     videoContainer: {
+      ...StyleSheet.absoluteFillObject,
       alignItems: "center",
       backgroundColor: colors.surface.video,
       justifyContent: "center",
-      width: CARD_WIDTH,
     },
     videoFallback: {
       backgroundColor: colors.surface.videoFallback,
     },
     wrapper: {
-      backgroundColor: colors.border.subtle,
+      aspectRatio: MEDIA_ASPECT_RATIO,
+      backgroundColor: colors.surface.media,
       overflow: "hidden",
       position: "relative",
+      width: CARD_WIDTH,
     },
   });

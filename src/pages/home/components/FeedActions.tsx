@@ -30,7 +30,7 @@ export function FeedActions({
         <Ionicons
           name={isLiked ? "heart" : "heart-outline"}
           size={20}
-          color={isLiked ? colors.feedback.danger : colors.text.muted}
+          color={isLiked ? colors.feedback.danger : colors.text.secondary}
         />
         <Text style={[styles.count, isLiked && styles.likedText]}>{likeCount}</Text>
       </Pressable>
@@ -39,13 +39,13 @@ export function FeedActions({
         <Ionicons
           name="chatbubble-outline"
           size={19}
-          color={commentsVisible ? colors.brandGreen : colors.text.muted}
+          color={commentsVisible ? colors.brandGreen : colors.text.secondary}
         />
         <Text style={[styles.count, commentsVisible && styles.commentsText]}>{commentCount}</Text>
       </Pressable>
 
       <Pressable style={[styles.action, styles.share]} hitSlop={8} onPress={onOpenShare}>
-        <Ionicons name="share-social-outline" size={20} color={colors.text.muted} />
+        <Ionicons name="share-social-outline" size={20} color={colors.text.secondary} />
         <Text style={styles.count}>Compartilhar</Text>
       </Pressable>
     </View>

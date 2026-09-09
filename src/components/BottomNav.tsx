@@ -140,7 +140,7 @@ export function BottomNav({ userAvatar, userName }: BottomNavProps) {
               </View>
             ) : (
               <Ionicons
-                color={active ? colors.brandPrimary : "#6B7280"}
+                color={active ? colors.brandGreen : colors.text.secondary}
                 name={item.icon}
                 size={22}
               />
@@ -188,7 +188,7 @@ const createStyles = (colors: AppColors) => ({
     top: 0,
   },
   indicatorActive: {
-    backgroundColor: colors.brandPrimary,
+    backgroundColor: colors.brandGreen,
   },
   item: {
     alignItems: "center",
@@ -205,7 +205,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "400",
   },
   labelActive: {
-    color: colors.brandPrimary,
+    color: colors.brandGreen,
     fontWeight: "600",
   },
 });
