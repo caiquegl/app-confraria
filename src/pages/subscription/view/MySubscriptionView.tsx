@@ -3,6 +3,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,11 +16,21 @@ import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { ErrorState } from "@/components/ErrorState";
+import { appLog } from "@/lib/app-log";
+import {
+  finishApplePurchase,
+  isAppleIapPlatform,
+  openAppleSubscriptionManagement,
+  purchaseAppleSubscription,
+  resolvePurchaseJws,
+  restoreApplePurchases,
+} from "../services/apple-iap";
 import {
   cancelSubscription,
   changeSubscriptionPlan,
   createSubscriptionCheckout,
   fetchSubscriptionMe,
+  verifyApplePurchase,
 } from "../services/subscription.service";
 import type {
   SubscriptionMe,
@@ -77,6 +88,7 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
   const [busyPlan, setBusyPlan] = useState<SubscriptionPlanCode | null>(null);
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>(null);
   const inFlightRef = useRef(false);
   const hasAttemptedRef = useRef(false);
@@ -130,11 +142,55 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
     );
   }, [subscription]);
 
+  const resolveAppleProductId = useCallback(
+    (plan: SubscriptionPlanCode) => {
+      const ids = subscription?.appleProductIds;
+      if (!ids) {
+        throw new Error(
+          "Product IDs Apple ainda não configurados. Atualize AppleIapConfig no backend.",
+        );
+      }
+      return plan === "annual" ? ids.annual : ids.monthly;
+    },
+    [subscription?.appleProductIds],
+  );
+
+  const subscribeWithApple = useCallback(
+    async (plan: SubscriptionPlanCode) => {
+      const productId = resolveAppleProductId(plan);
+      const purchase = await purchaseAppleSubscription(productId);
+      const signedTransactionInfo = await resolvePurchaseJws(purchase);
+      const latest = await verifyApplePurchase({
+        plan,
+        signedTransactionInfo,
+      });
+      await finishApplePurchase(purchase);
+      setSubscription(latest);
+      appLog.info("apple.iap.verify.client_ok", {
+        plan,
+        productId,
+      });
+      Toast.show({
+        type: "success",
+        text1: latest.isVip ? "VIP ativado" : "Compra enviada",
+        text2: latest.isVip
+          ? "Sua assinatura Apple já está ativa."
+          : "Aguarde a confirmação da Apple.",
+      });
+    },
+    [resolveAppleProductId],
+  );
+
   const subscribe = async (plan: SubscriptionPlanCode) => {
     if (busyPlan) return;
 
     setBusyPlan(plan);
     try {
+      if (isAppleIapPlatform()) {
+        await subscribeWithApple(plan);
+        return;
+      }
+
       const { checkoutUrl } = await createSubscriptionCheckout(plan);
       const result = await WebBrowser.openAuthSessionAsync(
         checkoutUrl,
@@ -172,8 +228,66 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
     }
   };
 
+  const handleRestoreApple = async () => {
+    if (isRestoring) return;
+    setIsRestoring(true);
+    try {
+      const purchases = await restoreApplePurchases();
+      if (purchases.length === 0) {
+        Toast.show({
+          type: "info",
+          text1: "Nenhuma compra encontrada",
+          text2: "Não há assinaturas Apple para restaurar nesta conta.",
+        });
+        return;
+      }
+
+      let latest: SubscriptionMe | null = null;
+      for (const purchase of purchases) {
+        const signedTransactionInfo = await resolvePurchaseJws(purchase);
+        latest = await verifyApplePurchase({ signedTransactionInfo });
+        await finishApplePurchase(purchase);
+      }
+
+      if (latest) {
+        setSubscription(latest);
+      } else {
+        await load();
+      }
+
+      Toast.show({
+        type: "success",
+        text1: "Compras restauradas",
+        text2: latest?.isVip
+          ? "Seu VIP Apple foi reativado."
+          : "Restauração concluída.",
+      });
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Falha ao restaurar",
+        text2: getErrorMessage(error, "Tente novamente mais tarde."),
+      });
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   const handleChangePlan = async (plan: SubscriptionPlanCode) => {
     if (isChangingPlan) return;
+
+    if (
+      isAppleIapPlatform() &&
+      (subscription?.billingProvider === "apple" || !subscription?.billingProvider)
+    ) {
+      setConfirmDialog(null);
+      try {
+        await openAppleSubscriptionManagement();
+      } catch {
+        await Linking.openURL("https://apps.apple.com/account/subscriptions");
+      }
+      return;
+    }
 
     setIsChangingPlan(true);
     try {
@@ -198,6 +312,16 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
 
   const handleCancel = async () => {
     if (isCanceling) return;
+
+    if (isAppleIapPlatform() && subscription?.billingProvider === "apple") {
+      setConfirmDialog(null);
+      try {
+        await openAppleSubscriptionManagement();
+      } catch {
+        await Linking.openURL("https://apps.apple.com/account/subscriptions");
+      }
+      return;
+    }
 
     setIsCanceling(true);
     try {
@@ -286,7 +410,7 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
                 </Text>
               </View>
 
-              {alternatePlan ? (
+              {alternatePlan && subscription.billingProvider !== "apple" ? (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Trocar plano</Text>
                   <Text style={styles.sectionHint}>
@@ -341,7 +465,10 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
                     <ActivityIndicator color={colors.brandDark} />
                   ) : (
                     <Text style={styles.cancelButtonText}>
-                      Cancelar no fim do período
+                      {isAppleIapPlatform() ||
+                      subscription.billingProvider === "apple"
+                        ? "Gerenciar na App Store"
+                        : "Cancelar no fim do período"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -359,6 +486,23 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
                   </Text>
                 </View>
               )}
+
+              {isAppleIapPlatform() || subscription.billingProvider === "apple" ? (
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  disabled={isRestoring}
+                  style={styles.secondaryButton}
+                  onPress={() => void handleRestoreApple()}
+                >
+                  {isRestoring ? (
+                    <ActivityIndicator color={colors.brandDark} />
+                  ) : (
+                    <Text style={styles.secondaryButtonText}>
+                      Restaurar compras Apple
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ) : null}
             </>
           ) : (
             <>
@@ -408,6 +552,23 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
                   </View>
                 );
               })}
+
+              {isAppleIapPlatform() ? (
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  disabled={isRestoring}
+                  style={styles.secondaryButton}
+                  onPress={() => void handleRestoreApple()}
+                >
+                  {isRestoring ? (
+                    <ActivityIndicator color={colors.brandDark} />
+                  ) : (
+                    <Text style={styles.secondaryButtonText}>
+                      Restaurar compras
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ) : null}
             </>
           )}
         </ScrollView>
@@ -418,12 +579,18 @@ export function MySubscriptionView({ onBack }: MySubscriptionViewProps) {
         confirmLabel={
           changePlanDialog
             ? `Confirmar ${changePlanLabel}`
-            : "Cancelar no fim do período"
+            : isAppleIapPlatform()
+              ? "Abrir App Store"
+              : "Cancelar no fim do período"
         }
         description={
           changePlanDialog
-            ? `A troca é imediata. Calculamos a diferença proporcional do plano ${changePlanLabel} (${formatAmount(changePlanDialog)} ${planPeriodLabel(changePlanDialog.code)}) e cobramos no cartão salvo agora. Se o pagamento falhar, o plano não muda.`
-            : "Você continua VIP até o fim do período já pago. A renovação automática será encerrada."
+            ? isAppleIapPlatform()
+              ? `No iOS, a troca de plano é feita na App Store. Vamos abrir a gestão de assinaturas.`
+              : `A troca é imediata. Calculamos a diferença proporcional do plano ${changePlanLabel} (${formatAmount(changePlanDialog)} ${planPeriodLabel(changePlanDialog.code)}) e cobramos no cartão salvo agora. Se o pagamento falhar, o plano não muda.`
+            : isAppleIapPlatform()
+              ? "No iOS, o cancelamento é feito na App Store. Vamos abrir a gestão de assinaturas."
+              : "Você continua VIP até o fim do período já pago. A renovação automática será encerrada."
         }
         headerTitle={
           changePlanDialog ? `Mudar para ${changePlanLabel}` : "Cancelar assinatura"
@@ -645,6 +812,18 @@ const createStyles = (colors: AppColors) => ({
     paddingVertical: 12,
   },
   cancelButtonText: {
+    color: colors.brandDark,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  secondaryButton: {
+    alignItems: "center",
+    backgroundColor: colors.brandGray,
+    borderRadius: 14,
+    minHeight: 48,
+    paddingVertical: 12,
+  },
+  secondaryButtonText: {
     color: colors.brandDark,
     fontSize: 14,
     fontWeight: "600",

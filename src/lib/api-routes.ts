@@ -225,6 +225,7 @@ export const apiRoutes = {
     checkout: "/subscriptions/checkout",
     changePlan: "/subscriptions/change-plan",
     cancel: "/subscriptions/cancel",
+    appleVerify: "/subscriptions/apple/verify",
   },
   stories: {
     create: "/stories",
