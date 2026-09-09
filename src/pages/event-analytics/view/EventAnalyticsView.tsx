@@ -126,7 +126,6 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
           firstName: contact.userName,
           id: contact.userId,
           isFriend: true,
-          isPremium: false,
           location: "Confraria",
           userId: contact.userId,
         })),
