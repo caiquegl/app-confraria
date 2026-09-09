@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Toast from "react-native-toast-message";
 
+import { appLog } from "@/lib/app-log";
 import { getCurrentUserId } from "@/lib/auth";
 import {
   connectRouteNavigationSocket,
@@ -20,6 +21,8 @@ type UseRouteLiveLocationsParams = {
   heading: number;
   routeId: string;
 };
+
+const STALE_LOG_THROTTLE_MS = 30_000;
 
 function locationTimestampMs(location: RouteLiveLocation): number {
   const parsed = Date.parse(location.updatedAt);
@@ -49,6 +52,7 @@ export function useRouteLiveLocations({
   const [isJoined, setIsJoined] = useState(false);
   const currentUserIdRef = useRef<string | null>(null);
   const lastAppliedAtByUserRef = useRef<Map<string, number>>(new Map());
+  const lastStaleLogAtByUserRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     void getCurrentUserId().then((userId) => {
@@ -62,6 +66,7 @@ export function useRouteLiveLocations({
       setConnectionError(null);
       setIsJoined(false);
       lastAppliedAtByUserRef.current.clear();
+      lastStaleLogAtByUserRef.current.clear();
       return;
     }
 
@@ -70,6 +75,10 @@ export function useRouteLiveLocations({
     const unsubscribeError = subscribeRouteNavigationError((payload) => {
       if (!isMounted) return;
       setConnectionError(payload.message);
+      appLog.warn("route.location.socket_error", {
+        message: payload.message,
+        routeId,
+      });
       Toast.show({
         text1: "Navegação em tempo real",
         text2: payload.message,
@@ -88,6 +97,10 @@ export function useRouteLiveLocations({
       });
       lastAppliedAtByUserRef.current = nextApplied;
       setPartners(filtered);
+      appLog.info("route.location.snapshot", {
+        partners: filtered.length,
+        routeId,
+      });
     });
 
     const unsubscribeUpdate = subscribeRouteLocationUpdate((location) => {
@@ -96,6 +109,17 @@ export function useRouteLiveLocations({
       const incomingAt = locationTimestampMs(location);
       const lastApplied = lastAppliedAtByUserRef.current.get(location.userId) ?? 0;
       if (incomingAt < lastApplied) {
+        const now = Date.now();
+        const lastLogAt = lastStaleLogAtByUserRef.current.get(location.userId) ?? 0;
+        if (now - lastLogAt >= STALE_LOG_THROTTLE_MS) {
+          lastStaleLogAtByUserRef.current.set(location.userId, now);
+          appLog.info("route.location.stale_ignored", {
+            incomingAt: location.updatedAt,
+            lastAppliedAt: new Date(lastApplied).toISOString(),
+            routeId,
+            userId: location.userId,
+          });
+        }
         return;
       }
 
@@ -116,6 +140,10 @@ export function useRouteLiveLocations({
           if (!isMounted) return;
           setIsJoined(false);
           setConnectionError("Não foi possível conectar na navegação em tempo real");
+          appLog.warn("route.location.join_fail", {
+            message: "socket null",
+            routeId,
+          });
           return;
         }
 
@@ -123,6 +151,7 @@ export function useRouteLiveLocations({
         if (isMounted) {
           setIsJoined(true);
           setConnectionError(null);
+          appLog.info("route.location.join_ok", { routeId });
         }
       } catch (error) {
         if (!isMounted) return;
@@ -132,6 +161,10 @@ export function useRouteLiveLocations({
             : "Não foi possível entrar na sala da rota";
         setIsJoined(false);
         setConnectionError(message);
+        appLog.warn("route.location.join_fail", {
+          message,
+          routeId,
+        });
         Toast.show({
           text1: "Navegação em tempo real",
           text2: message,

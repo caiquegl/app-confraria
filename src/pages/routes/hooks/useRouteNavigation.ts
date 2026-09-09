@@ -162,6 +162,7 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
   const rerouteAttemptIdRef = useRef(0);
   const rerouteAbortRef = useRef<AbortController | null>(null);
   const currentPositionRef = useRef<Coordinate | null>(null);
+  const lastAccuracySkipLogAtRef = useRef(0);
   const isArrivedRef = useRef(false);
   const isStoppedRef = useRef(false);
   const routeRef = useRef<RouteApiResponse | null>(null);
@@ -545,6 +546,19 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
       const isOffRoute =
         hasReliableGps && closest.distanceMeters > OFF_ROUTE_THRESHOLD_METERS;
 
+      if (!hasReliableGps) {
+        const now = Date.now();
+        if (now - lastAccuracySkipLogAtRef.current >= 30_000) {
+          lastAccuracySkipLogAtRef.current = now;
+          appLog.info("route.reroute.accuracy_skip", {
+            accuracyMeters,
+            distanceMeters: Math.round(closest.distanceMeters),
+            routeId,
+            thresholdMeters: MAX_GPS_ACCURACY_METERS,
+          });
+        }
+      }
+
       if (isOffRoute) {
         offRouteTicksRef.current += 1;
       } else if (hasReliableGps) {
@@ -646,7 +660,7 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
         onArrivedRef.current?.();
       }
     },
-    [advancePassedWaypoints, rerouteFromPosition],
+    [advancePassedWaypoints, rerouteFromPosition, routeId],
   );
 
   const publishHeading = useCallback((heading: number) => {
