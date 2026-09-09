@@ -256,7 +256,7 @@ function sendEventRequest(params: {
         return;
       }
 
-      reject(new Error(parseErrorMessage(xhr.responseText)));
+      reject(parseCreateEventError(xhr.responseText, xhr.status));
     };
 
     xhr.onerror = () => reject(new Error("Falha de conexão ao criar evento."));
@@ -265,16 +265,34 @@ function sendEventRequest(params: {
   });
 }
 
-function parseErrorMessage(responseText: string): string {
+function parseCreateEventError(responseText: string, status: number): Error {
   try {
-    const parsed = JSON.parse(responseText) as { message?: string | string[] };
-    if (Array.isArray(parsed.message)) return parsed.message.join("\n");
-    if (parsed.message) return parsed.message;
-  } catch {
-    // Keep generic message when backend response is not JSON.
-  }
+    const parsed = JSON.parse(responseText) as {
+      code?: string;
+      message?: string | string[] | { code?: string; message?: string };
+    };
 
-  return "Não foi possível criar o evento.";
+    const nested =
+      parsed.message && typeof parsed.message === "object" && !Array.isArray(parsed.message)
+        ? parsed.message
+        : null;
+    const code =
+      (typeof parsed.code === "string" && parsed.code) ||
+      (typeof nested?.code === "string" && nested.code) ||
+      undefined;
+    const message =
+      (typeof nested?.message === "string" && nested.message) ||
+      (Array.isArray(parsed.message) ? parsed.message.join("\n") : null) ||
+      (typeof parsed.message === "string" ? parsed.message : null) ||
+      "Não foi possível criar o evento.";
+
+    const error = new Error(message) as Error & { code?: string; status?: number };
+    if (code) error.code = code;
+    error.status = status;
+    return error;
+  } catch {
+    return new Error("Não foi possível criar o evento.");
+  }
 }
 
 function getFileExtension(uri: string): string {
