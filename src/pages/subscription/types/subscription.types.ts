@@ -8,6 +8,11 @@ export type SubscriptionPlan = {
 };
 
 export type SubscriptionMe = {
+  appleProductIds: {
+    annual: string;
+    monthly: string;
+  } | null;
+  billingProvider: "stripe" | "apple" | null;
   cancelAtPeriodEnd: boolean;
   currentPlan: SubscriptionPlanCode | null;
   isVip: boolean;
@@ -18,4 +23,9 @@ export type SubscriptionMe = {
 
 export type CheckoutResponse = {
   checkoutUrl: string;
+};
+
+export type VerifyApplePurchaseRequest = {
+  plan?: SubscriptionPlanCode;
+  signedTransactionInfo: string;
 };

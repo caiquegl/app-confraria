@@ -26,6 +26,7 @@ module.exports = {
     },
     plugins: [
       ...appJson.expo.plugins,
+      "expo-iap",
       [
         "react-native-maps",
         {

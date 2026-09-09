@@ -5,6 +5,7 @@ import type {
   CheckoutResponse,
   SubscriptionMe,
   SubscriptionPlanCode,
+  VerifyApplePurchaseRequest,
 } from "../types/subscription.types";
 
 export async function fetchSubscriptionMe(): Promise<SubscriptionMe> {
@@ -35,6 +36,16 @@ export async function changeSubscriptionPlan(
 export async function cancelSubscription(): Promise<SubscriptionMe> {
   const { data } = await api.post<SubscriptionMe>(
     apiRoutes.subscriptions.cancel,
+  );
+  return data;
+}
+
+export async function verifyApplePurchase(
+  payload: VerifyApplePurchaseRequest,
+): Promise<SubscriptionMe> {
+  const { data } = await api.post<SubscriptionMe>(
+    apiRoutes.subscriptions.appleVerify,
+    payload,
   );
   return data;
 }
