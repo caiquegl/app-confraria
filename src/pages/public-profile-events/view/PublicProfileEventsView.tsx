@@ -203,7 +203,7 @@ export function PublicProfileEventsView({
 
           {!shouldShowLoading && !shouldShowError && events.length > 0 ? (
             <View style={styles.eventsList}>
-              {events.map((event, index) => {
+              {events.map((event) => {
                 const primaryBadge = getPrimaryEventBadge(event);
 
                 return (
