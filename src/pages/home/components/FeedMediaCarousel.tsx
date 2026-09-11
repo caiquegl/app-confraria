@@ -348,7 +348,7 @@ const createStyles = (colors: AppColors) =>
       width: 48,
     },
     playerOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: colors.surface.video,
       zIndex: 1,
     },
