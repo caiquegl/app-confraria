@@ -1,15 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as VideoThumbnails from "expo-video-thumbnails";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  Keyboard,
-  KeyboardAvoidingView,
   Modal,
   PanResponder,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +14,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -28,6 +26,8 @@ import type { ComposeAudience, ComposeFeedMedia } from "../types/feed.types";
 const THUMBNAIL_SIZE = 80;
 const THUMBNAIL_GAP = 12;
 const THUMBNAIL_STEP = THUMBNAIL_SIZE + THUMBNAIL_GAP;
+/** Approximate publish footer height so the caption stays above the keyboard. */
+const COMPOSER_FOOTER_OFFSET = 88;
 
 type NewPostComposerProps = {
   activePhotoIndex: number;
@@ -67,11 +67,8 @@ export function NewPostComposer({
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
-  const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
   const activeMedia = media[activePhotoIndex] ?? media[0];
   const uploadPercent = Math.round(Math.min(Math.max(postUploadProgress, 0), 1) * 100);
-  const isAndroidKeyboardVisible = Platform.OS === "android" && androidKeyboardHeight > 0;
 
   useEffect(() => {
     if (restrictToFollowers && audience !== "friends") {
@@ -79,41 +76,13 @@ export function NewPostComposer({
     }
   }, [audience, onChangeAudience, restrictToFollowers]);
 
-  useEffect(() => {
-    if (Platform.OS !== "android") return;
-
-    const showSubscription = Keyboard.addListener("keyboardDidShow", (event) => {
-      setAndroidKeyboardHeight(event.endCoordinates.height);
-    });
-    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-      setAndroidKeyboardHeight(0);
-    });
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
-
   const handlePublishPress = () => {
     void onPublish();
   };
 
-  const handleCaptionFocus = () => {
-    if (Platform.OS !== "android") return;
-
-    setTimeout(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    }, 120);
-  };
-
   return (
     <Modal animationType="slide" visible={visible} statusBarTranslucent>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        enabled={Platform.OS === "ios"}
-        style={styles.screen}
-      >
+      <View style={styles.screen}>
         <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Pressable
             accessibilityLabel="Voltar para o feed"
@@ -128,17 +97,15 @@ export function NewPostComposer({
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView
-          ref={scrollRef}
-          style={styles.content}
+        <KeyboardAwareScrollView
+          bottomOffset={COMPOSER_FOOTER_OFFSET + Math.max(insets.bottom, 16)}
           contentContainerStyle={[
             styles.contentContainer,
-            isAndroidKeyboardVisible && {
-              paddingBottom: androidKeyboardHeight + 56,
-            },
+            { paddingBottom: Math.max(insets.bottom, 16) + COMPOSER_FOOTER_OFFSET },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          style={styles.content}
         >
           {activeMedia && (
             <View style={styles.previewCard}>
@@ -180,7 +147,6 @@ export function NewPostComposer({
             placeholder="Adicione uma legenda obrigatória..."
             placeholderTextColor={colors.text.placeholderMuted}
             style={styles.captionInput}
-            onFocus={handleCaptionFocus}
             onChangeText={onChangeCaption}
           />
 
@@ -203,13 +169,12 @@ export function NewPostComposer({
               <Text style={styles.audienceText}>Seguidores</Text>
             </Pressable>
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
 
         <View
           style={[
             styles.footer,
             { paddingBottom: Math.max(insets.bottom, 16) },
-            isAndroidKeyboardVisible && styles.footerHidden,
           ]}
         >
           <Button
@@ -241,7 +206,7 @@ export function NewPostComposer({
           </View>
         )}
         <Toast topOffset={insets.top + 12} />
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -448,9 +413,6 @@ const createStyles = (colors: AppColors) => ({
     borderTopWidth: 1,
     paddingHorizontal: 24,
     paddingTop: 14,
-  },
-  footerHidden: {
-    display: "none",
   },
   header: {
     alignItems: "center",
