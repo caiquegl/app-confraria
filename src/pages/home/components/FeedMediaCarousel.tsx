@@ -4,6 +4,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -35,9 +36,22 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [activeIndex, setActiveIndex] = useState(0);
+  /** Índice do vídeo em reprodução — player fica FORA do ScrollView para evitar tela preta no iOS. */
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const lastPressAtRef = useRef(0);
   const loggedEmptyRef = useRef(false);
+
+  useEffect(() => {
+    if (playingIndex == null) return;
+    if (playingIndex === activeIndex) return;
+    appLog.info("feed.media.video_stop", {
+      index: playingIndex,
+      reason: "slide_change",
+      title,
+    });
+    setPlayingIndex(null);
+  }, [activeIndex, playingIndex, title]);
 
   if (media.length === 0) {
     if (!loggedEmptyRef.current) {
@@ -47,10 +61,28 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
     return null;
   }
 
+  const playingItem =
+    playingIndex != null && media[playingIndex]?.mediaType === "video"
+      ? media[playingIndex]
+      : null;
+
+  const stopPlayback = (reason: string) => {
+    setPlayingIndex((current) => {
+      if (current == null) return current;
+      appLog.info("feed.media.video_stop", { index: current, reason, title });
+      return null;
+    });
+  };
+
   const scrollToIndex = (index: number) => {
     const clamped = Math.max(0, Math.min(index, media.length - 1));
+    stopPlayback("arrow");
     scrollRef.current?.scrollTo({ animated: true, x: CARD_WIDTH * clamped });
     setActiveIndex(clamped);
+  };
+
+  const handleScrollBeginDrag = () => {
+    stopPlayback("scroll_begin");
   };
 
   const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -58,7 +90,7 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
     setActiveIndex(nextIndex);
   };
 
-  const handleMediaPress = (onSinglePress?: () => void) => {
+  const handleMediaPress = (index: number, mediaType: FeedPostMedia["mediaType"]) => {
     const now = Date.now();
 
     if (now - lastPressAtRef.current < 280) {
@@ -68,13 +100,22 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
     }
 
     lastPressAtRef.current = now;
-    if (onSinglePress) {
-      setTimeout(() => {
-        if (lastPressAtRef.current === now) {
-          onSinglePress();
+
+    if (mediaType !== "video") return;
+
+    setTimeout(() => {
+      if (lastPressAtRef.current !== now) return;
+
+      setPlayingIndex((current) => {
+        if (current === index) {
+          appLog.info("feed.media.video_stop", { index, reason: "tap_pause", title });
+          return null;
         }
-      }, 280);
-    }
+
+        appLog.info("feed.media.video_play", { index, title });
+        return index;
+      });
+    }, 280);
   };
 
   return (
@@ -88,54 +129,68 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH}
         style={styles.scroll}
+        onScrollBeginDrag={handleScrollBeginDrag}
         onMomentumScrollEnd={handleScrollEnd}
+        onScrollEndDrag={handleScrollEnd}
       >
         {media.map((item, index) => (
-          <View key={`${item.url}-${index}`} style={styles.slide}>
+          <Pressable
+            key={`${item.url}-${index}`}
+            accessibilityLabel={
+              item.mediaType === "video"
+                ? `Vídeo ${index + 1} de ${title}. Toque para reproduzir. Toque duas vezes para curtir.`
+                : `Mídia ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`
+            }
+            accessibilityRole="button"
+            style={styles.slide}
+            onPress={() => handleMediaPress(index, item.mediaType)}
+          >
             {item.mediaType === "video" ? (
-              <FeedVideoSlide
-                isActive={index === activeIndex}
-                item={item}
-                title={title}
-                onPressMedia={handleMediaPress}
-              />
+              <View style={styles.videoContainer}>
+                <FeedVideoPoster thumbnailUrl={item.thumbnailUrl} />
+                {playingIndex !== index && (
+                  <View style={styles.playBadge} pointerEvents="none">
+                    <Ionicons name="play" size={22} color={colors.text.inverse} />
+                  </View>
+                )}
+              </View>
             ) : (
-              <Pressable
-                accessibilityLabel={`Mídia ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
-                accessibilityRole="imagebutton"
-                style={styles.imagePressable}
-                onPress={() => handleMediaPress()}
-              >
-                <Image
-                  source={{ uri: item.url }}
-                  style={styles.image}
-                  cachePolicy="memory-disk"
-                  contentFit="contain"
-                  recyclingKey={item.url}
-                  onError={() => {
-                    appLog.warn("feed.media.load_failed", {
-                      index,
-                      mediaType: item.mediaType,
+              <Image
+                source={{ uri: item.url }}
+                style={styles.image}
+                cachePolicy="memory-disk"
+                contentFit="contain"
+                recyclingKey={item.url}
+                onError={() => {
+                  appLog.warn("feed.media.load_failed", {
+                    index,
+                    mediaType: item.mediaType,
+                    title,
+                    urlHost: safeUrlHost(item.url),
+                  });
+                }}
+                onLoad={() => {
+                  if (index === 0) {
+                    appLog.info("feed.media.load_ok", {
+                      count: media.length,
+                      height: MEDIA_HEIGHT,
                       title,
-                      urlHost: safeUrlHost(item.url),
+                      width: CARD_WIDTH,
                     });
-                  }}
-                  onLoad={() => {
-                    if (index === 0) {
-                      appLog.info("feed.media.load_ok", {
-                        count: media.length,
-                        height: MEDIA_HEIGHT,
-                        title,
-                        width: CARD_WIDTH,
-                      });
-                    }
-                  }}
-                />
-              </Pressable>
+                  }
+                }}
+              />
             )}
-          </View>
+          </Pressable>
         ))}
       </ScrollView>
+
+      {/* Player fora do ScrollView: evita layer nativa preta ao arrastar no iOS. */}
+      {playingItem ? (
+        <View pointerEvents="none" style={styles.playerOverlay}>
+          <FeedVideoPlayer url={playingItem.url} />
+        </View>
+      ) : null}
 
       {media.length > 1 && (
         <>
@@ -173,52 +228,6 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   );
 }
 
-function FeedVideoSlide({
-  isActive,
-  item,
-  onPressMedia,
-  title,
-}: {
-  isActive: boolean;
-  item: FeedPostMedia;
-  onPressMedia: (onSinglePress?: () => void) => void;
-  title: string;
-}) {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  useEffect(() => {
-    if (!isActive) {
-      setIsPlaying(false);
-    }
-  }, [isActive]);
-
-  const togglePlayback = () => {
-    setIsPlaying((current) => !current);
-  };
-
-  return (
-    <Pressable
-      accessibilityLabel={`Vídeo de ${title}. Toque para reproduzir. Toque duas vezes para curtir.`}
-      accessibilityRole="button"
-      style={styles.videoContainer}
-      onPress={() => onPressMedia(togglePlayback)}
-    >
-      {isPlaying && isActive ? (
-        <FeedVideoPlayer url={item.url} />
-      ) : (
-        <FeedVideoPoster thumbnailUrl={item.thumbnailUrl} />
-      )}
-      {!isPlaying && (
-        <View style={styles.playBadge} pointerEvents="none">
-          <Ionicons name="play" size={22} color={colors.text.inverse} />
-        </View>
-      )}
-    </Pressable>
-  );
-}
-
 function FeedVideoPlayer({ url }: { url: string }) {
   const styles = useThemedStyles(createStyles);
   const player = useVideoPlayer(url, (instance) => {
@@ -229,7 +238,11 @@ function FeedVideoPlayer({ url }: { url: string }) {
   useEffect(() => {
     player.play();
     return () => {
-      player.pause();
+      try {
+        player.pause();
+      } catch {
+        // Native player may already be released on unmount.
+      }
     };
   }, [player]);
 
@@ -240,6 +253,7 @@ function FeedVideoPlayer({ url }: { url: string }) {
       contentFit="contain"
       nativeControls={false}
       allowsPictureInPicture={false}
+      {...(Platform.OS === "android" ? { surfaceType: "textureView" as const } : null)}
     />
   );
 }
@@ -284,6 +298,7 @@ const createStyles = (colors: AppColors) =>
       position: "absolute",
       top: "50%",
       width: 36,
+      zIndex: 3,
     },
     arrowLeft: {
       left: 12,
@@ -312,14 +327,12 @@ const createStyles = (colors: AppColors) =>
       left: 0,
       position: "absolute",
       right: 0,
+      zIndex: 3,
     },
     image: {
       backgroundColor: colors.surface.media,
       height: MEDIA_HEIGHT,
       width: CARD_WIDTH,
-    },
-    imagePressable: {
-      flex: 1,
     },
     playBadge: {
       alignItems: "center",
@@ -334,8 +347,14 @@ const createStyles = (colors: AppColors) =>
       top: "50%",
       width: 48,
     },
+    playerOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: colors.surface.video,
+      zIndex: 1,
+    },
     scroll: {
       height: MEDIA_HEIGHT,
+      zIndex: 0,
     },
     slide: {
       height: MEDIA_HEIGHT,

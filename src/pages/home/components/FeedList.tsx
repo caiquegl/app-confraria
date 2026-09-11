@@ -2,6 +2,7 @@ import { useCallback, useRef } from "react";
 import type { ReactElement } from "react";
 import {
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -178,7 +179,7 @@ export function FeedList({
       maxToRenderPerBatch={3}
       refreshing={isRefreshing}
       windowSize={5}
-      removeClippedSubviews
+      removeClippedSubviews={Platform.OS === "android"}
       updateCellsBatchingPeriod={50}
       onEndReached={handleEndReached}
       onEndReachedThreshold={0.4}
