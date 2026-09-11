@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -40,10 +41,16 @@ export function PlaceAutocompleteField({
 }: PlaceAutocompleteFieldProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const inputRef = useRef<TextInput>(null);
   const [query, setQuery] = useState(value?.description ?? "");
   const [suggestions, setSuggestions] = useState<PlaceReference[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+
+  const dismissSearchFocus = () => {
+    inputRef.current?.blur();
+    Keyboard.dismiss();
+  };
 
   useEffect(() => {
     if (!value) {
@@ -127,6 +134,7 @@ export function PlaceAutocompleteField({
     setSuggestions([]);
     setHasError(false);
     setIsLoading(false);
+    dismissSearchFocus();
     onChange(place);
   };
 
@@ -135,6 +143,7 @@ export function PlaceAutocompleteField({
     setSuggestions([]);
     setHasError(false);
     setIsLoading(false);
+    dismissSearchFocus();
     onChange(null);
   };
 
@@ -157,13 +166,17 @@ export function PlaceAutocompleteField({
       <View style={[styles.inputWrap, compact && styles.inputWrapCompact]}>
         <Ionicons color={colors.text.muted} name="location-outline" size={compact ? 16 : 18} />
         <TextInput
+          ref={inputRef}
           autoCapitalize="words"
+          blurOnSubmit
           editable={editable}
           placeholder={placeholder}
           placeholderTextColor={colors.text.placeholder}
+          returnKeyType="search"
           style={[styles.input, compact && styles.inputCompact]}
           value={query}
           onChangeText={handleChangeText}
+          onSubmitEditing={dismissSearchFocus}
         />
         {isLoading ? <ActivityIndicator color={colors.brandDark} size="small" /> : null}
         {query && editable ? (
