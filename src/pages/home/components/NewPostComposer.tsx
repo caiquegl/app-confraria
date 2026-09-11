@@ -9,7 +9,6 @@ import {
   PanResponder,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
