@@ -82,7 +82,7 @@
         "expo-camera",
         {
           "cameraPermission": "Permita que o Confraria acesse sua câmera para criar postagens.",
-          "microphonePermission": "Permita que o Confraria acesse seu microfone para gravar vídeos nos stories."
+          "microphonePermission": "Permita que o Confraria acesse seu microfone para gravar vídeos nas postagens."
         }
       ],
       [

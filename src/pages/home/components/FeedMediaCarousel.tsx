@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRef, useState } from "react";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Pressable,
@@ -57,7 +58,7 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
     setActiveIndex(nextIndex);
   };
 
-  const handleMediaPress = () => {
+  const handleMediaPress = (onSinglePress?: () => void) => {
     const now = Date.now();
 
     if (now - lastPressAtRef.current < 280) {
@@ -67,6 +68,13 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
     }
 
     lastPressAtRef.current = now;
+    if (onSinglePress) {
+      setTimeout(() => {
+        if (lastPressAtRef.current === now) {
+          onSinglePress();
+        }
+      }, 280);
+    }
   };
 
   return (
@@ -83,43 +91,49 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
         onMomentumScrollEnd={handleScrollEnd}
       >
         {media.map((item, index) => (
-          <Pressable
-            key={`${item.url}-${index}`}
-            accessibilityLabel={`Mídia ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
-            accessibilityRole="imagebutton"
-            style={styles.slide}
-            onPress={handleMediaPress}
-          >
+          <View key={`${item.url}-${index}`} style={styles.slide}>
             {item.mediaType === "video" ? (
-              <FeedVideoPoster thumbnailUrl={item.thumbnailUrl} />
-            ) : (
-              <Image
-                source={{ uri: item.url }}
-                style={styles.image}
-                cachePolicy="memory-disk"
-                contentFit="contain"
-                recyclingKey={item.url}
-                onError={() => {
-                  appLog.warn("feed.media.load_failed", {
-                    index,
-                    mediaType: item.mediaType,
-                    title,
-                    urlHost: safeUrlHost(item.url),
-                  });
-                }}
-                onLoad={() => {
-                  if (index === 0) {
-                    appLog.info("feed.media.load_ok", {
-                      count: media.length,
-                      height: MEDIA_HEIGHT,
-                      title,
-                      width: CARD_WIDTH,
-                    });
-                  }
-                }}
+              <FeedVideoSlide
+                isActive={index === activeIndex}
+                item={item}
+                title={title}
+                onPressMedia={handleMediaPress}
               />
+            ) : (
+              <Pressable
+                accessibilityLabel={`Mídia ${index + 1} de ${title}. Toque duas vezes para curtir ou descurtir.`}
+                accessibilityRole="imagebutton"
+                style={styles.imagePressable}
+                onPress={() => handleMediaPress()}
+              >
+                <Image
+                  source={{ uri: item.url }}
+                  style={styles.image}
+                  cachePolicy="memory-disk"
+                  contentFit="contain"
+                  recyclingKey={item.url}
+                  onError={() => {
+                    appLog.warn("feed.media.load_failed", {
+                      index,
+                      mediaType: item.mediaType,
+                      title,
+                      urlHost: safeUrlHost(item.url),
+                    });
+                  }}
+                  onLoad={() => {
+                    if (index === 0) {
+                      appLog.info("feed.media.load_ok", {
+                        count: media.length,
+                        height: MEDIA_HEIGHT,
+                        title,
+                        width: CARD_WIDTH,
+                      });
+                    }
+                  }}
+                />
+              </Pressable>
             )}
-          </Pressable>
+          </View>
         ))}
       </ScrollView>
 
@@ -159,32 +173,95 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   );
 }
 
-function FeedVideoPoster({ thumbnailUrl }: { thumbnailUrl?: string | null }) {
+function FeedVideoSlide({
+  isActive,
+  item,
+  onPressMedia,
+  title,
+}: {
+  isActive: boolean;
+  item: FeedPostMedia;
+  onPressMedia: (onSinglePress?: () => void) => void;
+  title: string;
+}) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    if (!isActive) {
+      setIsPlaying(false);
+    }
+  }, [isActive]);
+
+  const togglePlayback = () => {
+    setIsPlaying((current) => !current);
+  };
 
   return (
-    <View style={styles.videoContainer}>
-      {thumbnailUrl ? (
-        <Image
-          source={{ uri: thumbnailUrl }}
-          style={styles.video}
-          cachePolicy="memory-disk"
-          contentFit="contain"
-          recyclingKey={thumbnailUrl}
-          onError={() => {
-            appLog.warn("feed.media.video_thumb_failed", {
-              urlHost: safeUrlHost(thumbnailUrl),
-            });
-          }}
-        />
+    <Pressable
+      accessibilityLabel={`Vídeo de ${title}. Toque para reproduzir. Toque duas vezes para curtir.`}
+      accessibilityRole="button"
+      style={styles.videoContainer}
+      onPress={() => onPressMedia(togglePlayback)}
+    >
+      {isPlaying && isActive ? (
+        <FeedVideoPlayer url={item.url} />
       ) : (
-        <View style={[styles.video, styles.videoFallback]} />
+        <FeedVideoPoster thumbnailUrl={item.thumbnailUrl} />
       )}
-      <View style={styles.playBadge} pointerEvents="none">
-        <Ionicons name="play" size={22} color={colors.text.inverse} />
-      </View>
-    </View>
+      {!isPlaying && (
+        <View style={styles.playBadge} pointerEvents="none">
+          <Ionicons name="play" size={22} color={colors.text.inverse} />
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+function FeedVideoPlayer({ url }: { url: string }) {
+  const styles = useThemedStyles(createStyles);
+  const player = useVideoPlayer(url, (instance) => {
+    instance.loop = true;
+    instance.play();
+  });
+
+  useEffect(() => {
+    player.play();
+    return () => {
+      player.pause();
+    };
+  }, [player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.video}
+      contentFit="contain"
+      nativeControls={false}
+      allowsPictureInPicture={false}
+    />
+  );
+}
+
+function FeedVideoPoster({ thumbnailUrl }: { thumbnailUrl?: string | null }) {
+  const styles = useThemedStyles(createStyles);
+
+  return thumbnailUrl ? (
+    <Image
+      source={{ uri: thumbnailUrl }}
+      style={styles.video}
+      cachePolicy="memory-disk"
+      contentFit="contain"
+      recyclingKey={thumbnailUrl}
+      onError={() => {
+        appLog.warn("feed.media.video_thumb_failed", {
+          urlHost: safeUrlHost(thumbnailUrl),
+        });
+      }}
+    />
+  ) : (
+    <View style={[styles.video, styles.videoFallback]} />
   );
 }
 
@@ -240,6 +317,9 @@ const createStyles = (colors: AppColors) =>
       backgroundColor: colors.surface.media,
       height: MEDIA_HEIGHT,
       width: CARD_WIDTH,
+    },
+    imagePressable: {
+      flex: 1,
     },
     playBadge: {
       alignItems: "center",

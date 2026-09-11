@@ -5,6 +5,10 @@ import { apiRoutes } from "@/lib/api-routes";
 import { getApiBaseUrl } from "@/lib/api-environment";
 import { getToken } from "@/lib/auth";
 import { optimizeImageForUpload } from "@/lib/media-optimization";
+import {
+  getFeedVideoDurationError,
+  normalizeVideoDurationMs,
+} from "@/lib/video-duration";
 
 import type {
   ComposeFeedMedia,
@@ -134,6 +138,10 @@ export async function createFeedPost(params: {
   media: ComposeFeedMedia[];
   onUploadProgress?: UploadProgressHandler;
 }): Promise<FeedPost> {
+  if (params.media.length === 0) {
+    throw new Error("Adicione pelo menos uma mídia para publicar.");
+  }
+
   const formData = new FormData();
 
   formData.append("audience", params.audience);
@@ -149,16 +157,30 @@ export async function createFeedPost(params: {
         const optimizedImage = await optimizeImageForUpload(media.uri);
         return {
           ...media,
+          durationMs: null,
           extension: optimizedImage.extension,
           mimeType: optimizedImage.mimeType,
           uri: optimizedImage.uri,
         };
       }
 
+      const durationMs = normalizeVideoDurationMs(media.durationMs);
+      const durationError = getFeedVideoDurationError(durationMs);
+      if (durationError) {
+        throw new Error(durationError);
+      }
+
       const thumbnailUri = media.thumbnailUri ?? await generateVideoThumbnail(media.uri);
+      if (!thumbnailUri) {
+        throw new Error(
+          "Não foi possível gerar a miniatura do vídeo. Tente outro arquivo.",
+        );
+      }
+
       const extension = getFileExtension(media.uri, media.mediaType);
       return {
         ...media,
+        durationMs,
         extension,
         mimeType: getMimeType(extension, media.mediaType),
         thumbnailUri,
@@ -236,7 +258,11 @@ function sendFeedPostRequest(params: {
     };
 
     xhr.onerror = () => {
-      reject(new Error("Erro de rede ao enviar imagens. Verifique se o backend está acessível pelo celular."));
+      reject(
+        new Error(
+          "Erro de rede ao enviar mídias. Verifique se o backend está acessível pelo celular.",
+        ),
+      );
     };
 
     xhr.ontimeout = () => {

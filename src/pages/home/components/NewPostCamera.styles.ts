@@ -114,14 +114,13 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
   },
-  modeButton: {
+    modeButton: {
     alignItems: "center",
     alignSelf: "center",
     backgroundColor: colors.overlay.scrimStrong,
     borderColor: "rgba(255,255,255,0.24)",
     borderRadius: 999,
     borderWidth: 1,
-    bottom: 130,
     flexDirection: "row",
     gap: 8,
     marginBottom: 10,
