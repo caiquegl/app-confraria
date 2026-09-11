@@ -80,8 +80,6 @@ function areCanvasPropsEqual(
   prev: RoutePlannerMapCanvasProps,
   next: RoutePlannerMapCanvasProps,
 ): boolean {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
   return (
     prev.onSelectRouteOption === next.onSelectRouteOption &&
     prev.userLocation === next.userLocation &&
