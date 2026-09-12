@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
 import { ErrorState, isTechnicalErrorMessage } from "@/components/ErrorState";
+import { appLog } from "@/lib/app-log";
 import { getCurrentUserId } from "@/lib/auth";
 import { getApiErrorMessage } from "@/lib/password-reset";
 import {
@@ -144,6 +145,11 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   }, []);
 
   useEffect(() => {
+    appLog.info("route-nav:view:mount", { routeId });
+    return () => appLog.info("route-nav:view:unmount", { routeId });
+  }, [routeId]);
+
+  useEffect(() => {
     if (!route || route.status !== "in_progress") return;
 
     void ensureRouteBackgroundTracking(route.id, route.title).catch((error) => {
@@ -250,6 +256,28 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
     [routeId],
   );
 
+  const isAnyCameraOpen =
+    media.isMapPinCameraOpen || media.isStoryCameraOpen || media.isCameraOpen;
+
+  const renderPhase = navigation.state.error
+    ? "error"
+    : navigation.state.isLoading
+      ? "loading"
+      : phase === "completed"
+        ? "completed"
+        : "navigating";
+
+  // Só a troca de branch interessa: é o que distingue "mapa preto" de
+  // "tela preta". Sem isso a navegação não deixa rastro nenhum.
+  useEffect(() => {
+    appLog.info("route-nav:view:render", {
+      cameraOpen: isAnyCameraOpen,
+      message: navigation.state.error ?? undefined,
+      phase: renderPhase,
+      routeId,
+    });
+  }, [isAnyCameraOpen, navigation.state.error, renderPhase, routeId]);
+
   if (navigation.state.error) {
     const isFinished = navigation.state.error === "Esta rota já foi finalizada";
     const title = isTechnicalErrorMessage(navigation.state.error)
@@ -279,7 +307,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
   if (navigation.state.isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator color={colors.brandDark} size="large" />
+        <ActivityIndicator color={colors.text.primary} size="large" />
         <Text style={styles.loadingText}>Preparando navegação...</Text>
       </View>
     );
@@ -300,9 +328,6 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
       />
     );
   }
-
-  const isAnyCameraOpen =
-    media.isMapPinCameraOpen || media.isStoryCameraOpen || media.isCameraOpen;
 
   return (
     <View style={styles.screen}>

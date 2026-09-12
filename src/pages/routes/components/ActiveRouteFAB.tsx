@@ -31,7 +31,8 @@ export function ActiveRouteFAB({ bottomOffset = 86, onPress }: ActiveRouteFABPro
           <View style={styles.dot} />
         </View>
         <Text style={styles.label}>Rota ativa</Text>
-        <Ionicons color={colors.brandDark} name="navigate" size={14} />
+        {/* `brandDark` inverte para quase branco no tema escuro e some sobre o lima. */}
+        <Ionicons color={colors.text.onBrand} name="navigate" size={14} />
       </Pressable>
     </View>
   );
@@ -39,14 +40,14 @@ export function ActiveRouteFAB({ bottomOffset = 86, onPress }: ActiveRouteFABPro
 
 const createStyles = (colors: AppColors) => ({
   dot: {
-    backgroundColor: colors.brandDark,
+    backgroundColor: colors.text.onBrand,
     borderRadius: 999,
     height: 10,
     width: 10,
   },
   dotPing: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.brandDark,
+    backgroundColor: colors.text.onBrand,
     borderRadius: 999,
     opacity: 0.35,
     transform: [{ scale: 1.8 }],
@@ -58,7 +59,7 @@ const createStyles = (colors: AppColors) => ({
     width: 10,
   },
   label: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 14,
     fontWeight: "700",
     letterSpacing: 0.2,

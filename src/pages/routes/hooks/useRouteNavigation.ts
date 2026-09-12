@@ -169,6 +169,7 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
   const isMovingRef = useRef(false);
   const headingSmootherRef = useRef(createHeadingSmoother());
   const lastHeadingPublishAtRef = useRef(0);
+  const hasLoggedFirstFixRef = useRef(false);
   const isReroutingRef = useRef(false);
   const lastRerouteAtRef = useRef(0);
   const offRouteTicksRef = useRef(0);
@@ -474,8 +475,14 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
 
     setState((current) => ({ ...current, isLoading: true }));
 
+    appLog.info("route-nav:load:start", { routeId });
+
     try {
       const route = await fetchRoute(routeId);
+      appLog.info("route-nav:load:route-ok", {
+        routeId,
+        status: route.status,
+      });
 
       if (route.status === "finished") {
         setState((current) => ({
@@ -491,6 +498,7 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
       if (waypoints.length < 2) {
         throw new Error("Rota sem coordenadas suficientes para navegação");
       }
+      appLog.info("route-nav:load:waypoints", { count: waypoints.length, routeId });
 
       waypointsRef.current = waypoints;
       nextWaypointIndexRef.current = 1;
@@ -516,7 +524,16 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
       routeRef.current = route;
       setActiveNavigationRouteId(route.id);
       applyDirectionsToNavigation(selectedRoute, route);
+      appLog.info("route-nav:load:ready", {
+        polylinePoints: routePolylineRef.current.length,
+        routeId,
+        steps: (selectedRoute.steps ?? []).length,
+      });
     } catch (error) {
+      appLog.error("route-nav:load:failed", {
+        message: error instanceof Error ? error.message : String(error),
+        routeId,
+      });
       captureRouteError(error, {
         routeId,
         screen: "RouteNavigation",
@@ -710,6 +727,8 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
 
     void (async () => {
       const permission = await Location.requestForegroundPermissionsAsync();
+      appLog.info("route-nav:location:permission", { granted: permission.granted });
+
       if (!permission.granted) {
         setState((current) => ({
           ...current,
@@ -750,6 +769,14 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
             latitude: update.coords.latitude,
             longitude: update.coords.longitude,
           };
+
+          if (!hasLoggedFirstFixRef.current) {
+            hasLoggedFirstFixRef.current = true;
+            appLog.info("route-nav:location:first-fix", {
+              accuracy: update.coords.accuracy ?? null,
+              hasGpsHeading: update.coords.heading != null && update.coords.heading >= 0,
+            });
+          }
 
           const speed =
             update.coords.speed != null && update.coords.speed >= 0

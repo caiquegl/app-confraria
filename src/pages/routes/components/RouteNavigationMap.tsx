@@ -6,6 +6,7 @@ import Svg, { Path } from "react-native-svg";
 
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
+import { appLog } from "@/lib/app-log";
 import type { RouteLiveLocation, RouteLiveReport } from "@/lib/route-navigation-socket";
 
 import type { RouteNavigationState } from "../hooks/useRouteNavigation";
@@ -15,10 +16,12 @@ import { RoutePhotoClusterMarker } from "./RoutePhotoClusterMarker";
 import {
   CAMERA_ANIMATION_MS,
   CAMERA_TICK_MS,
+  CAMERA_WATCHDOG_MS,
   CAMERA_ZOOM_ANIMATION_MS,
   DEFAULT_NAVIGATION_PITCH,
   DEFAULT_NAVIGATION_ZOOM,
   getNavigationMapPadding,
+  MAP_READY_FALLBACK_MS,
   normalizeAngle,
   PITCH_CHANGE_THRESHOLD,
   pitchForSpeed,
@@ -110,12 +113,51 @@ export function RouteNavigationMap({
   }, [followUser]);
 
   useEffect(() => {
+    appLog.info("route-nav:map:mount", {
+      hasInitialCenter: Boolean(state.currentPosition ?? state.remainingPolyline[0]),
+      remainingPoints: state.remainingPolyline.length,
+    });
+
+    // Android nem sempre dispara onMapReady (remount com a câmera aberta, falha
+    // de init do GL). Sem esta rede de segurança nenhum comando de câmera sai e
+    // o mapa fica preto para sempre.
+    const readyFallback = setTimeout(() => {
+      if (isMapReadyRef.current) return;
+      isMapReadyRef.current = true;
+      appLog.warn("route-nav:map:ready-timeout");
+    }, MAP_READY_FALLBACK_MS);
+
+    const cameraWatchdog = setTimeout(() => {
+      if (hasPositionedRef.current) return;
+      appLog.error("route-nav:map:no-camera", {
+        hasPosition: Boolean(latestRef.current.position),
+        isMapReady: isMapReadyRef.current,
+        mapHeight: mapHeightRef.current,
+      });
+    }, CAMERA_WATCHDOG_MS);
+
+    return () => {
+      clearTimeout(readyFallback);
+      clearTimeout(cameraWatchdog);
+      appLog.info("route-nav:map:unmount", {
+        positioned: hasPositionedRef.current,
+        ready: isMapReadyRef.current,
+      });
+    };
+    // Diagnóstico de ciclo de vida: roda uma vez por montagem do mapa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (!followUser) return;
 
     const applyCamera = () => {
       const map = mapRef.current;
       const { heading, position, speedMps } = latestRef.current;
-      if (!map || !isMapReadyRef.current || !position) return;
+
+      if (!map || !isMapReadyRef.current || !position) {
+        return;
+      }
 
       const nextZoom = zoomForSpeed(speedMps, position.latitude, mapHeightRef.current);
       const nextPitch = pitchForSpeed(speedMps);
@@ -137,6 +179,11 @@ export function RouteNavigationMap({
 
       if (!hasPositionedRef.current) {
         hasPositionedRef.current = true;
+        appLog.info("route-nav:map:first-camera", {
+          mapHeight: mapHeightRef.current,
+          pitch: Math.round(camera.pitch),
+          zoom: Number(camera.zoom.toFixed(2)),
+        });
         map.setCamera(camera);
         return;
       }
@@ -207,6 +254,9 @@ export function RouteNavigationMap({
       style={styles.container}
       onLayout={(event) => {
         const { height } = event.nativeEvent.layout;
+        if (mapHeightRef.current === 0) {
+          appLog.info("route-nav:map:layout", { height: Math.round(height) });
+        }
         mapHeightRef.current = height;
         setMapHeight(height);
       }}
@@ -231,7 +281,12 @@ export function RouteNavigationMap({
         zoomControlEnabled
         zoomEnabled
         onMapReady={() => {
+          const wasReady = isMapReadyRef.current;
           isMapReadyRef.current = true;
+          appLog.info("route-nav:map:ready", {
+            afterFallback: wasReady,
+            hasPosition: Boolean(latestRef.current.position),
+          });
         }}
         // Pan sai do follow; pinch/zoom mantém (ver handlePanDrag / handleRegionChangeComplete).
         onPanDrag={handlePanDrag}

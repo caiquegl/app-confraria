@@ -36,6 +36,10 @@ export const CAMERA_TICK_MS = 1000;
 export const CAMERA_ANIMATION_MS = 1150;
 /** Mudança de zoom é lenta de propósito: transição brusca parece nervosa. */
 export const CAMERA_ZOOM_ANIMATION_MS = 2000;
+/** Rede de segurança caso o Android não dispare `onMapReady`. */
+export const MAP_READY_FALLBACK_MS = 1500;
+/** Se nenhum comando de câmera saiu até aqui, algo travou: registra para análise. */
+export const CAMERA_WATCHDOG_MS = 8000;
 export const ZOOM_CHANGE_THRESHOLD = 0.25;
 export const PITCH_CHANGE_THRESHOLD = 2;
 
