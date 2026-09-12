@@ -68,13 +68,35 @@ type RoutesHomeBottomSheetProps = {
   topReserve?: number;
 };
 
-function snapToDetent(
+function snapToDetentWithVelocity(
   heightPx: number,
+  velocityY: number,
   collapsed: number,
   mid: number,
   expanded: number,
 ): RoutesSheetDetent {
   "worklet";
+
+  // In react-native-gesture-handler, negative velocityY means moving upwards
+  if (velocityY < -400) {
+    if (heightPx < mid - 20) {
+      return "mid";
+    }
+    return "expanded";
+  }
+
+  // Positive velocityY means moving downwards
+  if (velocityY > 400) {
+    if (heightPx > mid + 20) {
+      return "mid";
+    }
+    return "collapsed";
+  }
+
+  // Moderate upward drag from collapsed: advance to mid if moved noticeably
+  if (heightPx > collapsed + 32 && heightPx < mid) {
+    return "mid";
+  }
 
   const targets: [RoutesSheetDetent, number][] = [
     ["collapsed", collapsed],
@@ -131,8 +153,11 @@ export function RoutesHomeBottomSheet({
       ? DETENT_ORDER.slice(DETENT_ORDER.indexOf(minDetent))
       : DETENT_ORDER;
     const index = availableDetents.indexOf(detent);
-    onDetentChange(availableDetents[(index + 1) % availableDetents.length]);
-  }, [detent, minDetent, onDetentChange]);
+    const nextDetent = availableDetents[(index + 1) % availableDetents.length];
+    const targetHeight = detentHeights[nextDetent];
+    height.value = withTiming(targetHeight, { duration: 260 });
+    onDetentChange(nextDetent);
+  }, [detent, detentHeights, height, minDetent, onDetentChange]);
 
   const commitDetent = useCallback(
     (next: RoutesSheetDetent) => {
@@ -145,6 +170,8 @@ export function RoutesHomeBottomSheet({
   const panGesture = useMemo(
     () =>
       Gesture.Pan()
+        .activeOffsetY([-6, 6])
+        .failOffsetX([-25, 25])
         .onBegin(() => {
           startHeight.value = height.value;
           runOnJS(setIsDragging)(true);
@@ -161,7 +188,13 @@ export function RoutesHomeBottomSheet({
             return;
           }
 
-          let nextDetent = snapToDetent(height.value, collapsed, mid, expanded);
+          let nextDetent = snapToDetentWithVelocity(
+            height.value,
+            event.velocityY,
+            collapsed,
+            mid,
+            expanded,
+          );
           if (minDetent) {
             const minIndex = DETENT_ORDER.indexOf(minDetent);
             const nextIndex = DETENT_ORDER.indexOf(nextDetent);
@@ -179,7 +212,33 @@ export function RoutesHomeBottomSheet({
         .onFinalize(() => {
           runOnJS(setIsDragging)(false);
         }),
-    [collapsed, commitDetent, cycleDetent, effectiveMinHeight, expanded, height, maxHeight, mid, minDetent, startHeight],
+    [
+      collapsed,
+      commitDetent,
+      cycleDetent,
+      effectiveMinHeight,
+      expanded,
+      height,
+      maxHeight,
+      mid,
+      minDetent,
+      startHeight,
+    ],
+  );
+
+  const tapGesture = useMemo(
+    () =>
+      Gesture.Tap()
+        .maxDuration(350)
+        .onEnd(() => {
+          runOnJS(cycleDetent)();
+        }),
+    [cycleDetent],
+  );
+
+  const handleGesture = useMemo(
+    () => Gesture.Exclusive(panGesture, tapGesture),
+    [panGesture, tapGesture],
   );
 
   const sheetStyle = useAnimatedStyle(() => ({
@@ -188,8 +247,14 @@ export function RoutesHomeBottomSheet({
 
   return (
     <Animated.View style={[styles.sheet, sheetStyle, { bottom: bottomOffset }]}>
-      <GestureDetector gesture={panGesture}>
-        <View style={styles.handleArea}>
+      <GestureDetector gesture={handleGesture}>
+        <View
+          accessibilityHint="Toque para alternar o tamanho ou arraste para deslizar"
+          accessibilityLabel="Barra do painel de rotas"
+          accessibilityRole="button"
+          hitSlop={{ bottom: 20, left: 40, right: 40, top: 16 }}
+          style={styles.handleArea}
+        >
           <View style={styles.handle} />
         </View>
       </GestureDetector>
@@ -209,13 +274,16 @@ const createStyles = (colors: AppColors) =>
       alignSelf: "center",
       backgroundColor: colors.border.default,
       borderRadius: 999,
-      height: 4,
-      width: 40,
+      height: 5,
+      width: 44,
     },
     handleArea: {
-      paddingBottom: 4,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 44,
+      paddingBottom: 10,
       paddingHorizontal: 24,
-      paddingTop: 10,
+      paddingTop: 12,
     },
     sheet: {
       backgroundColor: colors.surface.primary,

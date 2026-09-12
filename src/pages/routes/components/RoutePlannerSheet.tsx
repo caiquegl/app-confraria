@@ -33,13 +33,32 @@ type RoutePlannerSheetProps = {
   stepper: ReactNode;
 };
 
-function snapToSheetState(
+function snapToSheetStateWithVelocity(
   heightPx: number,
+  velocityY: number,
   compact: number,
   normal: number,
   full: number,
 ): SheetState {
   "worklet";
+
+  if (velocityY < -400) {
+    if (heightPx < normal - 20) {
+      return "normal";
+    }
+    return "full";
+  }
+
+  if (velocityY > 400) {
+    if (heightPx > normal + 20) {
+      return "normal";
+    }
+    return "compact";
+  }
+
+  if (heightPx > compact + 32 && heightPx < normal) {
+    return "normal";
+  }
 
   const targets: [SheetState, number][] = [
     ["compact", compact],
@@ -125,8 +144,14 @@ export function RoutePlannerSheet({
   }, [height, isDragging, sheetHeight]);
 
   const cycleDetent = useCallback(() => {
-    onSheetStateChange(cycleSheetState(sheetState));
-  }, [onSheetStateChange, sheetState]);
+    const next = cycleSheetState(sheetState);
+    const nextHeight = next === "compact" ? compact : next === "normal" ? normal : full;
+    height.value = withTiming(nextHeight, {
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+    });
+    onSheetStateChange(next);
+  }, [compact, full, height, normal, onSheetStateChange, sheetState]);
 
   const commitDetent = useCallback(
     (next: SheetState) => {
@@ -139,6 +164,8 @@ export function RoutePlannerSheet({
   const panGesture = useMemo(
     () =>
       Gesture.Pan()
+        .activeOffsetY([-6, 6])
+        .failOffsetX([-25, 25])
         .onBegin(() => {
           startHeight.value = height.value;
           runOnJS(setIsDragging)(true);
@@ -155,7 +182,13 @@ export function RoutePlannerSheet({
             return;
           }
 
-          const nextDetent = snapToSheetState(height.value, compact, normal, full);
+          const nextDetent = snapToSheetStateWithVelocity(
+            height.value,
+            event.velocityY,
+            compact,
+            normal,
+            full,
+          );
           const nextHeight =
             nextDetent === "compact" ? compact : nextDetent === "normal" ? normal : full;
 
@@ -181,14 +214,35 @@ export function RoutePlannerSheet({
     ],
   );
 
+  const tapGesture = useMemo(
+    () =>
+      Gesture.Tap()
+        .maxDuration(350)
+        .onEnd(() => {
+          runOnJS(cycleDetent)();
+        }),
+    [cycleDetent],
+  );
+
+  const handleGesture = useMemo(
+    () => Gesture.Exclusive(panGesture, tapGesture),
+    [panGesture, tapGesture],
+  );
+
   const sheetStyle = useAnimatedStyle(() => ({
     height: height.value,
   }));
 
   return (
     <Animated.View style={[styles.sheet, sheetStyle, { bottom: bottomOffset }]}>
-      <GestureDetector gesture={panGesture}>
-        <View style={styles.handleArea}>
+      <GestureDetector gesture={handleGesture}>
+        <View
+          accessibilityHint="Toque para alternar o tamanho ou arraste para deslizar"
+          accessibilityLabel="Barra do painel de rota"
+          accessibilityRole="button"
+          hitSlop={{ bottom: 20, left: 40, right: 40, top: 16 }}
+          style={styles.handleArea}
+        >
           <View style={styles.handle} />
         </View>
       </GestureDetector>
@@ -238,14 +292,16 @@ const createStyles = (colors: AppColors) =>
     handle: {
       backgroundColor: colors.border.default,
       borderRadius: 999,
-      height: 4,
-      width: 40,
+      height: 5,
+      width: 44,
     },
     handleArea: {
       alignItems: "center",
       borderBottomColor: colors.border.subtle,
       borderBottomWidth: 1,
-      paddingBottom: 12,
+      justifyContent: "center",
+      minHeight: 44,
+      paddingBottom: 10,
       paddingTop: 12,
     },
     sheet: {
