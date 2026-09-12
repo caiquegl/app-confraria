@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import {
   FlatList,
@@ -9,6 +9,7 @@ import {
   type ListRenderItem,
   type ViewToken,
 } from "react-native";
+import { useFocusEffect } from "expo-router";
 
 import { ErrorState } from "@/components/ErrorState";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
@@ -50,7 +51,7 @@ type FeedListProps = {
 };
 
 const viewabilityConfig = {
-  itemVisiblePercentThreshold: 40,
+  itemVisiblePercentThreshold: 30,
 };
 
 export function FeedList({
@@ -81,6 +82,18 @@ export function FeedList({
 }: FeedListProps) {
   const styles = useThemedStyles(createStyles);
   const endReachedDuringMountRef = useRef(true);
+  const [visiblePostIds, setVisiblePostIds] = useState<Set<string>>(() => new Set());
+  const [isScreenFocused, setIsScreenFocused] = useState(true);
+  const hasReportedViewabilityRef = useRef(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsScreenFocused(true);
+      return () => {
+        setIsScreenFocused(false);
+      };
+    }, []),
+  );
 
   const handleEndReached = useCallback(() => {
     if (endReachedDuringMountRef.current || posts.length === 0) return;
@@ -89,7 +102,25 @@ export function FeedList({
 
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      hasReportedViewabilityRef.current = true;
       if (viewableItems.length === 0) return;
+
+      const nextVisibleIds = new Set<string>();
+      for (const token of viewableItems) {
+        if (token.isViewable && token.item?.id) {
+          nextVisibleIds.add(token.item.id);
+        }
+      }
+
+      setVisiblePostIds((prev) => {
+        if (
+          prev.size === nextVisibleIds.size &&
+          [...prev].every((id) => nextVisibleIds.has(id))
+        ) {
+          return prev;
+        }
+        return nextVisibleIds;
+      });
 
       const maxVisibleIndex = Math.max(
         ...viewableItems.map((item) => item.index ?? 0),
@@ -102,23 +133,31 @@ export function FeedList({
   );
 
   const renderItem: ListRenderItem<FeedPost> = useCallback(
-    ({ item }) => (
-      <FeedCard
-        post={item}
-        isLoadingComments={commentsLoadingByPost[item.id] ?? false}
-        onAddComment={onAddComment}
-        onAddReply={onAddReply}
-        onDeleteComment={onDeleteComment}
-        onEditComment={onEditComment}
-        onLoadComments={onLoadComments}
-        onOpenShare={onOpenShare}
-        onOpenUserProfile={onOpenUserProfile}
-        onToggleCommentLike={onToggleCommentLike}
-        onToggleLike={onToggleLike}
-      />
-    ),
+    ({ item }) => {
+      const isVisible =
+        isScreenFocused &&
+        (!hasReportedViewabilityRef.current || visiblePostIds.has(item.id));
+
+      return (
+        <FeedCard
+          post={item}
+          isLoadingComments={commentsLoadingByPost[item.id] ?? false}
+          isVisible={isVisible}
+          onAddComment={onAddComment}
+          onAddReply={onAddReply}
+          onDeleteComment={onDeleteComment}
+          onEditComment={onEditComment}
+          onLoadComments={onLoadComments}
+          onOpenShare={onOpenShare}
+          onOpenUserProfile={onOpenUserProfile}
+          onToggleCommentLike={onToggleCommentLike}
+          onToggleLike={onToggleLike}
+        />
+      );
+    },
     [
       commentsLoadingByPost,
+      isScreenFocused,
       onAddComment,
       onAddReply,
       onDeleteComment,
@@ -128,6 +167,7 @@ export function FeedList({
       onOpenUserProfile,
       onToggleCommentLike,
       onToggleLike,
+      visiblePostIds,
     ],
   );
 

@@ -12,6 +12,7 @@ import { FeedMediaCarousel } from "./FeedMediaCarousel";
 
 type FeedCardProps = {
   isLoadingComments: boolean;
+  isVisible?: boolean;
   onAddComment: (postId: string, text: string) => void;
   onAddReply: (
     postId: string,
@@ -31,6 +32,7 @@ type FeedCardProps = {
 
 function FeedCardInner({
   isLoadingComments,
+  isVisible,
   onAddComment,
   onAddReply,
   onDeleteComment,
@@ -81,6 +83,7 @@ function FeedCardInner({
 
       {mediaItems.length > 0 && (
         <FeedMediaCarousel
+          isVisible={isVisible}
           media={mediaItems}
           title={mediaTitle}
           onDoublePress={() => onToggleLike(post.id)}

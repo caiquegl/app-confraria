@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Platform,
@@ -27,12 +27,18 @@ const MEDIA_ASPECT_RATIO = 4 / 5;
 const MEDIA_HEIGHT = Math.round(CARD_WIDTH / MEDIA_ASPECT_RATIO);
 
 type FeedMediaCarouselProps = {
+  isVisible?: boolean;
   media: FeedPostMedia[];
   onDoublePress?: () => void;
   title: string;
 };
 
-export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCarouselProps) {
+export function FeedMediaCarousel({
+  isVisible = true,
+  media,
+  onDoublePress,
+  title,
+}: FeedMediaCarouselProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -42,16 +48,25 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
   const lastPressAtRef = useRef(0);
   const loggedEmptyRef = useRef(false);
 
+  const stopPlayback = useCallback((reason: string) => {
+    setPlayingIndex((current) => {
+      if (current == null) return current;
+      appLog.info("feed.media.video_stop", { index: current, reason, title });
+      return null;
+    });
+  }, [title]);
+
   useEffect(() => {
     if (playingIndex == null) return;
     if (playingIndex === activeIndex) return;
-    appLog.info("feed.media.video_stop", {
-      index: playingIndex,
-      reason: "slide_change",
-      title,
-    });
-    setPlayingIndex(null);
-  }, [activeIndex, playingIndex, title]);
+    stopPlayback("slide_change");
+  }, [activeIndex, playingIndex, stopPlayback]);
+
+  useEffect(() => {
+    if (!isVisible && playingIndex != null) {
+      stopPlayback("scrolled_out_of_view");
+    }
+  }, [isVisible, playingIndex, stopPlayback]);
 
   if (media.length === 0) {
     if (!loggedEmptyRef.current) {
@@ -65,14 +80,6 @@ export function FeedMediaCarousel({ media, onDoublePress, title }: FeedMediaCaro
     playingIndex != null && media[playingIndex]?.mediaType === "video"
       ? media[playingIndex]
       : null;
-
-  const stopPlayback = (reason: string) => {
-    setPlayingIndex((current) => {
-      if (current == null) return current;
-      appLog.info("feed.media.video_stop", { index: current, reason, title });
-      return null;
-    });
-  };
 
   const scrollToIndex = (index: number) => {
     const clamped = Math.max(0, Math.min(index, media.length - 1));
