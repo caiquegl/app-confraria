@@ -122,7 +122,15 @@ function buildGpsPlace(
   };
 }
 
-export function RoutesMapHomeView() {
+export type RoutesMapHomeViewProps = {
+  initialDestination?: QuickRoutePlace | null;
+  onClearInitialDestination?: () => void;
+};
+
+export function RoutesMapHomeView({
+  initialDestination,
+  onClearInitialDestination,
+}: RoutesMapHomeViewProps = {}) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const plannerMapStyle = useMemo(() => getRoutePlannerMapStyle(colors), [colors]);
@@ -137,7 +145,9 @@ export function RoutesMapHomeView() {
 
   const [userAvatar, setUserAvatar] = useState<string | null>(storedProfile.avatar);
   const [userName, setUserName] = useState<string>(storedProfile.name ?? "Perfil");
-  const [destination, setDestination] = useState<QuickRoutePlace | null>(null);
+  const [destination, setDestination] = useState<QuickRoutePlace | null>(
+    () => initialDestination ?? null,
+  );
   const [stops, setStops] = useState<QuickRoutePlace[]>([]);
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
   const [fuelCost, setFuelCost] = useState<number | null>(null);
@@ -147,7 +157,9 @@ export function RoutesMapHomeView() {
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [mapGasStations, setMapGasStations] = useState<NearbyPlace[]>([]);
   const [isLoadingNearby, setIsLoadingNearby] = useState(false);
-  const [sheetDetent, setSheetDetent] = useState<RoutesSheetDetent>("collapsed");
+  const [sheetDetent, setSheetDetent] = useState<RoutesSheetDetent>(() =>
+    initialDestination ? "expanded" : "collapsed",
+  );
   const [nearbyCategory, setNearbyCategory] = useState<NearbyCategoryFilter>("all");
   const [mapAreaHeight, setMapAreaHeight] = useState(0);
   const [routeResetToken, setRouteResetToken] = useState(0);
@@ -155,6 +167,12 @@ export function RoutesMapHomeView() {
   const [paywallReason, setPaywallReason] = useState<"limit" | "routeStyle">("limit");
   const [isPremium, setIsPremium] = useState(false);
   const [routeStyle, setRouteStyle] = useState<RouteStyle>("direct");
+
+  const appliedDestinationKeyRef = useRef<string | null>(
+    initialDestination
+      ? `${initialDestination.latitude},${initialDestination.longitude},${initialDestination.placeId}`
+      : null,
+  );
 
   const hasCoords = location.latitude != null && location.longitude != null;
   const isLocationReady = location.status === "ready" && hasCoords;
@@ -281,6 +299,20 @@ export function RoutesMapHomeView() {
 
   useEffect(() => {
     if (!destination?.latitude || !destination.longitude) return;
+
+    if (directions.selectedPolyline.length > 1) {
+      mapRef.current?.fitToCoordinates(directions.selectedPolyline, {
+        edgePadding: {
+          top: 80,
+          right: 40,
+          bottom: Math.round(activeSheetHeight) + 30,
+          left: 40,
+        },
+        animated: true,
+      });
+      return;
+    }
+
     mapRef.current?.animateToRegion(
       {
         latitude: destination.latitude,
@@ -290,7 +322,23 @@ export function RoutesMapHomeView() {
       },
       450,
     );
-  }, [destination?.latitude, destination?.longitude, destination?.placeId]);
+  }, [
+    activeSheetHeight,
+    destination?.latitude,
+    destination?.longitude,
+    destination?.placeId,
+    directions.selectedPolyline,
+  ]);
+
+  useEffect(() => {
+    if (initialDestination && isLocationBlocked) {
+      Toast.show({
+        type: "info",
+        text1: "Ative a localização",
+        text2: "Precisamos da sua localização GPS para traçar a rota até o evento.",
+      });
+    }
+  }, [initialDestination, isLocationBlocked]);
 
   useEffect(() => {
     if (
@@ -417,6 +465,8 @@ export function RoutesMapHomeView() {
   };
 
   const handleClearDestination = useCallback(() => {
+    appliedDestinationKeyRef.current = null;
+    onClearInitialDestination?.();
     setDestination((prevDestination) => {
       setStops((prevStops) => {
         if (prevDestination != null || prevStops.length > 0) {
@@ -444,20 +494,30 @@ export function RoutesMapHomeView() {
         450,
       );
     }
-  }, [hasCoords, location.latitude, location.longitude]);
-
-  useFocusEffect(
-    useCallback(() => {
-      handleClearDestination();
-      void mapPhotos.reload();
-    }, [handleClearDestination, mapPhotos.reload]),
-  );
+  }, [hasCoords, location.latitude, location.longitude, onClearInitialDestination]);
 
   const applyDestination = useCallback((place: QuickRoutePlace) => {
     setDestination(place);
     setStops([]);
     setSheetDetent("expanded");
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (initialDestination) {
+        const destKey = `${initialDestination.latitude},${initialDestination.longitude},${initialDestination.placeId}`;
+        if (appliedDestinationKeyRef.current !== destKey) {
+          appliedDestinationKeyRef.current = destKey;
+          applyDestination(initialDestination);
+        }
+      } else {
+        appliedDestinationKeyRef.current = null;
+        handleClearDestination();
+      }
+
+      void mapPhotos.reload();
+    }, [applyDestination, handleClearDestination, initialDestination, mapPhotos.reload]),
+  );
 
   const resolveMapPointDestination = useCallback(
     async (latitude: number, longitude: number) => {

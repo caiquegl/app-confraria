@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,7 +15,7 @@ import type { EventDetailPlace } from "@/pages/event-detail/types/event-detail.t
 import type { ShareSendResult } from "@/pages/home/components/SharePostSheet";
 import type { FeedShareFriend } from "@/pages/home/types/feed.types";
 import { fetchChatConversations, sendChatMessage } from "@/pages/messages/services/messages.service";
-import { hasValidCoordinates, openDirections } from "@/lib/location";
+import { hasValidCoordinates } from "@/lib/location";
 import { formatEventPeriodLabel, resolvePeriodFromLegacy } from "@/lib/event-period";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
@@ -96,25 +96,45 @@ export function EventAnalyticsView({ eventId, onBack }: EventAnalyticsViewProps)
   }, [event?.places]);
 
   const directionsTarget = useMemo(() => {
-    const place = places.destination ?? places.origin;
+    const place =
+      (hasValidCoordinates(places.origin) ? places.origin : places.destination) ??
+      places.origin ??
+      places.destination;
     if (!place) return null;
 
     return {
       label: place.mainText || place.description,
       latitude: place.latitude,
       longitude: place.longitude,
+      placeId: place.placeId,
+      subtitle: place.secondaryText || "",
     };
   }, [places.destination, places.origin]);
 
-  const handleOpenDirections = useCallback(async () => {
-    const opened = await openDirections(directionsTarget);
-    if (opened) return;
+  const handleOpenDirections = useCallback(() => {
+    if (
+      !directionsTarget ||
+      directionsTarget.latitude == null ||
+      directionsTarget.longitude == null
+    ) {
+      Toast.show({
+        type: "error",
+        text1: "Localização indisponível",
+        text2: "Este evento não possui coordenadas válidas para traçar a rota.",
+      });
+      return;
+    }
 
-    Toast.show({
-      type: "error",
-      text1: "Não foi possível abrir o app de navegação",
-      text2: "Verifique se há um aplicativo de mapas instalado no dispositivo.",
-    });
+    router.push({
+      pathname: "/routes",
+      params: {
+        destinationLat: String(directionsTarget.latitude),
+        destinationLng: String(directionsTarget.longitude),
+        destinationPlaceId: directionsTarget.placeId,
+        destinationSubtitle: directionsTarget.subtitle,
+        destinationTitle: directionsTarget.label,
+      },
+    } as unknown as Href);
   }, [directionsTarget]);
 
   const loadShareFriends = useCallback(async () => {
