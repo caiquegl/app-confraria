@@ -77,6 +77,12 @@ export function RouteNavigationMap({
   const hasPositionedRef = useRef(false);
   const mapHeightRef = useRef(0);
   const [mapHeight, setMapHeight] = useState(0);
+  /**
+   * Só o evento real do `onMapReady` libera o `mapPadding`. No Android o setter
+   * da prop faz `view.map.setPadding(...)` sem checar null, e `view.map` só
+   * existe depois do `onMapReady` — passar padding antes derruba o app.
+   */
+  const [isMapReady, setIsMapReady] = useState(false);
   /** Rumo da câmera quando o usuário gira o mapa manualmente. */
   const [mapHeading, setMapHeading] = useState(0);
 
@@ -118,9 +124,9 @@ export function RouteNavigationMap({
       remainingPoints: state.remainingPolyline.length,
     });
 
-    // Android nem sempre dispara onMapReady (remount com a câmera aberta, falha
-    // de init do GL). Sem esta rede de segurança nenhum comando de câmera sai e
-    // o mapa fica preto para sempre.
+    // Libera apenas os comandos de câmera, que o lado nativo descarta com
+    // segurança enquanto o mapa não existe. O `mapPadding` continua preso ao
+    // evento real, porque lá o setter nativo desreferencia sem checar null.
     const readyFallback = setTimeout(() => {
       if (isMapReadyRef.current) return;
       isMapReadyRef.current = true;
@@ -196,7 +202,7 @@ export function RouteNavigationMap({
     applyCamera();
     const interval = setInterval(applyCamera, CAMERA_TICK_MS);
     return () => clearInterval(interval);
-  }, [followUser, mapHeight]);
+  }, [followUser, isMapReady, mapHeight]);
 
   const handlePanDrag = () => {
     // No Android o pinch também dispara onPanDrag. Só marcamos o gesto;
@@ -247,7 +253,13 @@ export function RouteNavigationMap({
       }
     : undefined;
   // Objeto estável: trocar a referência a cada render reaplica o padding nativo.
-  const mapPadding = useMemo(() => getNavigationMapPadding(mapHeight), [mapHeight]);
+  // Enquanto o mapa não estiver pronto a prop é omitida por completo — passar
+  // `undefined` não adianta, porque o setter nativo roda do mesmo jeito.
+  const mapPaddingProps = useMemo(
+    () =>
+      isMapReady && mapHeight > 0 ? { mapPadding: getNavigationMapPadding(mapHeight) } : {},
+    [isMapReady, mapHeight],
+  );
 
   return (
     <View
@@ -263,9 +275,9 @@ export function RouteNavigationMap({
     >
       <MapView
         ref={mapRef}
+        {...mapPaddingProps}
         customMapStyle={mapStyle}
         initialCamera={initialCamera}
-        mapPadding={mapPadding}
         pitchEnabled={followUser}
         provider={PROVIDER_GOOGLE}
         rotateEnabled={!followUser}
@@ -283,6 +295,7 @@ export function RouteNavigationMap({
         onMapReady={() => {
           const wasReady = isMapReadyRef.current;
           isMapReadyRef.current = true;
+          setIsMapReady(true);
           appLog.info("route-nav:map:ready", {
             afterFallback: wasReady,
             hasPosition: Boolean(latestRef.current.position),
