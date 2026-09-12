@@ -565,7 +565,13 @@ export function RouteDetailView({ onBack, routeId }: RouteDetailViewProps) {
       );
 
       if (action === "start_now") {
-        await ensureRouteBackgroundTracking(copied.id, copied.title);
+        try {
+          await ensureRouteBackgroundTracking(copied.id, copied.title);
+        } catch (trackingError) {
+          routeTrackingLog.error("RouteDetailView:copy-and-start:tracking-failed", trackingError, {
+            routeId: copied.id,
+          });
+        }
         router.push(`/routes/${copied.id}/navigate` as Href);
         return;
       }

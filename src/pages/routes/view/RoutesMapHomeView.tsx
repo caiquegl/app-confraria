@@ -40,6 +40,7 @@ import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 import { QuickRouteSheet } from "../components/QuickRouteSheet";
 import { FreeRouteLimitPaywall } from "../components/FreeRouteLimitPaywall";
+import { RouteBackgroundPermissionModal } from "../components/RouteBackgroundPermissionModal";
 import { RouteMapPhotosCarouselModal } from "../components/RouteMapPhotosCarouselModal";
 import { RoutePhotoClusterMarker } from "../components/RoutePhotoClusterMarker";
 import {
@@ -167,6 +168,10 @@ export function RoutesMapHomeView({
   const [paywallReason, setPaywallReason] = useState<"limit" | "routeStyle">("limit");
   const [isPremium, setIsPremium] = useState(false);
   const [routeStyle, setRouteStyle] = useState<RouteStyle>("direct");
+  const [pendingBackgroundRoute, setPendingBackgroundRoute] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const appliedDestinationKeyRef = useRef<string | null>(
     initialDestination
@@ -659,8 +664,12 @@ export function RoutesMapHomeView({
 
         if (action === "start_now") {
           trackRoutesEvent("quick_route_started", { routeId: route.id });
-          await ensureRouteBackgroundTracking(route.id, route.title);
-          router.push(`/routes/${route.id}/navigate` as Href);
+          try {
+            await ensureRouteBackgroundTracking(route.id, route.title);
+            router.push(`/routes/${route.id}/navigate` as Href);
+          } catch {
+            setPendingBackgroundRoute({ id: route.id, title: route.title });
+          }
         } else {
           trackRoutesEvent("quick_route_saved", { routeId: route.id });
           Toast.show({
@@ -695,6 +704,25 @@ export function RoutesMapHomeView({
     },
     [bikes, destination, directions.selectedOption, fuelCost, origin, routeCover, routeStyle, selectedBike, stops],
   );
+
+  const handleBackgroundPermissionGranted = useCallback(async () => {
+    if (!pendingBackgroundRoute) return;
+    const targetRoute = pendingBackgroundRoute;
+    setPendingBackgroundRoute(null);
+    try {
+      await ensureRouteBackgroundTracking(targetRoute.id, targetRoute.title);
+    } catch {
+      // Prossegue mesmo se a ativação em segundo plano falhar
+    }
+    router.push(`/routes/${targetRoute.id}/navigate` as Href);
+  }, [pendingBackgroundRoute]);
+
+  const handleContinueForeground = useCallback(() => {
+    if (!pendingBackgroundRoute) return;
+    const targetRoute = pendingBackgroundRoute;
+    setPendingBackgroundRoute(null);
+    router.push(`/routes/${targetRoute.id}/navigate` as Href);
+  }, [pendingBackgroundRoute]);
 
   const handlePlanRoute = useCallback(async () => {
     if (origin && destination && directions.selectedOption) {
@@ -1007,6 +1035,14 @@ export function RoutesMapHomeView({
           setShowFreeRoutePaywall(false);
           router.push("/profile/subscription" as Href);
         }}
+      />
+
+      <RouteBackgroundPermissionModal
+        routeTitle={pendingBackgroundRoute?.title}
+        visible={pendingBackgroundRoute != null}
+        onClose={handleContinueForeground}
+        onContinueForeground={handleContinueForeground}
+        onPermissionGranted={handleBackgroundPermissionGranted}
       />
     </View>
   );
