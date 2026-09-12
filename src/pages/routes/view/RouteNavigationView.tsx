@@ -460,6 +460,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
 
       <PostSuccessModal
         visible={media.isPostSuccessVisible}
+        onClose={media.closePostSuccess}
         onContinue={media.closePostSuccess}
       />
 

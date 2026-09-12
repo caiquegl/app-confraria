@@ -4,19 +4,49 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { type AppColors, useTheme, useThemedStyles } from "@/theme";
 
 type PostSuccessModalProps = {
+  onClose?: () => void;
   onContinue: () => void;
   visible: boolean;
 };
 
-export function PostSuccessModal({ onContinue, visible }: PostSuccessModalProps) {
+export function PostSuccessModal({
+  onClose,
+  onContinue,
+  visible,
+}: PostSuccessModalProps) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const handleDismiss = onClose ?? onContinue;
+
   return (
-    <Modal animationType="fade" statusBarTranslucent transparent visible={visible}>
+    <Modal
+      animationType="fade"
+      onRequestClose={handleDismiss}
+      statusBarTranslucent
+      transparent
+      visible={visible}
+    >
       <View style={styles.backdrop}>
+        <Pressable
+          accessibilityLabel="Fechar modal"
+          accessibilityRole="button"
+          style={StyleSheet.absoluteFill}
+          onPress={handleDismiss}
+        />
+
         <View style={styles.card}>
+          <Pressable
+            accessibilityLabel="Fechar"
+            accessibilityRole="button"
+            hitSlop={12}
+            style={styles.closeButton}
+            onPress={handleDismiss}
+          >
+            <Ionicons color={colors.text.muted} name="close" size={20} />
+          </Pressable>
+
           <View style={styles.iconWrap}>
-            <Ionicons name="checkmark-circle" size={56} color={colors.brandPrimary} />
+            <Ionicons color={colors.brandPrimary} name="checkmark-circle" size={56} />
           </View>
 
           <Text style={styles.title}>Post publicado!</Text>
@@ -30,7 +60,7 @@ export function PostSuccessModal({ onContinue, visible }: PostSuccessModalProps)
             onPress={onContinue}
           >
             <Text style={styles.buttonText}>Ver feed</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.brandDark} />
+            <Ionicons color={colors.brandDark} name="chevron-forward" size={20} />
           </Pressable>
         </View>
       </View>
@@ -71,7 +101,19 @@ const createStyles = (colors: AppColors) => ({
     borderRadius: 32,
     paddingHorizontal: 32,
     paddingVertical: 32,
+    position: "relative" as const,
     width: "100%",
+  },
+  closeButton: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 36,
+    justifyContent: "center",
+    position: "absolute" as const,
+    right: 16,
+    top: 16,
+    width: 36,
+    zIndex: 2,
   },
   description: {
     color: colors.text.secondary,

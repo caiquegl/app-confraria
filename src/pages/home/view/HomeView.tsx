@@ -36,6 +36,7 @@ export function HomeView() {
     closePostSuccess,
     closeShare,
     deleteComment,
+    dismissPostSuccess,
     editComment,
     composeActivePhotoIndex,
     composeAudience,
@@ -207,7 +208,11 @@ export function HomeView() {
         onPublish={publishPost}
       />
 
-      <PostSuccessModal visible={isPostSuccessVisible} onContinue={closePostSuccess} />
+      <PostSuccessModal
+        visible={isPostSuccessVisible}
+        onClose={dismissPostSuccess}
+        onContinue={closePostSuccess}
+      />
 
       <NewStoryCamera
         isPublishing={stories.isUploading}

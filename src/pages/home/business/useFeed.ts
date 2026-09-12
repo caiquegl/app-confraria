@@ -647,6 +647,10 @@ export function useFeed() {
     listRef.current?.scrollToOffset({ animated: true, offset: 0 });
   };
 
+  const dismissPostSuccess = () => {
+    setIsPostSuccessVisible(false);
+  };
+
   const removeComposerPhoto = (index: number) => {
     setComposerMedia((prev) => {
       const next = prev.filter((_, photoIndex) => photoIndex !== index);
@@ -754,6 +758,7 @@ export function useFeed() {
     closeComposer,
     commentsLoadingByPost,
     deleteComment,
+    dismissPostSuccess,
     editComment,
     composeActivePhotoIndex,
     composeAudience,

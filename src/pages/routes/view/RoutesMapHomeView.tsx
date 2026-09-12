@@ -284,23 +284,12 @@ export function RoutesMapHomeView({
   }, [reloadBikes, showQuickSheet]);
 
   useEffect(() => {
-    if (showQuickSheet) {
-      setSheetDetent("expanded");
-    } else {
-      setSheetDetent("collapsed");
-    }
+    setSheetDetent("collapsed");
   }, [showQuickSheet]);
 
-  const handleSheetDetentChange = useCallback(
-    (next: RoutesSheetDetent) => {
-      if (showQuickSheet && next === "collapsed") {
-        setSheetDetent("mid");
-        return;
-      }
-      setSheetDetent(next);
-    },
-    [showQuickSheet],
-  );
+  const handleSheetDetentChange = useCallback((next: RoutesSheetDetent) => {
+    setSheetDetent(next);
+  }, []);
 
   useEffect(() => {
     if (!destination?.latitude || !destination.longitude) return;
@@ -504,7 +493,7 @@ export function RoutesMapHomeView({
   const applyDestination = useCallback((place: QuickRoutePlace) => {
     setDestination(place);
     setStops([]);
-    setSheetDetent("expanded");
+    setSheetDetent("collapsed");
   }, []);
 
   useFocusEffect(
@@ -948,7 +937,6 @@ export function RoutesMapHomeView({
         <RoutesHomeBottomSheet
           containerHeight={mapSheetHeight}
           detent={sheetDetent}
-          minDetent={showQuickSheet ? "mid" : undefined}
           onDetentChange={handleSheetDetentChange}
         >
           {showQuickSheet && destination ? (
