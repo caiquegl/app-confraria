@@ -122,7 +122,7 @@ const createStyles = (colors: AppColors) => ({
     width: "100%",
   },
   imageWrap: {
-    aspectRatio: 16 / 9,
+    aspectRatio: 4 / 3,
     backgroundColor: colors.surface.subtle,
     borderRadius: 20,
     marginBottom: 16,
