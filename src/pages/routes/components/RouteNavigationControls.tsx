@@ -26,7 +26,7 @@ export function RouteNavigationControls({
         style={({ pressed }) => [styles.button, styles.reportButton, pressed && styles.pressed]}
         onPress={onReport}
       >
-        <Ionicons color={colors.text.inverse} name="warning" size={26} />
+        <Ionicons color={colors.navigation.reportForeground} name="warning" size={26} />
       </Pressable>
 
       <Pressable
@@ -35,7 +35,7 @@ export function RouteNavigationControls({
         style={({ pressed }) => [styles.button, styles.photoButton, pressed && styles.pressed]}
         onPress={onOpenMedia}
       >
-        <Ionicons color={colors.brandDark} name="camera" size={24} />
+        <Ionicons color={colors.text.onBrand} name="camera" size={24} />
       </Pressable>
 
       <Pressable
@@ -44,7 +44,7 @@ export function RouteNavigationControls({
         style={({ pressed }) => [styles.button, styles.recenterButton, pressed && styles.pressed]}
         onPress={onRecenter}
       >
-        <Ionicons color={colors.brandDark} name="locate" size={24} />
+        <Ionicons color={colors.navigation.textPrimary} name="locate" size={24} />
       </Pressable>
     </View>
   );
@@ -65,20 +65,20 @@ const createStyles = (colors: AppColors) => ({
   },
   photoButton: {
     backgroundColor: colors.accent.brand,
-    borderColor: colors.surface.primary,
+    borderColor: colors.navigation.surface,
     borderWidth: 2,
   },
   pressed: {
     opacity: 0.8,
   },
   recenterButton: {
-    backgroundColor: colors.surface.primary,
-    borderColor: "#CBD1D6",
+    backgroundColor: colors.navigation.surface,
+    borderColor: colors.border.default,
     borderWidth: 1.5,
   },
   reportButton: {
-    backgroundColor: "#F97316",
-    borderColor: colors.surface.primary,
+    backgroundColor: colors.navigation.report,
+    borderColor: colors.navigation.surface,
     borderWidth: 2,
   },
   wrap: {

@@ -66,7 +66,8 @@ export function RouteNavigationStatsCard({
             style={({ pressed }) => [styles.recalculateButton, pressed && styles.pressed]}
             onPress={onRecalculate}
           >
-            <Ionicons color={colors.brandDark} name="refresh" size={14} />
+            {/* Fundo lima nas duas paletas: o ícone precisa ser escuro sempre. */}
+            <Ionicons color={colors.text.onBrand} name="refresh" size={14} />
             <Text style={styles.recalculateText}>Recalcular agora</Text>
           </Pressable>
         ) : null}
@@ -80,7 +81,11 @@ export function RouteNavigationStatsCard({
         style={[styles.stopButton, !canFinish && styles.stopButtonDisabled]}
         onPress={onStop}
       >
-        <Ionicons color={colors.text.inverse} name={canFinish ? "stop-circle" : "exit-outline"} size={22} />
+        <Ionicons
+          color={colors.feedback.dangerForeground}
+          name={canFinish ? "stop-circle" : "exit-outline"}
+          size={22}
+        />
       </Pressable>
     </View>
   );
@@ -89,8 +94,10 @@ export function RouteNavigationStatsCard({
 const createStyles = (colors: AppColors) => ({
   card: {
     alignItems: "center",
-    backgroundColor: colors.brandDark,
+    backgroundColor: colors.navigation.surface,
+    borderColor: colors.navigation.surfaceBorder,
     borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 20,
@@ -104,18 +111,18 @@ const createStyles = (colors: AppColors) => ({
     flex: 1,
   },
   dot: {
-    color: colors.text.secondary,
+    color: colors.navigation.textMuted,
     fontSize: 12,
   },
   duration: {
-    color: colors.brandGreen,
+    color: colors.navigation.accent,
     fontFamily: "monospace",
     fontSize: 30,
     fontWeight: "800",
     lineHeight: 34,
   },
   meta: {
-    color: colors.text.muted,
+    color: colors.navigation.textSecondary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -127,7 +134,7 @@ const createStyles = (colors: AppColors) => ({
     marginTop: 4,
   },
   offRouteMeta: {
-    color: "#FBBF24",
+    color: colors.navigation.offRouteWarning,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -146,17 +153,18 @@ const createStyles = (colors: AppColors) => ({
     paddingVertical: 6,
   },
   recalculateText: {
-    color: colors.brandDark,
+    color: colors.text.onBrand,
     fontSize: 12,
     fontWeight: "700",
   },
   stopButton: {
     alignItems: "center",
-    backgroundColor: colors.feedback.danger,
+    // `danger` é claro demais na paleta escura para carregar um ícone branco.
+    backgroundColor: colors.feedback.dangerStrong,
     borderRadius: 18,
     height: NAV_CONTROL_BUTTON_SIZE,
     justifyContent: "center",
-    shadowColor: colors.feedback.danger,
+    shadowColor: colors.feedback.dangerStrong,
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 10,

@@ -45,7 +45,12 @@ export function getRoutePlannerMapStyle(colors: AppColors): MapStyleElement[] {
   ];
 }
 
-export function getRouteNavigationMapStyleNight(colors: AppColors): MapStyleElement[] {
+/**
+ * Estilo do mapa em navegação. A distinção dia/noite vem dos próprios tokens
+ * `colors.map.navigation*`, que já são claros na paleta clara e escuros na
+ * escura — por isso não há ramificação aqui.
+ */
+export function getRouteNavigationMapStyle(colors: AppColors): MapStyleElement[] {
   return [
     { elementType: "geometry", stylers: [{ color: colors.map.navigationGeometry }] },
     { elementType: "labels.text.fill", stylers: [{ color: colors.map.navigationLabelFill }] },
@@ -79,5 +84,5 @@ export function getRouteNavigationMapStyleNight(colors: AppColors): MapStyleElem
 /** @deprecated Use `getRoutePlannerMapStyle(useTheme().colors)`. */
 export const ROUTE_PLANNER_MAP_STYLE = getRoutePlannerMapStyle(lightColors);
 
-/** @deprecated Use `getRouteNavigationMapStyleNight(useTheme().colors)`. */
-export const ROUTE_NAVIGATION_MAP_STYLE_NIGHT = getRouteNavigationMapStyleNight(lightColors);
+/** @deprecated Use `getRouteNavigationMapStyle(useTheme().colors)`. */
+export const ROUTE_NAVIGATION_MAP_STYLE_NIGHT = getRouteNavigationMapStyle(lightColors);

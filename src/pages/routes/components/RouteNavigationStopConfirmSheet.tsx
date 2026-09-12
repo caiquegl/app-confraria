@@ -125,7 +125,7 @@ function InfoRow({
 
 const createStyles = (colors: AppColors) => ({
   backdrop: {
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    backgroundColor: colors.map.modalScrim,
     bottom: 0,
     left: 0,
     position: "absolute",
@@ -160,11 +160,11 @@ const createStyles = (colors: AppColors) => ({
   },
   confirmButton: {
     alignItems: "center",
-    backgroundColor: colors.feedback.danger,
+    backgroundColor: colors.feedback.dangerStrong,
     borderRadius: 18,
     height: 52,
     justifyContent: "center",
-    shadowColor: colors.feedback.danger,
+    shadowColor: colors.feedback.dangerStrong,
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -173,7 +173,7 @@ const createStyles = (colors: AppColors) => ({
     opacity: 0.75,
   },
   confirmButtonText: {
-    color: colors.text.inverse,
+    color: colors.feedback.dangerForeground,
     fontSize: 16,
     fontWeight: "900",
   },
@@ -192,7 +192,7 @@ const createStyles = (colors: AppColors) => ({
   },
   iconWrap: {
     alignItems: "center",
-    backgroundColor: "#FEE2E2",
+    backgroundColor: colors.surface.dangerSubtle,
     borderRadius: 999,
     height: 56,
     justifyContent: "center",

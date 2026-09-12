@@ -161,7 +161,7 @@ const createStyles = (colors: AppColors) => ({
     paddingTop: 12,
   },
   storyIconWrap: {
-    backgroundColor: "#F0F7D8",
+    backgroundColor: colors.surface.brandSubtle,
   },
   subtitle: {
     color: colors.text.secondary,

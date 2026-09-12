@@ -349,7 +349,7 @@ export function RouteNavigationView({ onBack, routeId }: RouteNavigationViewProp
             router.replace("/routes" as Href);
           }}
         >
-          <Ionicons color={colors.text.inverse} name="remove-outline" size={14} />
+          <Ionicons color={colors.navigation.textPrimary} name="remove-outline" size={14} />
           <Text style={styles.minimizeText}>Minimizar mapa</Text>
         </Pressable>
       </View>
@@ -520,8 +520,10 @@ const createStyles = (colors: AppColors) => ({
   },
   minimizeButton: {
     alignItems: "center",
-    backgroundColor: colors.brandDark,
+    backgroundColor: colors.navigation.surface,
+    borderColor: colors.navigation.surfaceBorder,
     borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     gap: 6,
     paddingHorizontal: 16,
@@ -536,7 +538,7 @@ const createStyles = (colors: AppColors) => ({
     opacity: 0.85,
   },
   minimizeText: {
-    color: colors.text.inverse,
+    color: colors.navigation.textPrimary,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -554,7 +556,7 @@ const createStyles = (colors: AppColors) => ({
   },
   retryBanner: {
     alignSelf: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: colors.navigation.report,
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 10,

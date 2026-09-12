@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, useColorScheme, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import Svg, { Path } from "react-native-svg";
 
@@ -26,7 +26,7 @@ import {
   zoomForSpeed,
 } from "../utils/navigation-camera.utils";
 import { getRouteReportTypeByKey } from "../utils/route-report-types";
-import { getRouteNavigationMapStyleNight, getRoutePlannerMapStyle } from "../utils/route-map-style";
+import { getRouteNavigationMapStyle } from "../utils/route-map-style";
 
 type RouteNavigationMapProps = {
   followUser: boolean;
@@ -58,8 +58,10 @@ export function RouteNavigationMap({
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const reportTypeByKey = useMemo(() => getRouteReportTypeByKey(colors), [colors]);
-  const plannerMapStyle = useMemo(() => getRoutePlannerMapStyle(colors), [colors]);
-  const nightMapStyle = useMemo(() => getRouteNavigationMapStyleNight(colors), [colors]);
+  // O estilo segue o tema escolhido no app (via tokens), não a aparência do
+  // sistema: antes o app em claro com o aparelho em escuro renderizava mapa
+  // noturno sob cards claros.
+  const mapStyle = useMemo(() => getRouteNavigationMapStyle(colors), [colors]);
   const mapRef = useRef<MapView | null>(null);
   const zoomRef = useRef(DEFAULT_NAVIGATION_ZOOM);
   const pitchRef = useRef(DEFAULT_NAVIGATION_PITCH);
@@ -71,8 +73,6 @@ export function RouteNavigationMap({
   /** A primeira posição entra sem animação para não "voar" até o usuário. */
   const hasPositionedRef = useRef(false);
   const mapHeightRef = useRef(0);
-  const colorScheme = useColorScheme();
-  const isNightMode = colorScheme === "dark";
   const [mapHeight, setMapHeight] = useState(0);
   /** Rumo da câmera quando o usuário gira o mapa manualmente. */
   const [mapHeading, setMapHeading] = useState(0);
@@ -213,7 +213,7 @@ export function RouteNavigationMap({
     >
       <MapView
         ref={mapRef}
-        customMapStyle={isNightMode ? nightMapStyle : plannerMapStyle}
+        customMapStyle={mapStyle}
         initialCamera={initialCamera}
         mapPadding={mapPadding}
         pitchEnabled={followUser}
@@ -244,7 +244,7 @@ export function RouteNavigationMap({
             coordinates={state.completedPolyline}
             lineCap="round"
             lineJoin="round"
-            strokeColor="rgba(28, 33, 38, 0.35)"
+            strokeColor={colors.map.navigationPolylineCompleted}
             strokeWidth={6}
           />
         ) : null}
@@ -254,7 +254,7 @@ export function RouteNavigationMap({
             coordinates={state.remainingPolyline}
             lineCap="round"
             lineJoin="round"
-            strokeColor={colors.brandGreen}
+            strokeColor={colors.map.navigationPolylineRoute}
             strokeWidth={7}
           />
         ) : null}
@@ -364,7 +364,7 @@ export function RouteNavigationMap({
                   collapsable={false}
                   style={[
                     styles.reportPin,
-                    { backgroundColor: config?.color ?? "#EF4444" },
+                    { backgroundColor: config?.color ?? colors.feedback.danger },
                   ]}
                 >
                   <Ionicons
@@ -435,7 +435,8 @@ function HeadingNavArrow() {
     <Svg width={44} height={44} viewBox="0 0 48 48">
       <Path
         d="M24 2 L42 42 L24 32 L6 42 Z"
-        fill={colors.brandGreen}
+        // Mesma cor do traçado da rota: lima no mapa noturno, oliva no diurno.
+        fill={colors.map.navigationPolylineRoute}
         stroke={colors.text.inverse}
         strokeLinejoin="round"
         strokeWidth={2.5}
@@ -544,7 +545,7 @@ const createStyles = (colors: AppColors) => ({
   },
   placePinTitle: {
     alignItems: "center",
-    backgroundColor: "rgba(28, 33, 38, 0.92)",
+    backgroundColor: colors.map.navigationPinLabel,
     borderRadius: 8,
     justifyContent: "center",
     marginBottom: 4,
@@ -597,7 +598,7 @@ const createStyles = (colors: AppColors) => ({
   },
   partnerPinInner: {
     alignItems: "center",
-    backgroundColor: "#3B82F6",
+    backgroundColor: colors.routes.pinPolice,
     borderColor: colors.surface.primary,
     borderRadius: 999,
     borderWidth: 2,

@@ -78,7 +78,8 @@ export function RouteNavigationInstructionCard({
                 item.kind === "upcoming" && styles.iconWrapUpcoming,
               ]}
             >
-              <Ionicons color={colors.brandDark} name={item.icon} size={22} />
+              {/* Os três fundos do ícone são claros nas duas paletas. */}
+              <Ionicons color={colors.text.onBrand} name={item.icon} size={22} />
             </View>
             <View style={styles.copy}>
               <Text style={styles.distance}>{item.distanceLabel}</Text>
@@ -115,8 +116,10 @@ export function RouteNavigationInstructionCard({
 const createStyles = (colors: AppColors) => ({
   card: {
     alignItems: "center",
-    backgroundColor: colors.brandDark,
+    backgroundColor: colors.navigation.surface,
+    borderColor: colors.navigation.surfaceBorder,
     borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 14,
@@ -131,19 +134,19 @@ const createStyles = (colors: AppColors) => ({
     minWidth: 0,
   },
   distance: {
-    color: colors.text.inverse,
+    color: colors.navigation.textPrimary,
     fontSize: 22,
     fontWeight: "800",
     lineHeight: 26,
   },
   dot: {
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    backgroundColor: colors.navigation.dotIdle,
     borderRadius: 999,
     height: 5,
     width: 5,
   },
   dotActive: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.navigation.accent,
     width: 14,
   },
   dotsRow: {
@@ -162,19 +165,19 @@ const createStyles = (colors: AppColors) => ({
     width: 40,
   },
   iconWrapOffRoute: {
-    backgroundColor: "#93C5FD",
+    backgroundColor: colors.navigation.offRouteManeuver,
   },
   iconWrapUpcoming: {
-    backgroundColor: "#D9F99D",
+    backgroundColor: colors.navigation.upcomingManeuver,
   },
   instruction: {
-    color: "#D1D5DB",
+    color: colors.navigation.textSecondary,
     fontSize: 13,
     fontWeight: "600",
     marginTop: 2,
   },
   upcomingLabel: {
-    color: colors.text.muted,
+    color: colors.navigation.textMuted,
     fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.4,

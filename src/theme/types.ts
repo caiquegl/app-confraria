@@ -113,6 +113,7 @@ export type AppColors = {
     navigationRoad: string;
     navigationRoadStroke: string;
     navigationWater: string;
+    navigationPolylineRoute: string;
     navigationPolylineCompleted: string;
     navigationPinLabel: string;
     frosted: string;
@@ -141,9 +142,26 @@ export type AppColors = {
     suggestionHighlightBackground: string;
     suggestionHighlightBorder: string;
   };
+  /**
+   * Navegação tem chrome próprio: os cards flutuam sobre o mapa e precisam
+   * acompanhar o estilo do mapa, não a superfície invertida do app.
+   */
   navigation: {
     offRouteWarning: string;
     offRouteManeuver: string;
     upcomingManeuver: string;
+    /** Fundo dos cards sobrepostos ao mapa. */
+    surface: string;
+    surfaceBorder: string;
+    textPrimary: string;
+    textSecondary: string;
+    textMuted: string;
+    /** Destaque numérico: tempo restante e distância da manobra. */
+    accent: string;
+    /** Ponto inativo do carrossel de manobras. */
+    dotIdle: string;
+    /** Botão de reportar ocorrência. Glifo escuro sobre âmbar, como placa de trânsito. */
+    report: string;
+    reportForeground: string;
   };
 };

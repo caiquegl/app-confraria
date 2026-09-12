@@ -128,7 +128,9 @@ export const darkColors: AppColors = {
     navigationRoad: "#38414a",
     navigationRoadStroke: "#212a33",
     navigationWater: "#17263c",
-    navigationPolylineCompleted: "rgba(159, 193, 50, 0.35)",
+    navigationPolylineRoute: "#C8F763",
+    // Cinza, não oliva: o trecho percorrido precisa se distinguir do restante.
+    navigationPolylineCompleted: "rgba(148, 163, 184, 0.45)",
     navigationPinLabel: "rgba(248, 250, 252, 0.92)",
     frosted: "rgba(30, 41, 59, 0.94)",
     photoScrim: "rgba(0,0,0,0.96)",
@@ -162,5 +164,15 @@ export const darkColors: AppColors = {
     offRouteWarning: "#FBBF24",
     offRouteManeuver: "#60A5FA",
     upcomingManeuver: "#A3E635",
+    // Um degrau abaixo do mapa (#1f2428) para o card destacar sem ofuscar.
+    surface: "#161B20",
+    surfaceBorder: "rgba(248, 250, 252, 0.14)",
+    textPrimary: "#F8FAFC",
+    textSecondary: "#CBD5E1",
+    textMuted: "#94A3B8",
+    accent: "#C8F763",
+    dotIdle: "rgba(248, 250, 252, 0.22)",
+    report: "#FB923C",
+    reportForeground: "#1C2126",
   },
 };
