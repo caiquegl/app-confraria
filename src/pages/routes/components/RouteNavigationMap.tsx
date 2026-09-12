@@ -12,6 +12,19 @@ import type { RouteNavigationState } from "../hooks/useRouteNavigation";
 import type { RoutePhotoCluster } from "../types/route-photo.types";
 import type { RouteNavigationPlacePin } from "../utils/build-navigation-place-pins";
 import { RoutePhotoClusterMarker } from "./RoutePhotoClusterMarker";
+import {
+  CAMERA_ANIMATION_MS,
+  CAMERA_TICK_MS,
+  CAMERA_ZOOM_ANIMATION_MS,
+  DEFAULT_NAVIGATION_PITCH,
+  DEFAULT_NAVIGATION_ZOOM,
+  getNavigationMapPadding,
+  normalizeAngle,
+  PITCH_CHANGE_THRESHOLD,
+  pitchForSpeed,
+  ZOOM_CHANGE_THRESHOLD,
+  zoomForSpeed,
+} from "../utils/navigation-camera.utils";
 import { getRouteReportTypeByKey } from "../utils/route-report-types";
 import { getRouteNavigationMapStyleNight, getRoutePlannerMapStyle } from "../utils/route-map-style";
 
@@ -29,12 +42,9 @@ type RouteNavigationMapProps = {
     | "heading"
     | "placePins"
     | "remainingPolyline"
+    | "speedMps"
   >;
 };
-
-/** Course-up: mapa e seta seguem o heading do aparelho. */
-const NAVIGATION_PITCH = 0;
-const NAVIGATION_ZOOM = 17.5;
 
 export function RouteNavigationMap({
   followUser,
@@ -51,65 +61,95 @@ export function RouteNavigationMap({
   const plannerMapStyle = useMemo(() => getRoutePlannerMapStyle(colors), [colors]);
   const nightMapStyle = useMemo(() => getRouteNavigationMapStyleNight(colors), [colors]);
   const mapRef = useRef<MapView | null>(null);
-  const zoomRef = useRef(NAVIGATION_ZOOM);
+  const zoomRef = useRef(DEFAULT_NAVIGATION_ZOOM);
+  const pitchRef = useRef(DEFAULT_NAVIGATION_PITCH);
   const followUserRef = useRef(followUser);
   /** Zoom no início do gesto — para distinguir pinch/zoom de pan puro. */
-  const zoomAtGestureStartRef = useRef(NAVIGATION_ZOOM);
+  const zoomAtGestureStartRef = useRef(DEFAULT_NAVIGATION_ZOOM);
   const gestureActiveRef = useRef(false);
+  const isMapReadyRef = useRef(false);
+  /** A primeira posição entra sem animação para não "voar" até o usuário. */
+  const hasPositionedRef = useRef(false);
+  const mapHeightRef = useRef(0);
   const colorScheme = useColorScheme();
   const isNightMode = colorScheme === "dark";
-  // Android congela o Marker cedo demais com tracksViewChanges=false e o ícone some.
-  // Mantém true no pin do usuário para a seta acompanhar o heading em tempo real.
-  const [tracksUserPin, setTracksUserPin] = useState(true);
-  const hasUserPosition = Boolean(state.currentPosition);
-  const lastTrackedHeadingRef = useRef<number | null>(null);
+  const [mapHeight, setMapHeight] = useState(0);
+  /** Rumo da câmera quando o usuário gira o mapa manualmente. */
+  const [mapHeading, setMapHeading] = useState(0);
+
+  /** Espelho dos dados de navegação: o loop de câmera roda fora do ciclo de render. */
+  const latestRef = useRef({
+    heading: 0,
+    position: null as { latitude: number; longitude: number } | null,
+    speedMps: 0,
+  });
 
   useEffect(() => {
-    if (!hasUserPosition) {
-      setTracksUserPin(true);
-      lastTrackedHeadingRef.current = null;
-      return;
-    }
+    latestRef.current = {
+      heading: Number.isFinite(state.heading) ? state.heading : 0,
+      position: state.currentPosition,
+      speedMps: Number.isFinite(state.speedMps) ? state.speedMps : 0,
+    };
+  }, [state.currentPosition, state.heading, state.speedMps]);
 
-    const heading = Number.isFinite(state.heading) ? Math.round(state.heading) : 0;
-    const headingChanged =
-      lastTrackedHeadingRef.current == null ||
-      Math.abs(heading - lastTrackedHeadingRef.current) >= 2;
-
-    if (!headingChanged && lastTrackedHeadingRef.current != null) {
-      return;
-    }
-
-    lastTrackedHeadingRef.current = heading;
-    setTracksUserPin(true);
-    const timer = setTimeout(() => setTracksUserPin(false), 350);
-    return () => clearTimeout(timer);
-  }, [hasUserPosition, state.heading]);
+  // Em course-up a seta fica fixa apontando para cima e quem gira é o mapa.
+  // Fora do follow ela volta a marcar o rumo real em relação à câmera.
+  const userPinRotation = followUser ? 0 : normalizeAngle(state.heading - mapHeading);
 
   useEffect(() => {
-    // Recenter: volta ao zoom padrão da navegação.
-    // Zoom manual (pinch) não deve desligar o follow nem resetar o nível.
+    // Recenter: recompõe zoom e inclinação a partir da velocidade atual, em vez
+    // de voltar para um nível fixo. Pinch manual não desliga o follow.
     if (followUser && !followUserRef.current) {
-      zoomRef.current = NAVIGATION_ZOOM;
+      const { position, speedMps } = latestRef.current;
+      if (position) {
+        zoomRef.current = zoomForSpeed(speedMps, position.latitude, mapHeightRef.current);
+        pitchRef.current = pitchForSpeed(speedMps);
+      }
     }
     followUserRef.current = followUser;
   }, [followUser]);
 
   useEffect(() => {
-    if (!followUser || !state.currentPosition || !mapRef.current) return;
+    if (!followUser) return;
 
-    const heading = Number.isFinite(state.heading) ? state.heading : 0;
+    const applyCamera = () => {
+      const map = mapRef.current;
+      const { heading, position, speedMps } = latestRef.current;
+      if (!map || !isMapReadyRef.current || !position) return;
 
-    mapRef.current.animateCamera(
-      {
-        center: state.currentPosition,
+      const nextZoom = zoomForSpeed(speedMps, position.latitude, mapHeightRef.current);
+      const nextPitch = pitchForSpeed(speedMps);
+      const zoomChanged = Math.abs(nextZoom - zoomRef.current) > ZOOM_CHANGE_THRESHOLD;
+
+      if (zoomChanged) {
+        zoomRef.current = nextZoom;
+      }
+      if (Math.abs(nextPitch - pitchRef.current) > PITCH_CHANGE_THRESHOLD) {
+        pitchRef.current = nextPitch;
+      }
+
+      const camera = {
+        center: position,
         heading,
-        pitch: NAVIGATION_PITCH,
+        pitch: pitchRef.current,
         zoom: zoomRef.current,
-      },
-      { duration: 280 },
-    );
-  }, [followUser, state.currentPosition, state.heading]);
+      };
+
+      if (!hasPositionedRef.current) {
+        hasPositionedRef.current = true;
+        map.setCamera(camera);
+        return;
+      }
+
+      map.animateCamera(camera, {
+        duration: zoomChanged ? CAMERA_ZOOM_ANIMATION_MS : CAMERA_ANIMATION_MS,
+      });
+    };
+
+    applyCamera();
+    const interval = setInterval(applyCamera, CAMERA_TICK_MS);
+    return () => clearInterval(interval);
+  }, [followUser, mapHeight]);
 
   const handlePanDrag = () => {
     // No Android o pinch também dispara onPanDrag. Só marcamos o gesto;
@@ -127,6 +167,9 @@ export function RouteNavigationMap({
       const camera = await mapRef.current.getCamera();
       if (typeof camera.zoom === "number") {
         zoomRef.current = camera.zoom;
+      }
+      if (typeof camera.heading === "number" && !followUserRef.current) {
+        setMapHeading(camera.heading);
       }
 
       if (!gestureActiveRef.current) return;
@@ -147,28 +190,32 @@ export function RouteNavigationMap({
     }
   };
 
-  const initialRegion = state.currentPosition
+  const initialCenter = state.currentPosition ?? state.remainingPolyline[0];
+  const initialCamera = initialCenter
     ? {
-        latitude: state.currentPosition.latitude,
-        longitude: state.currentPosition.longitude,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
+        center: initialCenter,
+        heading: 0,
+        pitch: DEFAULT_NAVIGATION_PITCH,
+        zoom: DEFAULT_NAVIGATION_ZOOM,
       }
-    : state.remainingPolyline[0]
-      ? {
-          latitude: state.remainingPolyline[0].latitude,
-          longitude: state.remainingPolyline[0].longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }
-      : undefined;
+    : undefined;
+  // Objeto estável: trocar a referência a cada render reaplica o padding nativo.
+  const mapPadding = useMemo(() => getNavigationMapPadding(mapHeight), [mapHeight]);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={(event) => {
+        const { height } = event.nativeEvent.layout;
+        mapHeightRef.current = height;
+        setMapHeight(height);
+      }}
+    >
       <MapView
         ref={mapRef}
         customMapStyle={isNightMode ? nightMapStyle : plannerMapStyle}
-        initialRegion={initialRegion}
+        initialCamera={initialCamera}
+        mapPadding={mapPadding}
         pitchEnabled={followUser}
         provider={PROVIDER_GOOGLE}
         rotateEnabled={!followUser}
@@ -183,6 +230,9 @@ export function RouteNavigationMap({
         toolbarEnabled={false}
         zoomControlEnabled
         zoomEnabled
+        onMapReady={() => {
+          isMapReadyRef.current = true;
+        }}
         // Pan sai do follow; pinch/zoom mantém (ver handlePanDrag / handleRegionChangeComplete).
         onPanDrag={handlePanDrag}
         onRegionChangeComplete={() => {
@@ -330,24 +380,50 @@ export function RouteNavigationMap({
         {state.currentPosition &&
         Number.isFinite(state.currentPosition.latitude) &&
         Number.isFinite(state.currentPosition.longitude) ? (
-          <Marker
-            anchor={{ x: 0.5, y: 0.5 }}
+          <UserLocationMarker
             coordinate={state.currentPosition}
-            flat
-            tracksViewChanges={tracksUserPin}
-            rotation={Number.isFinite(state.heading) ? state.heading : 0}
-          >
-            {/*
-              Um único SVG quadrado, ponta = topo do viewBox, centro = âncora.
-              Evita badge circular + offset inventado (desalinha o bearing).
-            */}
-            <View collapsable={false} style={styles.userPinHitbox}>
-              <HeadingNavArrow />
-            </View>
-          </Marker>
+            rotation={userPinRotation}
+          />
         ) : null}
       </MapView>
     </View>
+  );
+}
+
+function UserLocationMarker({
+  coordinate,
+  rotation,
+}: {
+  coordinate: { latitude: number; longitude: number };
+  rotation: number;
+}) {
+  const styles = useThemedStyles(createStyles);
+  // O Android precisa de tracksViewChanges para rasterizar o SVG, mas mantê-lo
+  // ligado reprocessa o bitmap a cada frame da câmera. `rotation` é prop nativa
+  // do Marker, então basta desenhar uma vez e congelar.
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setTracksViewChanges(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <Marker
+      anchor={{ x: 0.5, y: 0.5 }}
+      coordinate={coordinate}
+      flat
+      rotation={rotation}
+      tracksViewChanges={tracksViewChanges}
+    >
+      {/*
+        Um único SVG quadrado, ponta = topo do viewBox, centro = âncora.
+        Evita badge circular + offset inventado (desalinha o bearing).
+      */}
+      <View collapsable={false} style={styles.userPinHitbox}>
+        <HeadingNavArrow />
+      </View>
+    </Marker>
   );
 }
 

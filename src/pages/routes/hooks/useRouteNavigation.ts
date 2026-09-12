@@ -27,6 +27,11 @@ import {
   sumPolylineDistanceMeters,
   sumPolylineDistanceUpToIndex,
 } from "../utils/navigation-geometry.utils";
+import {
+  createHeadingSmoother,
+  headingTauForMovement,
+  resolveIsMoving,
+} from "../utils/navigation-camera.utils";
 import { getManeuverIconName, getManeuverLabel } from "../utils/navigation-maneuver.utils";
 import {
   buildManeuverCarouselItems,
@@ -67,6 +72,8 @@ export type RouteNavigationState = {
   routePolyline: Coordinate[];
   speedKmh: number | null;
   speedLabel: string;
+  /** m/s — alimenta o zoom e a inclinação adaptativos da câmera. */
+  speedMps: number;
   totalDistanceMeters: number;
   traveledDistanceMeters: number;
 };
@@ -80,6 +87,7 @@ const REROUTE_COOLDOWN_MS = 15_000;
 const REROUTE_DIRECTIONS_TIMEOUT_MS = 18_000;
 const REROUTE_MAX_ATTEMPTS = 3;
 const MAX_GPS_ACCURACY_METERS = 45;
+const HEADING_PUBLISH_INTERVAL_MS = 100;
 
 const INITIAL_STATE: RouteNavigationState = {
   activeStep: null,
@@ -106,6 +114,7 @@ const INITIAL_STATE: RouteNavigationState = {
   routePolyline: [],
   speedKmh: null,
   speedLabel: "—",
+  speedMps: 0,
   totalDistanceMeters: 0,
   traveledDistanceMeters: 0,
 };
@@ -156,6 +165,10 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
   const compassHeadingRef = useRef<number | null>(null);
   /** m/s — usado para escolher GPS vs bússola. */
   const speedRef = useRef(0);
+  /** Em movimento vale o rumo do GPS; parado, a bússola. Com histerese. */
+  const isMovingRef = useRef(false);
+  const headingSmootherRef = useRef(createHeadingSmoother());
+  const lastHeadingPublishAtRef = useRef(0);
   const isReroutingRef = useRef(false);
   const lastRerouteAtRef = useRef(0);
   const offRouteTicksRef = useRef(0);
@@ -644,6 +657,7 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
         remainingPolyline,
         speedKmh,
         speedLabel: speedKmh != null ? `${speedKmh} km/h` : "—",
+        speedMps: speedRef.current,
         traveledDistanceMeters,
       }));
 
@@ -663,16 +677,29 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
     [advancePassedWaypoints, rerouteFromPosition, routeId],
   );
 
-  const publishHeading = useCallback((heading: number) => {
-    const rounded = Math.round(heading);
-    if (rounded === Math.round(headingRef.current)) {
+  /**
+   * Suaviza o rumo bruto e publica no máximo a 10Hz. Sem isso a bússola dispara
+   * dezenas de atualizações por segundo e cada uma corta a animação da câmera
+   * pela metade, o que aparece como tremor.
+   */
+  const publishHeading = useCallback((rawHeading: number) => {
+    if (!Number.isFinite(rawHeading) || rawHeading < 0) return;
+
+    const smoothed = headingSmootherRef.current.push(rawHeading, {
+      tauMs: headingTauForMovement(isMovingRef.current),
+    });
+
+    headingRef.current = smoothed;
+
+    const now = Date.now();
+    if (now - lastHeadingPublishAtRef.current < HEADING_PUBLISH_INTERVAL_MS) {
       return;
     }
-    headingRef.current = heading;
-    setState((current) => ({
-      ...current,
-      heading,
-    }));
+    lastHeadingPublishAtRef.current = now;
+
+    setState((current) =>
+      Math.abs(current.heading - smoothed) < 0.01 ? current : { ...current, heading: smoothed },
+    );
   }, []);
 
   useEffect(() => {
@@ -701,8 +728,12 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
 
           compassHeadingRef.current = compassHeading;
 
-          // Parado ou em movimento: bússola atualiza o heading para mapa + pin.
-          publishHeading(compassHeading);
+          // Em movimento o rumo vem do GPS: num suporte de moto o magnetômetro
+          // sofre com o metal e mede para onde o aparelho aponta, não para onde
+          // a moto vai. Parado, a bússola é a única fonte disponível.
+          if (!isMovingRef.current) {
+            publishHeading(compassHeading);
+          }
         });
       } catch {
         // Bússola indisponível — segue só com GPS / bearing.
@@ -725,26 +756,31 @@ export function useRouteNavigation({ onArrived, routeId }: UseRouteNavigationPar
               ? update.coords.speed
               : 0;
           speedRef.current = speed;
+          isMovingRef.current = resolveIsMoving(speed, isMovingRef.current);
 
           const gpsHeading =
             update.coords.heading != null && update.coords.heading >= 0
               ? update.coords.heading
               : null;
 
-          // Preferência: bússola (mapa + pin no giroscópio). GPS/bearing só se faltar.
-          let heading: number;
-          if (compassHeadingRef.current != null) {
-            heading = compassHeadingRef.current;
-          } else if (gpsHeading != null) {
-            heading = gpsHeading;
-          } else if (previousPositionRef.current) {
-            heading = bearingBetween(previousPositionRef.current, position);
-          } else {
-            heading = headingRef.current;
+          // Em movimento: rumo real do deslocamento (GPS ou bearing entre fixes).
+          // Parado: bússola, já que o GPS não tem rumo confiável sem movimento.
+          let rawHeading: number | null = null;
+          if (isMovingRef.current) {
+            rawHeading =
+              gpsHeading ??
+              (previousPositionRef.current
+                ? bearingBetween(previousPositionRef.current, position)
+                : null);
+          }
+          rawHeading ??= compassHeadingRef.current ?? gpsHeading;
+
+          if (rawHeading != null) {
+            publishHeading(rawHeading);
           }
 
           previousPositionRef.current = position;
-          headingRef.current = heading;
+          const heading = headingRef.current;
           const accuracy =
             update.coords.accuracy != null && update.coords.accuracy >= 0
               ? update.coords.accuracy
