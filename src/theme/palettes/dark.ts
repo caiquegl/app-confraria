@@ -11,6 +11,7 @@ export const darkColors: AppColors = {
   /** Ênfase legível em ícones/labels sobre slate (não usar como fundo oliva). */
   brandPrimary: "#9FC132",
   brandActive: "#B8E43A",
+  navActive: "#C8F763",
 
   text: {
     primary: "#F8FAFC",

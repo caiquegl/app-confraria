@@ -6,6 +6,7 @@ export type AppColors = {
   brandGray: string;
   brandPrimary: string;
   brandActive: string;
+  navActive: string;
   text: {
     primary: string;
     secondary: string;

@@ -7,6 +7,7 @@ export const lightColors: AppColors = {
   brandGray: "#F5F7F5",
   brandPrimary: "#576D1E",
   brandActive: "#728F21",
+  navActive: "#576D1E",
 
   text: {
     primary: "#1C2126",

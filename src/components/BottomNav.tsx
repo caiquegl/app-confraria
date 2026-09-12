@@ -130,7 +130,7 @@ export function BottomNav({ userAvatar, userName }: BottomNavProps) {
             <View style={[styles.indicator, active && styles.indicatorActive]} />
 
             {item.isProfile ? (
-              <View style={styles.avatarRing}>
+              <View style={[styles.avatarRing, active && styles.avatarRingActive]}>
                 <UserAvatar
                   avatarUrl={userAvatar}
                   name={userName || "Perfil"}
@@ -140,7 +140,7 @@ export function BottomNav({ userAvatar, userName }: BottomNavProps) {
               </View>
             ) : (
               <Ionicons
-                color={active ? colors.brandGreen : colors.text.secondary}
+                color={active ? colors.navActive : colors.text.secondary}
                 name={item.icon}
                 size={22}
               />
@@ -167,6 +167,9 @@ const createStyles = (colors: AppColors) => ({
     borderRadius: 14,
     padding: 2,
   },
+  avatarRingActive: {
+    backgroundColor: colors.navActive,
+  },
   bar: {
     backgroundColor: colors.surface.primary,
     borderTopColor: colors.border.subtle,
@@ -188,7 +191,7 @@ const createStyles = (colors: AppColors) => ({
     top: 0,
   },
   indicatorActive: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: colors.navActive,
   },
   item: {
     alignItems: "center",
@@ -205,7 +208,7 @@ const createStyles = (colors: AppColors) => ({
     fontWeight: "400",
   },
   labelActive: {
-    color: colors.brandGreen,
+    color: colors.navActive,
     fontWeight: "600",
   },
 });
